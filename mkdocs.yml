@@ -1,0 +1,20 @@
+site_name: vukery
+site_description: A very opinionated pinball framework based on the Mission Pinball Framework, built to be simple, lean and LLM-friendly
+site_url: https://vukery.com/
+repo_url: https://github.com/vukery/vukery
+repo_name: vukery/vukery
+
+theme:
+  name: material
+
+extra_css:
+  - stylesheets/mkdocs.css
+
+markdown_extensions:
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.snippets
+  - attr_list

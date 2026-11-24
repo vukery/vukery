@@ -1,0 +1,3 @@
+/* Theme: Material's defaults. The only custom rule hides content meant for
+   GitHub only (e.g. the "Read the documentation" link in README.md). */
+.gh-only { display: none !important; }

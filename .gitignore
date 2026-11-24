@@ -1,0 +1,103 @@
+# ---------------------------------------------------------------------------
+# vukery
+# ---------------------------------------------------------------------------
+
+# Build notes: plan, decisions, trial results. Local only, never pushed.
+notes/
+
+# Game folders: saved data and logs for each environment
+data/
+log/
+*.log
+
+# Docs site built by MkDocs (rendered and served elsewhere)
+site/
+
+# ---------------------------------------------------------------------------
+# Python
+# ---------------------------------------------------------------------------
+
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Packaging
+build/
+dist/
+wheels/
+*.egg-info/
+.eggs/
+*.egg
+MANIFEST
+
+# Environments (uv creates .venv; .python-version is committed on purpose)
+.venv/
+venv/
+env/
+.env
+.env.*
+
+# Test, lint and type-check caches
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.pyright/
+.hypothesis/
+.tox/
+.nox/
+.coverage
+.coverage.*
+coverage.xml
+htmlcov/
+
+# Profiling
+*.prof
+*.lprof
+
+# ---------------------------------------------------------------------------
+# Vim
+# ---------------------------------------------------------------------------
+
+# Swap files
+[._]*.s[a-v][a-z]
+!*.svg
+[._]*.sw[a-p]
+[._]s[a-rt-v][a-z]
+[._]ss[a-gi-z]
+[._]sw[a-p]
+
+# Session, persistent undo, backups, netrw, tags
+Session.vim
+Sessionx.vim
+.netrwhist
+*~
+*.un~
+[._]*.un~
+tags
+tags.lock
+tags.temp
+
+# ---------------------------------------------------------------------------
+# macOS
+# ---------------------------------------------------------------------------
+
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon
+._*
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+
+# ---------------------------------------------------------------------------
+# Tools
+# ---------------------------------------------------------------------------
+
+# Claude Code local settings (may hold personal permissions or tokens)
+.claude/settings.local.json
