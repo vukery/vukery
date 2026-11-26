@@ -23,7 +23,7 @@ def _parser() -> argparse.ArgumentParser:
         prog="vuk",
         description="vukery: a very opinionated pinball framework based on the Mission Pinball Framework.",
         epilog="Environment variables: VUK_ENV picks the environment (development, test or production; "
-               "default development; vuk test always uses test). VUK_LOG sets one log level for "
+               "default development; vuk you always uses test). VUK_LOG sets one log level for "
                "everything (debug, info, warning or error); per-component levels go in the logging: config.",
     )
     parser.add_argument("--version", action="version", version=f"vukery {__version__}")
@@ -59,8 +59,9 @@ def _parser() -> argparse.ArgumentParser:
     commands.add_parser("doctor", help="check the setup: versions, FFmpeg, serial ports (MPF: mpf diagnosis)")
     commands.add_parser("wire", help="FAST wiring instructions for the config (MPF: mpf wire)")
 
-    test = commands.add_parser("test", help="run the game's specs in the test environment (MPF: mpf test)")
-    test.add_argument("pytest_args", nargs=argparse.REMAINDER, help="passed to pytest")
+    you = commands.add_parser("you", aliases=["test"],
+                              help="run the machine's specs, in the test environment (MPF: mpf test)")
+    you.add_argument("pytest_args", nargs=argparse.REMAINDER, help="passed to pytest, e.g. -k scoring")
 
     generate = commands.add_parser("generate", help="create a mode, show or slide in a game (MPF: mpf create_config)")
     generate.add_argument("kind", choices=("mode", "show", "slide"))
@@ -103,8 +104,26 @@ def _create(args: argparse.Namespace) -> int:
         print(f"      create  {path}")
     print(f"\nGet VUKed! Your machine is in {folder}. Next:\n\n"
           f"  cd {folder}\n  uv sync          # install vukery and the test tools\n"
-          f"  uv run vuk me    # play it, with the dashboard\n  uv run pytest    # run its specs")
+          f"  uv run vuk me    # play it, with the dashboard\n  uv run vuk you   # run its specs")
     return 0
+
+
+def _specs(args: argparse.Namespace) -> int:
+    """vuk you: run the machine folder's specs with pytest, in the test environment."""
+    import importlib.util
+    import os
+    from pathlib import Path
+
+    folder = Path(args.game_dir).resolve()
+    if not (folder / "config").is_dir():
+        print(f"vuk you: {folder} isn't a machine folder (it has no config/ folder)", file=sys.stderr)
+        return 1
+    if importlib.util.find_spec("pytest") is None:
+        print("vuk you: the specs need pytest (uv add --dev pytest pytest-describe pytest-spec)", file=sys.stderr)
+        return 1
+    environment = {**os.environ, "VUK_ENV": "test"}  # specs always run in test: no hardware, ever
+    return subprocess.run([sys.executable, "-m", "pytest", *args.pytest_args], cwd=folder,
+                          env=environment, check=False).returncode
 
 
 def _run(args: argparse.Namespace) -> int:
@@ -246,7 +265,14 @@ def _mc(args: argparse.Namespace) -> int:
 
 def main(argv: Sequence[str] | None = None) -> int:
     parser = _parser()
-    args = parser.parse_args(argv)
+    args, unknown = parser.parse_known_args(argv)
+    match args.command, unknown:
+        case "you" | "test", _:
+            args.pytest_args = [*unknown, *args.pytest_args]  # options like -k go to pytest
+        case _, [_, *_]:
+            parser.error(f"unrecognized arguments: {' '.join(unknown)}")
+        case _:
+            pass
     match args.command:
         case None:
             parser.print_help()
@@ -255,6 +281,8 @@ def main(argv: Sequence[str] | None = None) -> int:
             return _doctor()
         case "it":
             return _create(args)
+        case "you" | "test":  # vuk test is an alias
+            return _specs(args)
         case "us" | "me":
             return _run(args)
         case "mc":

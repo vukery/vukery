@@ -119,3 +119,41 @@ def describe_vuk_me():
     def it_has_no_vuk_view():
         with pytest.raises(SystemExit):
             main(["view"])
+
+
+def describe_vuk_you():
+    """vuk you runs a machine folder's specs, always in the test environment."""
+
+    def _machine(tmp_path):
+        from vukery.generator import create_machine
+
+        folder = tmp_path / "pinbot"
+        create_machine(folder)
+        return folder
+
+    def it_runs_the_specs_and_passes(tmp_path, capsys):
+        assert main(["-C", str(_machine(tmp_path)), "you"]) == 0
+
+    def it_fails_when_a_spec_fails(tmp_path, capsys):
+        folder = _machine(tmp_path)
+        spec = folder / "tests" / "test_pinbot.py"
+        spec.write_text(spec.read_text().replace("to_equal(1000)", "to_equal(999)"))
+        assert main(["-C", str(folder), "you"]) != 0
+
+    def it_passes_arguments_to_pytest(tmp_path, capfd):
+        assert main(["-C", str(_machine(tmp_path)), "you", "-k", "scores_1000", "-q"]) == 0
+        assert "1 passed" in capfd.readouterr().out
+
+    def it_always_uses_the_test_environment(tmp_path, capfd, monkeypatch):
+        folder = _machine(tmp_path)
+        (folder / "tests" / "test_env.py").write_text(
+            "import os\n\ndef test_env():\n    assert os.environ['VUK_ENV'] == 'test'\n")
+        monkeypatch.setenv("VUK_ENV", "production")
+        assert main(["-C", str(folder), "you", "-k", "test_env"]) == 0
+
+    def it_answers_to_vuk_test_too(tmp_path, capsys):
+        assert main(["-C", str(_machine(tmp_path)), "test"]) == 0
+
+    def it_explains_a_folder_that_isnt_a_machine(tmp_path, capsys):
+        assert main(["-C", str(tmp_path), "you"]) == 1
+        assert "isn't a machine folder" in capsys.readouterr().err
