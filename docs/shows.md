@@ -26,7 +26,10 @@ a grid: one row per moment, one column per light.
 # modes/hole_score/lane_sweep.yaml
 every: 0.15s                  # each row lasts this long
 lights: hole_score_lanes      # a light group (or a light, or a list): its lights are the columns
-colors: {R: ff0000, O: ff8000, Y: ffff00}
+colors:
+  R: ff0000
+  O: ff8000
+  Y: ffff00
 frames: |
   R.........
   RR........
@@ -60,7 +63,10 @@ and MPF shows copy over:
   coils: c_chime1
 - time: +0.25s                # relative to the step before
   coils: c_chime3
-  lights: {l_match: {color: ffcc00, fade: 200ms}}
+  lights:
+    l_match:
+      color: ffcc00
+      fade: 200ms
 - time: +0.4s
   events: match_chimed
 ```
@@ -69,9 +75,9 @@ and MPF shows copy over:
   step's length. `duration: -1` holds until the show is stopped. Times take
   `0.5`, `500ms` or `0.5s`.
 - **`lights:`** takes a light or a group, and a color (`ff8800`), `on`, `off`,
-  or `{color: ..., fade: ...}`.
-- **`coils:`** takes a coil or a list (each is pulsed), or
-  `{c_x: {action: enable}}` (`pulse`, `enable`, `disable`). Coils keep their
+  or a mapping with `color:` and `fade:`.
+- **`coils:`** takes a coil or a list (each is pulsed), or a coil with an
+  `action:` (`pulse`, `enable`, `disable`). Coils keep their
   limits: a show can't pulse harder or longer than the coil allows.
 - **`events:`** takes an event or a list, posted when the step runs.
 
@@ -83,7 +89,8 @@ That works in names and in values:
 ```yaml
 # modes/base/lit.yaml
 - duration: -1
-  lights: {(lights): (color)}
+  lights:
+    (lights): (color)
 ```
 
 ```python

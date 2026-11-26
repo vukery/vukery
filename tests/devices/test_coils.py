@@ -20,6 +20,11 @@ def rig(tmp_path):
     game.stop()
 
 
+def describe_coil_config():
+    def it_reads_a_bare_number_as_text():  # number: 1 in YAML is the int 1
+        expect(CoilConfig.from_yaml("c_x", {"number": 1}).number).to_equal("1")
+
+
 def describe_coil_limits():
     def it_rejects_settings_it_doesnt_know():
         with pytest.raises(ConfigError, match="unknown setting"):

@@ -6,41 +6,41 @@
 
 switches:
   s_start:
-    number: "0"        # the hardware number; on the simulated platforms any unique string works
+    number: 0        # the hardware number; on the simulated platforms any unique one works
     tags: start        # the start button: vukery's attract and game modes listen for this tag
   s_trough1:
-    number: "1"
+    number: 1
   s_trough2:
-    number: "2"
+    number: 2
   s_trough3:
-    number: "3"
+    number: 3
   s_left_flipper:
-    number: "4"
+    number: 4
   s_right_flipper:
-    number: "5"
+    number: 5
   s_left_sling:
-    number: "6"
+    number: 6
   s_right_sling:
-    number: "7"
+    number: 7
   s_target:
-    number: "8"
+    number: 8
 
 coils:
   c_trough_eject:
-    number: "0"
+    number: 0
     default_pulse_ms: 20      # how long the coil fires (vukery enforces its limits)
   c_left_flipper:
-    number: "1"
+    number: 1
     default_pulse_ms: 30
     default_hold_power: 0.125 # flippers hold at low power while the button is held
   c_right_flipper:
-    number: "2"
+    number: 2
     default_pulse_ms: 30
     default_hold_power: 0.125
   c_left_sling:
-    number: "3"
+    number: 3
   c_right_sling:
-    number: "4"
+    number: 4
 
 ball_devices:
   bd_trough:

@@ -42,7 +42,8 @@ class CoilConfig:
         unknown = sorted(set(data) - known)
         if unknown:
             raise ConfigError(f"coils: {name}: unknown setting(s): {', '.join(unknown)}")
-        return cls(name=name, **{key: data[key] for key in data})
+        values = {key: str(value) if key == "number" else value for key, value in data.items()}
+        return cls(name=name, **values)  # numbers are strings, as with switches and lights: 1 means "1"
 
 
 def _power(value: float, what: str, coil: str) -> float:

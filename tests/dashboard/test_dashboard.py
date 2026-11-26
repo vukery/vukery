@@ -247,7 +247,7 @@ def describe_config_dashboard_yaml():
         config = DashboardConfig.from_yaml(yaml.safe_load(path.read_text())["dashboard"])
         expect(config.arrangement.x1).to_equal(33.3)
         expect(config.positions["backbox"]).to_equal({"l_frenzy": (0.25, 0.5)})
-        expect("list:    {width: 33.3}" in path.read_text()).to_equal(True)
+        expect(path.read_text()).to_contain("    list:\n      width: 33.3\n")
 
     def it_is_where_the_examples_keep_their_dashboard(rig):
         expect(rig.dashboard.layout["config_file"].endswith("examples/basic/config/dashboard.yaml")).to_equal(True)

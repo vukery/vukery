@@ -36,15 +36,18 @@ YAML describes the machine. Sections and settings are MPF's:
 ```yaml
 switches:
   s_start:
-    number: "0"
+    number: 0
     tags: start               # the start button
-  s_trough1: {number: "1"}
-  s_trough2: {number: "2"}
-  s_target:  {number: "8"}
+  s_trough1:
+    number: 1
+  s_trough2:
+    number: 2
+  s_target:
+    number: 8
 
 coils:
   c_trough_eject:
-    number: "0"
+    number: 0
     default_pulse_ms: 20
 
 ball_devices:
@@ -70,6 +73,11 @@ game:
 modes:
   - base
 ```
+
+**Write it as indented YAML,** one setting per line, as above. Hardware
+numbers can be bare (`number: 1`) and are read as text; quote one that
+starts with a zero (`number: "010"`), which YAML would otherwise read as an
+octal number.
 
 **Supported sections so far:** `switches`, `coils`, `lights`,
 `ball_devices` (troughs), `flippers` (single-wound, no EOS),

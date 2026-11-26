@@ -22,10 +22,14 @@ lights:
     type: rgbw
   l_custom:
     channels:             # each color on any channel
-      red:   {number: 40-0}
-      green: {number: 40-2}
-      blue:  {number: 40-1}
-      white: {number: 41-2}
+      red:
+        number: 40-0
+      green:
+        number: 40-2
+      blue:
+        number: 40-1
+      white:
+        number: 41-2
 ```
 
 ## Settings
