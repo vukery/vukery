@@ -83,7 +83,8 @@ class QueuedEvent:
         if self._released:
             self._released.set()
 
-    async def _until_cleared(self) -> None:
+    async def until_cleared(self) -> None:
+        """Wait until ``clear()`` if ``wait()`` was called; otherwise return right away."""
         if self.waiting:
             self._released = asyncio.Event()
             await self._released.wait()
@@ -149,8 +150,19 @@ class EventManager:
     def post_queue(self, event: str, callback: Callable[..., Any] | None = None, **kwargs: Any) -> None:
         self._post(_Posted(event, "queue", callback, kwargs))
 
-    async def post_async(self, event: str, kind: str = "normal", **kwargs: Any) -> dict[str, Any]:
-        """Post and wait until it's been handled. Returns the callback's kwargs (e.g. a relay's result)."""
+    async def post_async(self, event: str, **kwargs: Any) -> dict[str, Any]:
+        """Post and wait until it's been handled."""
+        return await self._post_and_wait(event, "normal", kwargs)
+
+    async def post_queue_async(self, event: str, **kwargs: Any) -> dict[str, Any]:
+        """Post a queue event and wait until every handler has released it."""
+        return await self._post_and_wait(event, "queue", kwargs)
+
+    async def post_relay_async(self, event: str, **kwargs: Any) -> dict[str, Any]:
+        """Post a relay event and wait. Returns the arguments as the handlers left them."""
+        return await self._post_and_wait(event, "relay", kwargs)
+
+    async def _post_and_wait(self, event: str, kind: str, kwargs: dict[str, Any]) -> dict[str, Any]:
         future: asyncio.Future[dict[str, Any]] = self.loop.create_future()
 
         def done(**result: Any) -> None:
@@ -159,9 +171,6 @@ class EventManager:
 
         self._post(_Posted(event, kind, done, kwargs))
         return await future
-
-    async def post_queue_async(self, event: str, **kwargs: Any) -> dict[str, Any]:
-        return await self.post_async(event, kind="queue", **kwargs)
 
     def _post(self, posted: _Posted) -> None:
         if self.stopped:
@@ -236,7 +245,8 @@ class EventManager:
             match posted.kind, outcome:
                 case "boolean", False:
                     return False
-                case "relay", dict() as changes:
+                case "relay", dict():
+                    changes: dict[str, Any] = outcome  # type: ignore[assignment]
                     kwargs.update(changes)
                     result = kwargs
                 case _, Block():
@@ -253,6 +263,6 @@ class EventManager:
                 handler.callback(queue=queue, **{**posted.kwargs, **handler.kwargs})
             except Exception as e:
                 raise EventHandlerError(f"{handler} failed on event {posted.event!r}: {e}") from e
-            await queue._until_cleared()
+            await queue.until_cleared()
         if posted.callback:
             posted.callback(**posted.kwargs)
