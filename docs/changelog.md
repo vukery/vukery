@@ -6,6 +6,16 @@ vukery is in **0.0.x** while it works toward parity with MPF. Every push to
 
 Check your version with `vuk --version`.
 
+## 0.0.19 (2026-11-26)
+
+- **Actors move and blink.** `.moves(x=, y=, seconds=, repeat=, back=)` moves
+  any actor from where it's placed to another point: once, there and back,
+  or over and over (a scroll). `.blinks(every=, times=, fade=)` turns it off
+  and on, or fades it out and in (MPF's pulsate). See
+  [Displays and scenes](scenes.md#animations-moves-and-blinks).
+- `game.screen()` lists only what's visible at that moment.
+- The display examples blink, fade and move.
+
 ## 0.0.18 (2026-11-26)
 
 - **Shows:** YAML files in their mode's folder, played with
