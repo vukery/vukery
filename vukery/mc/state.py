@@ -187,6 +187,10 @@ class MediaState:
         """The texts you could see on ``display`` now (what ``GameRig.screen()`` reads)."""
         return [item for item in self.draws(display) if isinstance(item, DrawText) and item.opacity > 0]
 
+    def _players(self) -> dict[int, SimpleNamespace]:
+        """Every player's variables, by number: ``{players[2].score}``."""
+        return {number: SimpleNamespace(**variables, number=number) for number, variables in self.players.items()}
+
     def _player(self) -> SimpleNamespace:
         return SimpleNamespace(**self.players.get(self.current or 0, {}), number=self.current or "")
 
@@ -226,7 +230,7 @@ class MediaState:
             y = cy + (ay - 0.5) * height + dy
             match actor.get("type"):
                 case "text":
-                    text = _FORMATTER.format(str(actor["text"]), player=self._player())
+                    text = _FORMATTER.format(str(actor["text"]), player=self._player(), players=self._players())
                     out.append(DrawText(text, x, y, float(actor.get("size", 0.1)) * height,
                                         str(actor.get("color", "ffffff")), str(actor.get("anchor", "center")), seen))
                 case "scene":

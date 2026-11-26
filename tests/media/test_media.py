@@ -42,6 +42,26 @@ def describe_media_state():
         state.apply(welcome())
         expect([t.text for t in state.texts("main")]).to_equal(["12,340", "BALL 2", ""])
 
+    def it_fills_in_any_players_values():
+        state = MediaState()
+        state.apply(welcome(Scene(Text("{players[1].score:,}"), Text("{players[2].score:02,}"))))
+        expect([t.text for t in state.texts("main")]).to_equal(["12,340", ""])   # no player 2 yet
+        state.apply({"type": "player", "number": 2, "vars": {"score": 0}})
+        expect([t.text for t in state.texts("main")]).to_equal(["12,340", "00"])
+
+    def it_scales_clipping_to_the_framebuffer():  # pyglet may already count window units in pixels
+        from vukery.mc.app import pixel_ratio
+
+        class Window:
+            def __init__(self, width, framebuffer):
+                self.width, self.framebuffer = width, framebuffer
+
+            def get_framebuffer_size(self):
+                return self.framebuffer, 0
+
+        expect(pixel_ratio(Window(1280, 2560))).to_equal(2.0)
+        expect(pixel_ratio(Window(2560, 2560))).to_equal(1.0)
+
     def it_follows_player_changes_and_turns():
         state = MediaState()
         state.apply(welcome())

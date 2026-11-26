@@ -27,13 +27,33 @@ def _alpha(opacity: float) -> int:
     return max(0, min(255, round(opacity * 255)))
 
 
-def draw_scene(state: MediaState, display: str, x: float, y: float, width: float, height: float) -> None:
-    """Draw ``display``'s scene into a rect, in window units: nested scenes' backgrounds and
-    every text, with entrances and exits where they are now.
+def pixel_ratio(window: Any) -> float:
+    """Framebuffer pixels per window unit. pyglet may already give window sizes in framebuffer
+    pixels on a HiDPI screen (then this is 1.0, whatever ``get_pixel_ratio()`` says)."""
+    return window.get_framebuffer_size()[0] / window.width if window.width else 1.0
 
-    The display windows use the whole window; the vuk me dashboard draws into a
-    pane per display.
+
+def draw_scene(state: MediaState, display: str, x: float, y: float, width: float, height: float,
+               pixel_ratio: float = 1.0) -> None:
+    """Draw ``display``'s scene into a rect, in window units: nested scenes' backgrounds and
+    every text, with entrances, exits, moves and blinks where they are now.
+
+    Nothing is drawn outside the rect, as on a real display: an actor moving off the
+    edge is cut off there. ``pixel_ratio`` is framebuffer pixels per window unit
+    (``pixel_ratio(window)``), since clipping works in framebuffer pixels. The display windows use the whole
+    window; the vuk me dashboard draws into a pane per display.
     """
+    from pyglet import gl
+
+    gl.glEnable(gl.GL_SCISSOR_TEST)
+    gl.glScissor(int(x * pixel_ratio), int(y * pixel_ratio), round(width * pixel_ratio), round(height * pixel_ratio))
+    try:
+        _draw_scene(state, display, x, y, width, height)
+    finally:
+        gl.glDisable(gl.GL_SCISSOR_TEST)
+
+
+def _draw_scene(state: MediaState, display: str, x: float, y: float, width: float, height: float) -> None:
     import pyglet
 
     pyglet.shapes.Rectangle(x, y, width, height, color=_rgb(state.background(display))).draw()
@@ -61,7 +81,7 @@ def draw(window: Any, state: MediaState, display: str) -> None:
     """
     window.switch_to()
     window.clear()
-    draw_scene(state, display, 0, 0, window.width, window.height)
+    draw_scene(state, display, 0, 0, window.width, window.height, pixel_ratio(window))
 
 
 async def connect(state: MediaState, port: int, displays: list[str], audio: bool,

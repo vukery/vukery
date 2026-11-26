@@ -36,7 +36,7 @@ from typing import Any, Literal
 from vukery.core.log import get_logger
 from vukery.dashboard import layout as lay
 from vukery.dashboard.state import DashboardState
-from vukery.mc.app import FRAME_SECONDS, connect, draw_scene
+from vukery.mc.app import FRAME_SECONDS, connect, draw_scene, pixel_ratio
 from vukery.media import protocol
 from vukery.media.arrangement import PLACES, Arrangement, write_config
 
@@ -120,7 +120,7 @@ def _scroll_group(view: DashboardView, order: int) -> Any:
             return id(self)
 
         def set_state(self) -> None:
-            area, ratio = view.list_area, view.window.get_pixel_ratio()
+            area, ratio = view.list_area, pixel_ratio(view.window)
             gl.glEnable(gl.GL_SCISSOR_TEST)
             gl.glScissor(int(area.x * ratio), int(area.y * ratio), int(area.w * ratio), int(area.h * ratio))
             self.saved = view.window.view
@@ -373,7 +373,7 @@ class DashboardView:
             if name in self.panes:
                 screen = lay.fit(lay.content(self.panes[name]), int(size.get("width", 800)),
                                  int(size.get("height", 480)))
-                draw_scene(state, name, screen.x, screen.y, screen.w, screen.h)
+                draw_scene(state, name, screen.x, screen.y, screen.w, screen.h, pixel_ratio(self.window))
         if self.list_total > self.list_area.h:
             bar = lay.thumb(self.track, self.list_total, self.list_area.h, self.scroll)
             pyglet.shapes.Rectangle(bar.x, bar.y, bar.w, bar.h, color=(90, 90, 100)).draw()
