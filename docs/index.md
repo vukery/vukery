@@ -20,6 +20,11 @@ This framework will not be the answer for all pinball projects, but if
 successful, I hope it will make building simpler pinball games easier with an
 emphasis on modular design, unit testing and a conventional deployment plan.
 
+**Who it's for:** developers. People who don't mind writing a little Python
+code, and tech-savvy LLM users who build games with an AI assistant. If
+you'd rather build a game entirely from configuration, without code, MPF is
+a great choice.
+
 > **Status: 0.0.x, early.** A game engine, scoring, displays and the FAST
 > Nano are in, with three example games. Not yet tried on a real machine.
 > See the [status page](https://github.com/vukery/vukery/blob/main/docs/status.md).
