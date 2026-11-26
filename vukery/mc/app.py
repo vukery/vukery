@@ -12,7 +12,7 @@ import sys
 from typing import Any, cast
 
 from vukery.core.log import get_logger
-from vukery.mc.state import MediaState
+from vukery.mc.state import DrawRect, DrawText, MediaState
 from vukery.media import protocol
 
 log = get_logger("mc")
@@ -23,11 +23,12 @@ def _rgb(color: str) -> tuple[int, int, int]:
     return int(color[0:2], 16), int(color[2:4], 16), int(color[4:6], 16)
 
 
-def draw_slide(state: MediaState, display: str, x: float, y: float, width: float, height: float) -> None:
-    """Draw ``display``'s current slide into a rect, in window units.
+def draw_scene(state: MediaState, display: str, x: float, y: float, width: float, height: float) -> None:
+    """Draw ``display``'s scene into a rect, in window units: nested scenes' backgrounds and
+    every text, with entrances and exits where they are now.
 
-    The display windows use the whole window; the vuk me dashboard draws into
-    its virtual backbox.
+    The display windows use the whole window; the vuk me dashboard draws into a
+    pane per display.
     """
     import pyglet
 
@@ -36,22 +37,27 @@ def draw_slide(state: MediaState, display: str, x: float, y: float, width: float
         pyglet.text.Label("waiting for the engine…", font_size=max(int(height * 0.04), 8), x=int(x + width / 2),
                           y=int(y + height / 2), anchor_x="center", anchor_y="center").draw()
         return
-    for text in state.texts(display):
-        pyglet.text.Label(text.text, font_size=max(int(text.size * height * 0.75), 1),
-                          x=int(x + text.x * width), y=int(y + text.y * height),
-                          anchor_x=cast(Any, text.anchor), anchor_y="center",
-                          color=(*_rgb(text.color), 255)).draw()
+    for item in state.draws(display):
+        match item:
+            case DrawRect():
+                pyglet.shapes.Rectangle(x + item.x * width, y + item.y * height, item.width * width,
+                                        item.height * height, color=_rgb(item.color)).draw()
+            case DrawText():
+                pyglet.text.Label(item.text, font_size=max(int(item.size * height * 0.75), 1),
+                                  x=int(x + item.x * width), y=int(y + item.y * height),
+                                  anchor_x=cast(Any, item.anchor), anchor_y="center",
+                                  color=(*_rgb(item.color), 255)).draw()
 
 
 def draw(window: Any, state: MediaState, display: str) -> None:
-    """Draw ``display``'s current slide filling ``window``.
+    """Draw ``display``'s scene filling ``window``.
 
     pyglet's own resize handling sets the viewport and projection (including on
     HiDPI screens), as long as the window's events are dispatched before drawing.
     """
     window.switch_to()
     window.clear()
-    draw_slide(state, display, 0, 0, window.width, window.height)
+    draw_scene(state, display, 0, 0, window.width, window.height)
 
 
 async def connect(state: MediaState, port: int, displays: list[str], audio: bool,

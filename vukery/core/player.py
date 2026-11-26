@@ -1,7 +1,7 @@
 """Players and their variables.
 
 Setting a player variable posts ``player_<name>`` with ``value``,
-``prev_value``, ``change`` and ``player_num``, as in MPF, so slides, sounds
+``prev_value``, ``change`` and ``player_num``, as in MPF, so scenes, sounds
 and other modes can react to it.
 """
 

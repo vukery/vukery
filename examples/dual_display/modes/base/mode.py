@@ -2,7 +2,7 @@
 
 from vukery import Mode
 
-from .slides import SLIDES
+from .scenes import ball_info, score
 
 
 class Base(Mode):
@@ -13,8 +13,8 @@ class Base(Mode):
         "s_left_sling": 10,
         "s_right_sling": 10,
     }
-    slides = SLIDES
+    scenes = (score, ball_info)
 
     def mode_start(self, **_):
-        self.show_slide("score", display="main")        # covers the title (priority 100 > 10)
-        self.show_slide("ball_info", display="apron")   # covers "PRESS START" on the apron
+        self.show_scene(score, display="main")        # covers the title (priority 100 > 10)
+        self.show_scene(ball_info, display="apron")   # covers "PRESS START" on the apron

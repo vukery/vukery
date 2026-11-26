@@ -1,7 +1,7 @@
 """What the engine tells the ``vuk me`` dashboard: the machine's layout once, then its state.
 
 The dashboard is a media controller with ``"dashboard": true`` in its hello.
-Besides slides and player variables, it gets:
+Besides scenes and player variables, it gets:
 
 - ``layout(machine)`` in its welcome: every switch, light, coil, ball device,
   flipper, autofire coil and mode; the panes' sizes; and which switches and

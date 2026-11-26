@@ -59,7 +59,8 @@ class GameRig:
             self.machine.platform.simulate_balls = simulate_balls
             self.posted: list[tuple[str, dict[str, Any]]] = []
             self.machine.events.monitors.append(lambda event, kwargs: self.posted.append((event, kwargs)))
-            self.display = MediaState()  # an in-process media controller: what the screens would show
+            # an in-process media controller on virtual time: what the screens would show, entrances included
+            self.display = MediaState(now=self.clock.now)
             self.loop.run_until_complete(self.machine.start())
             self.dashboard = DashboardState(now=self.clock.now)  # what vuk me would show
             if self.machine.media is not None:
@@ -169,8 +170,8 @@ class GameRig:
         """The text on a display right now (the first display by default)."""
         return [text.text for text in self.display.texts(display or self._first_display())]
 
-    def slide(self, display: str | None = None) -> str | None:
-        """The name of the slide on a display right now."""
+    def scene(self, display: str | None = None) -> str | None:
+        """The name of the scene on a display right now."""
         return self.display.showing.get(display or self._first_display())
 
     def _first_display(self) -> str:

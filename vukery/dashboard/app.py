@@ -36,7 +36,7 @@ from typing import Any, Literal
 from vukery.core.log import get_logger
 from vukery.dashboard import layout as lay
 from vukery.dashboard.state import DashboardState
-from vukery.mc.app import FRAME_SECONDS, connect, draw_slide
+from vukery.mc.app import FRAME_SECONDS, connect, draw_scene
 from vukery.media import protocol
 from vukery.media.arrangement import PLACES, Arrangement, write_config
 
@@ -373,7 +373,7 @@ class DashboardView:
             if name in self.panes:
                 screen = lay.fit(lay.content(self.panes[name]), int(size.get("width", 800)),
                                  int(size.get("height", 480)))
-                draw_slide(state, name, screen.x, screen.y, screen.w, screen.h)
+                draw_scene(state, name, screen.x, screen.y, screen.w, screen.h)
         if self.list_total > self.list_area.h:
             bar = lay.thumb(self.track, self.list_total, self.list_area.h, self.scroll)
             pyglet.shapes.Rectangle(bar.x, bar.y, bar.w, bar.h, color=(90, 90, 100)).draw()

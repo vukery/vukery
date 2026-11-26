@@ -36,6 +36,7 @@ from vukery.devices.light import Light, LightConfig
 from vukery.devices.light_group import LightGroup
 from vukery.devices.rules import AutofireCoil, Flipper
 from vukery.media import dashboard, protocol
+from vukery.media.scenes import build, scene_name
 from vukery.media.server import DisplayConfig, MediaServer
 from vukery.modes.attract import Attract
 from vukery.modes.game import Game
@@ -135,8 +136,8 @@ class Machine(Logs):
         self.shows.load(self.config.game_dir, list(self.config.modes))
         if self.media is not None:
             for mode in self.modes.modes.values():
-                for name, slide in type(mode).slides.items():
-                    self.media.define(name, slide, mode.name)
+                for function in type(mode).scenes:
+                    self.media.define(scene_name(function), build(function), mode.name)
             if self.environment != "test":
                 await self.media.serve()
         self.events.post("init_done")

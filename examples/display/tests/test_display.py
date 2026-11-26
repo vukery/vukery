@@ -12,7 +12,7 @@ GAME = Path(__file__).parents[1]
 @pytest.fixture
 def game():
     # The test rig includes a media controller in the same process, so specs can
-    # check what's on screen (game.slide(), game.screen()) without opening a window.
+    # check what's on screen (game.scene(), game.screen()) without opening a window.
     rig = GameRig(GAME)
     yield rig
     rig.stop()
@@ -26,13 +26,13 @@ def describe_display():
 
     def describe_between_games():
         def it_shows_press_start(game):
-            expect(game.slide()).to_equal("start_screen")
+            expect(game.scene()).to_equal("start_screen")
             expect(game.screen()).to_equal(["vukery", "PRESS START"])
 
     def describe_during_a_game():
         def it_shows_the_score_and_ball(game):
             game.start_game()
-            expect(game.slide()).to_equal("score")
+            expect(game.scene()).to_equal("score")
             expect(game.screen()).to_equal(["0", "PLAYER 1   BALL 1"])  # the text, as drawn
 
         def it_updates_the_score_as_it_changes(game):
@@ -58,4 +58,4 @@ def describe_display():
             game.drain()
             game.drain()
             game.drain()
-            expect(game.slide()).to_equal("start_screen")
+            expect(game.scene()).to_equal("start_screen")

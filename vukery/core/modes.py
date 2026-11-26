@@ -31,7 +31,7 @@ from vukery.core.clock import Timer
 from vukery.core.events import BLOCK, Block, Handler
 from vukery.core.log import Logs
 from vukery.core.scoring import Entry, entries, facility, resolve
-from vukery.media.slides import Slide
+from vukery.media.scenes import SceneFunction, scene_name
 
 if TYPE_CHECKING:
     from vukery.core.machine import Machine
@@ -100,7 +100,7 @@ class Mode(Logs):
     stop_on: ClassVar[str | tuple[str, ...]] = ()
     game_mode: ClassVar[bool] = True  # stops when the game ends; can only run during a game
     stop_on_ball_end: ClassVar[bool] = True
-    slides: ClassVar[dict[str, Slide]] = {}  # slides this mode can show, by name
+    scenes: ClassVar[tuple[SceneFunction, ...]] = ()  # the @scene functions this mode can show
     scoring: ClassVar[dict[str, Entry]] = {}  # what this mode scores (see vukery.core.scoring)
 
     def __init_subclass__(cls, **kwargs: Any) -> None:
@@ -169,14 +169,14 @@ class Mode(Logs):
         if timer := self._delays.pop(name, None):
             timer.cancel()
 
-    def show_slide(self, name: str, display: str | None = None, priority: int = 0) -> None:
-        """Show one of the game's slides (MPF: ``slide_player``).
+    def show_scene(self, scene: Any, display: str | None = None, priority: int = 0) -> None:
+        """Show one of the game's scenes (MPF: ``slide_player``): its function, or its name.
 
         ``display``: which display (MPF: ``target``); the first one by default.
-        ``priority``: added to the mode's priority. The slide goes away when the mode stops.
+        ``priority``: added to the mode's priority. The scene goes away when the mode stops.
         """
         if self.machine.media is not None:
-            self.machine.media.show(self, name, display, priority)
+            self.machine.media.show(self, scene_name(scene), display, priority)
 
     def play_show(self, name: str, *, priority: int = 0, speed: float = 1.0, loops: int = -1, start_step: int = 1,
                   show_tokens: dict[str, Any] | None = None, key: str | None = None,
@@ -201,9 +201,9 @@ class Mode(Logs):
         own = f"{self.name}.{key}"
         return own if own in self.machine.shows.shows else key
 
-    def remove_slide(self, name: str) -> None:
+    def remove_scene(self, scene: Any) -> None:
         if self.machine.media is not None:
-            self.machine.media.remove(self, name)
+            self.machine.media.remove(self, scene_name(scene))
 
     # --- hooks for subclasses
 
