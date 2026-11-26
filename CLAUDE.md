@@ -85,10 +85,11 @@ think one is wrong, say so instead of working around it.
 - **Game folder layout:**
   - `config/`, with `config/environments/<env>` deep-merged over the
     shared files;
-  - `modes/<name>/`, one folder per mode: the class in `mode.py`, its parts
-    in files next to it (`scoring.py`, `slides.py`…). Split is the default;
-    one file is allowed (only `examples/basic` does it). `modes/vukery/` is
-    reserved for game-specific overrides and monkey patches;
+  - `modes/<name>/`, one folder per mode: `mode.py` holds the class and
+    whatever configures it (settings, the scoring table); bigger parts go
+    in files next to it (`slides.py`, helper modules, shows). One file is
+    allowed (only `examples/basic` does it). `modes/vukery/` is reserved for
+    game-specific overrides and monkey patches;
   - `assets/{sounds,images,videos,fonts}/`, where assets are named by file
     name without the extension.
 - **Modular:** build one implementation, but keep a clean plug-in

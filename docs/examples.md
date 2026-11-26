@@ -84,7 +84,7 @@ uv run vuk you
 |---|---|
 | [`config/machine.yaml`](https://github.com/vukery/vukery/blob/main/examples/display/config/machine.yaml) | `examples/basic`'s machine, plus `displays:` |
 | [`modes/start_screen/mode.py`](https://github.com/vukery/vukery/blob/main/examples/display/modes/start_screen/mode.py), [`slides.py`](https://github.com/vukery/vukery/blob/main/examples/display/modes/start_screen/slides.py) | the slide shown between games |
-| [`modes/base/mode.py`](https://github.com/vukery/vukery/blob/main/examples/display/modes/base/mode.py), [`scoring.py`](https://github.com/vukery/vukery/blob/main/examples/display/modes/base/scoring.py), [`slides.py`](https://github.com/vukery/vukery/blob/main/examples/display/modes/base/slides.py) | the mode, its scoring table and its score slide, in their own files |
+| [`modes/base/mode.py`](https://github.com/vukery/vukery/blob/main/examples/display/modes/base/mode.py), [`slides.py`](https://github.com/vukery/vukery/blob/main/examples/display/modes/base/slides.py) | the mode and its scoring table; its score slide in a file next to it |
 | [`tests/test_display.py`](https://github.com/vukery/vukery/blob/main/examples/display/tests/test_display.py) | the specs |
 
 ## `examples/dual_display`

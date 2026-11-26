@@ -1,19 +1,25 @@
 """The base mode: runs for every ball and scores the playfield.
 
-A mode is a folder: this file holds the class and its rules, and the files
-next to it hold its parts (scoring.py here; add slides.py, and shows, as the
-mode grows). A small mode can also be one file.
+A mode is a folder: this file holds the class, what configures it (its
+settings, its scoring table) and its rules. Bigger parts go in files next to
+it as the mode grows: slides in slides.py, helper code in its own module, and
+shows.
 """
 
 from vukery import Mode, on
-
-from .scoring import SCORING  # a file next to this one, in the same mode folder
 
 
 class Base(Mode):
     priority = 100              # higher priorities handle switches first (and can block lower ones)
     start_on = "ball_started"   # starts with every ball; a game mode also stops when the ball ends
-    scoring = SCORING           # what this mode scores (scoring.py)
+
+    # What this mode scores. Keys are switch names (or switch tags / event names),
+    # values are points. MPF: variable_player: s_target_active: score: 1000
+    scoring = {
+        "s_target": 1000,
+        "s_left_sling": 10,
+        "s_right_sling": 10,
+    }
 
     @on.switch("s_target")      # runs whenever the target is hit, alongside the scoring table
     def count_target(self):
