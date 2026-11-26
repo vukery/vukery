@@ -12,7 +12,13 @@
   MPF's per-component ``debug: true`` keys are accepted and mean the same as setting
   that component to ``debug`` here.
 
-The ``logging:`` config section::
+Set levels on the fly with the ``VUK_LOG`` environment variable, like Rust's
+``RUST_LOG``: an optional default level, then ``component=level`` pairs::
+
+    VUK_LOG=debug vuk run
+    VUK_LOG=info,fast.rgb=off,events=debug vuk run
+
+It's applied on top of the ``logging:`` config section::
 
     logging:
       level: info        # default for everything
@@ -91,12 +97,30 @@ class LoggingConfig:
             backups=int(data.get("backups", 5)),
         )
 
-    def with_overrides(self, overrides: Mapping[str, str]) -> LoggingConfig:
-        """Apply ``--log name=level`` overrides from the command line."""
+    def with_vuk_log(self, value: str | None) -> LoggingConfig:
+        """Apply a ``VUK_LOG`` value, e.g. ``"info,fast=debug,fast.rgb=off"``.
+
+        A bare level sets the default level and lets the console and file show it.
+        """
+        if not value or not value.strip():
+            return self
+        level, console, file = self.level, self.console, self.file
         components = dict(self.components)
-        for name, level in overrides.items():
-            components[name] = parse_level(level, f"--log {name}")
-        return LoggingConfig(self.level, self.console, self.file, components, self.max_file_mb, self.backups)
+        for part in (p.strip() for p in value.split(",")):
+            match part.split("="):
+                case [""]:
+                    continue
+                case [bare]:
+                    level = parse_level(bare.strip(), "VUK_LOG")
+                    console, file = min(console, level), min(file, level)
+                case [name, lvl] if name.strip():
+                    components[name.strip()] = parse_level(lvl.strip(), f"VUK_LOG {name.strip()}")
+                case _:
+                    raise ConfigError(f"VUK_LOG: can't read {part!r}. Use e.g. VUK_LOG=info,fast=debug")
+        if components:
+            lowest = min(components.values())
+            console, file = min(console, lowest), min(file, lowest)
+        return LoggingConfig(level, console, file, components, self.max_file_mb, self.backups)
 
 
 def get_logger(name: str) -> logging.Logger:

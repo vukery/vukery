@@ -79,9 +79,9 @@ def describe_logging():
             get_logger("fast.net").info("back on")
             assert "back on" in log_file()
 
-        def it_applies_command_line_overrides(log_file):
+        def it_applies_vuk_log(log_file):
             base = config("level: warning")
-            setup_logging(base.with_overrides({"events": "debug"}), "development", log_file.dir, console=False)
+            setup_logging(base.with_vuk_log("events=debug"), "development", log_file.dir, console=False)
             get_logger("events").debug("event detail")
             get_logger("game").info("game info")
             text = log_file()
@@ -101,6 +101,25 @@ def describe_logging():
         def it_keeps_the_file_more_detailed_than_the_console(log_file):
             cfg = config("level: debug\nconsole: warning\nfile: debug")
             assert cfg.console == logging.WARNING and cfg.file == logging.DEBUG
+
+    def describe_vuk_log():
+        def it_sets_the_default_level_with_a_bare_level():
+            cfg = config("level: info\nconsole: info").with_vuk_log("debug")
+            assert cfg.level == logging.DEBUG and cfg.console == logging.DEBUG
+
+        def it_sets_components_and_lets_their_detail_through():
+            cfg = config("console: warning\nfile: info").with_vuk_log("info, fast=debug, fast.rgb=off")
+            assert cfg.level == logging.INFO
+            assert cfg.components["fast"] == logging.DEBUG
+            assert cfg.console == logging.DEBUG and cfg.file == logging.DEBUG
+
+        def it_ignores_an_empty_value():
+            cfg = config()
+            assert cfg.with_vuk_log("") is cfg and cfg.with_vuk_log(None) is cfg
+
+        def it_rejects_garbage():
+            with pytest.raises(ConfigError, match="VUK_LOG"):
+                config().with_vuk_log("fast=debug=yes")
 
     def describe_config_errors():
         def it_rejects_unknown_levels():
