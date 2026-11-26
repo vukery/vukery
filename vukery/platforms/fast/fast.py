@@ -13,10 +13,12 @@ Changes from MPF (trimmed to what vukery supports):
   ``soft_reset``, ``start``, ``stop``) instead of init-phase events.
 - ``platform_settings`` for switches and coils get their FAST defaults here
   (MPF did that in its config validator).
-- Port auto-detection isn't ported yet: ports must be set explicitly.
+- Port auto-detection (``port: auto``) finds the NET and RGB ports by USB ID
+  and an ``ID:`` handshake before connecting.
 """
 
 import asyncio
+from dataclasses import replace
 
 from vukery.core.errors import ConfigError, HardwareError
 from vukery.core.log import Logs
@@ -28,6 +30,7 @@ from vukery.platforms.fast.config import FastConfig
 from vukery.platforms.fast.fast_driver import FASTDriver
 from vukery.platforms.fast.fast_io_board import FastIoBoard
 from vukery.platforms.fast.fast_led import FASTLEDChannel, FASTRGBLED
+from vukery.platforms.fast.fast_port_detector import FastPortDetector
 from vukery.platforms.fast.fast_switch import FASTSwitch
 from vukery.platforms.interfaces import DriverConfig, DriverSettings, PlatformHost, SwitchConfig, SwitchSettings
 
@@ -118,9 +121,8 @@ class FastHardwarePlatform(Logs):
         self.io_boards_by_name[board.name] = board
 
     async def _connect_to_hardware(self):
+        await self._resolve_auto_ports()
         net = self.config.net
-        if 'auto' in net.port:
-            raise ConfigError("fast: net: port: auto isn't supported by vukery yet. Set the port explicitly.")
 
         if net.controller == 'neuron':
             communicator = FastNetNeuronCommunicator(platform=self, processor='net', config=net)
@@ -132,12 +134,31 @@ class FastHardwarePlatform(Logs):
         self.serial_connections['net'] = communicator
 
         if self.config.rgb:
-            if 'auto' in self.config.rgb.port:
-                raise ConfigError("fast: rgb: port: auto isn't supported by vukery yet. Set the port explicitly.")
             rgb = FastRgbCommunicator(platform=self, processor='rgb', config=self.config.rgb)
             await rgb.connect()
             await rgb.init()
             self.serial_connections['rgb'] = rgb
+
+    async def _resolve_auto_ports(self):
+        """Replace ``port: auto`` with the detected port for each connection that uses it."""
+        connections = {name: section for name, section in (('net', self.config.net), ('rgb', self.config.rgb))
+                       if section is not None}
+        auto = [name for name, section in connections.items() if 'auto' in section.port]
+        if not auto:
+            return
+
+        hardcoded = [port for section in connections.values() for port in section.port if port != 'auto']
+        bauds = {name: connections[name].baud for name in auto}
+        found = await FastPortDetector(self, auto, hardcoded, bauds).detect_ports()
+
+        missing = [name for name in auto if name not in found]
+        if missing:
+            raise HardwareError(f"Couldn't find the FAST {', '.join(m.upper() for m in missing)} port(s). "
+                                "Is the controller connected and powered? You can also set the port in "
+                                "the fast: section of your config.")
+
+        self.config = replace(self.config, **{
+            name: replace(connections[name], port=[found[name]]) for name in auto})
 
     async def get_hw_switch_states(self, query_hw=False):
         """Return a dict of hw switch states.

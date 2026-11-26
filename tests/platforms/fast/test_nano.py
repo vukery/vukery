@@ -9,8 +9,9 @@ Each ``it_`` names the MPF test it comes from. Differences from MPF:
 import pytest
 
 from tests.mpf_ported.fast.mock_fast import MockFastNetNano, MockFastRgb
-from tests.platforms.fast.rig import FastRig, mpf_expected_commands
+from tests.platforms.fast.rig import FastRig, SilentBoard, mpf_expected_commands
 from vukery.core.errors import CoilLimitError, ConfigError, HardwareError
+from vukery.platforms.interfaces import SerialPortInfo
 
 # MPF's own expected startup traffic for this config, minus the digital output on driver 0x01
 STARTUP = {
@@ -251,3 +252,40 @@ def describe_fast_nano():
                 rig.settle(0.1)
                 assert _leds(rig)["28"] == "002211"
                 assert _leds(rig)["29"] == "000022"
+
+
+# A Nano is one FTDI quad serial chip on USB: four ports, of which NET and RGB answer.
+NANO_USB = (1027, 24593)
+NANO_PORTS = [SerialPortInfo(f"/dev/ttyUSB{i}", *NANO_USB) for i in range(4)]
+
+
+def describe_port_auto_detection():  # COMBAT's config uses port: auto for net and rgb
+    def _rig(serial_ports):
+        boards = {"/dev/ttyUSB0": SilentBoard(None), "/dev/ttyUSB1": MockFastNetNano(None),
+                  "/dev/ttyUSB2": MockFastRgb(None), "/dev/ttyUSB3": SilentBoard(None)}
+        return FastRig("nano.yaml", boards=boards, expected={"/dev/ttyUSB1": STARTUP},
+                       serial_ports=serial_ports, auto_ports=True)
+
+    def it_finds_the_net_and_rgb_ports_of_a_nano():
+        rig = _rig(NANO_PORTS)
+        rig.start()
+        try:
+            assert rig.platform.config.net.port == ["/dev/ttyUSB1"]
+            assert rig.platform.config.rgb.port == ["/dev/ttyUSB2"]
+            assert rig.unsent("/dev/ttyUSB1") == {}
+        finally:
+            rig.stop()
+
+    def it_ignores_serial_devices_that_arent_fast():
+        other = SerialPortInfo("/dev/ttyACM9", 0x2341, 0x0043)  # e.g. an Arduino
+        rig = _rig([other, *NANO_PORTS])
+        rig.start()
+        try:
+            assert rig.platform.config.net.port == ["/dev/ttyUSB1"]
+        finally:
+            rig.stop()
+
+    def it_explains_when_no_controller_is_attached():
+        rig = _rig([])
+        with pytest.raises(HardwareError, match="Couldn't find the FAST NET, RGB port"):
+            rig.start()

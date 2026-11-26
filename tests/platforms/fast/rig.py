@@ -19,7 +19,8 @@ from vukery.devices.coil import Coil, CoilConfig
 from vukery.devices.light import Light, LightConfig
 from vukery.platforms.fast.config import FastConfig
 from vukery.platforms.fast.fast import FastHardwarePlatform
-from vukery.platforms.interfaces import DriverSettings, PulseSettings, SwitchConfig, SwitchSettings
+from vukery.platforms.interfaces import (DriverSettings, PulseSettings, SerialPortInfo, SwitchConfig,
+                                         SwitchSettings)
 
 MPF_FAST = Path(__file__).parents[2] / "mpf_ported" / "fast"
 
@@ -45,6 +46,13 @@ def mpf_expected_commands(test_file: str, attribute: str = "net_cpu") -> dict[st
 
 def mpf_config(name: str) -> dict[str, Any]:
     return yaml.safe_load((MPF_FAST / "config" / name).read_text())
+
+
+class SilentBoard(mock_fast.MockFastSerial):
+    """A serial port with nothing answering (e.g. the unused ports of a Nano's FTDI chip)."""
+
+    def write(self, msg):
+        return len(msg)
 
 
 class MockPort:
@@ -79,9 +87,11 @@ class _Repeating:
 class FakeHost:
     """The ``PlatformHost`` for tests: records switch changes and stop requests."""
 
-    def __init__(self, loop: asyncio.AbstractEventLoop, boards: dict[str, mock_fast.MockFastSerial]):
+    def __init__(self, loop: asyncio.AbstractEventLoop, boards: dict[str, mock_fast.MockFastSerial],
+                 serial_ports: list[SerialPortInfo] | None = None):
         self.loop = loop
         self.boards = boards
+        self.serial_ports = serial_ports or []
         self.production = False
         self.is_shutting_down = False
         self.stopped: str | None = None
@@ -89,6 +99,9 @@ class FakeHost:
         self.switches: dict[int, tuple[str, bool]] = {}  # hw number → (name, invert)
         self.switch_states: dict[str, int] = {}
         self.switch_events: list[tuple[str, int]] = []
+
+    def list_serial_ports(self) -> list[SerialPortInfo]:
+        return self.serial_ports
 
     async def open_serial(self, port: str, baud: int) -> MockPort:
         if port not in self.boards:
@@ -138,15 +151,20 @@ class FastRig:
     """Boots the FAST platform from an MPF test config against mock boards."""
 
     def __init__(self, config_file: str, boards: dict[str, mock_fast.MockFastSerial],
-                 expected: dict[str, dict[str, str]]):
+                 expected: dict[str, dict[str, str]], serial_ports: list[SerialPortInfo] | None = None,
+                 auto_ports: bool = False):
         self.loop = asyncio.new_event_loop()
         self.config = mpf_config(config_file)
         self.boards = boards
         for port, commands in expected.items():
             boards[port].expected_commands = dict(commands)
-        self.host = FakeHost(self.loop, boards)
-        fast = dict(self.config["fast"])
-        if "rgb" in fast and fast["rgb"]["port"] not in boards:
+        self.host = FakeHost(self.loop, boards, serial_ports)
+        fast = {name: dict(section) if isinstance(section, dict) else section
+                for name, section in self.config["fast"].items()}
+        if auto_ports:
+            for section in ("net", "rgb"):
+                fast[section]["port"] = "auto"
+        elif "rgb" in fast and fast["rgb"]["port"] not in boards:
             del fast["rgb"]  # no mock RGB board given: test NET only
         self.platform = FastHardwarePlatform(self.host, FastConfig.from_yaml(fast))
         self.coils: dict[str, Coil] = {}

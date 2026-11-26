@@ -85,6 +85,15 @@ class SerialPort(Protocol):
     def close(self) -> None: ...
 
 
+@dataclass(frozen=True)
+class SerialPortInfo:
+    """A serial device the OS can see (for auto-detection by USB vendor/product ID)."""
+
+    device: str  # e.g. "/dev/ttyUSB1" or "/dev/cu.usbserial-A"
+    vid: int | None
+    pid: int | None
+
+
 class Cancellable(Protocol):
     def cancel(self) -> None: ...
 
@@ -97,6 +106,10 @@ class PlatformHost(Protocol):
 
     async def open_serial(self, port: str, baud: int) -> SerialPort:
         """Open a serial port. Raises ``OSError`` if it can't be opened."""
+        ...
+
+    def list_serial_ports(self) -> list[SerialPortInfo]:
+        """The serial devices currently attached."""
         ...
 
     def schedule_interval(self, callback: Callable[[], None], seconds: float) -> Cancellable: ...
