@@ -35,6 +35,11 @@ def describe_display():
             expect(game.scene()).to_equal("score")
             expect(game.screen()).to_equal(["0", "PLAYER 1   BALL 1"])  # the text, as drawn
 
+        def it_beeps_when_the_target_is_hit(game):
+            game.start_game()
+            game.switch("s_target")
+            expect(game).to_have_played("target_hit")   # assets/sounds/target_hit.wav
+
         def it_updates_the_score_as_it_changes(game):
             game.start_game()
             game.switch("s_target")

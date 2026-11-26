@@ -21,7 +21,8 @@ rest of the docs never describe something as if it already works.
 | Lights | Built: MPF's channel numbering, colors, fades, RGBW, MPF's priority stack, light groups. | [Lights](devices/lights.md) |
 | FAST Neuron and EXP boards | Planned, after COMBAT. | |
 | Ball save, tilt, high score, match, other built-in modes | Planned. | |
-| Sounds, images, video | Planned. | |
+| Sound | Built: sounds from `assets/sounds/`, MPF's `sounds:`, `sound_pools:` and tracks; `play_sound` with MPF's `sound_player` options; mixed with priorities, queueing, loops and ducking; played by `vuk me` and by `vuk us`. Fades, markers and sounds in shows come later. | [Sound](sound.md) |
+| Images, video | Planned. | |
 | `vuk me` dashboard | Built: a scrolling list of the game, switches, lights, coils and devices; the backbox, a pane per display, and the playfield; clicking switches; dragging switches and lights into the backbox or onto the playfield; resizable panes; all saved to `config/dashboard.yaml` (`arrangement_lock`). Never fires coils. Your own artwork comes later. | [The dashboard](dashboard.md) |
 
 ## What vukery is tested against

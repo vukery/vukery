@@ -104,9 +104,9 @@ def _health() -> int:
     from pyglet.media.codecs import have_ffmpeg
 
     if have_ffmpeg():
-        print("FFmpeg libraries: found (pyglet plays video and sound with them)")
+        print("FFmpeg libraries: found (pyglet plays sound and video with them)")
     else:
-        print("FFmpeg libraries: not found. Text scenes work; video and sound will need them "
+        print("FFmpeg libraries: not found. Scenes and .wav sounds work; .ogg, .mp3 and other sounds need them "
               "(macOS: brew install ffmpeg; Debian: apt install ffmpeg)")
     return 0
 
@@ -240,12 +240,12 @@ def _run(args: argparse.Namespace) -> int:
             media_controllers = [subprocess.Popen([sys.executable, "-m", "vukery.dashboard", str(machine.media.port)])]
             loop.run_until_complete(until_closed(media_controllers[0]))
         elif config.platform == "development":
-            media_controllers = _start_media_controllers(game_dir, machine.media_controllers())
+            media_controllers = _start_media_controllers(game_dir, machine.media_controllers(), machine.plays_sound())
             if sys.stdin.isatty():
                 print("Type a switch name and press Enter to tap it, e.g. s_start.")
             loop.run_until_complete(type_switches())
         else:
-            media_controllers = _start_media_controllers(game_dir, machine.media_controllers())
+            media_controllers = _start_media_controllers(game_dir, machine.media_controllers(), machine.plays_sound())
             loop.run_forever()
     except KeyboardInterrupt:
         machine.stop("Ctrl-C")
@@ -277,10 +277,20 @@ def _shut_down(loop: Any) -> None:
         loop.run_until_complete(asyncio.gather(*pending, return_exceptions=True))
 
 
-def _start_media_controllers(game_dir: Any, displays: list[str]) -> list[Any]:
-    """One full-screen media controller process per display (they exit when the engine says bye)."""
-    return [subprocess.Popen([sys.executable, "-m", "vukery.mc", str(game_dir), "--display", name])
-            for name in displays]
+def media_controller_commands(game_dir: Any, displays: list[str], audio: bool) -> list[list[str]]:
+    """One full-screen media controller per display; the first one plays the sounds. With sounds
+    but no displays, one that only plays sound."""
+    base = [sys.executable, "-m", "vukery.mc", str(game_dir)]
+    commands = [[*base, "--display", name, *(["--audio"] if audio and i == 0 else [])]
+                for i, name in enumerate(displays)]
+    if audio and not displays:
+        commands.append([*base, "--audio"])
+    return commands
+
+
+def _start_media_controllers(game_dir: Any, displays: list[str], audio: bool) -> list[Any]:
+    """Start the media controllers (they exit when the engine says bye)."""
+    return [subprocess.Popen(command) for command in media_controller_commands(game_dir, displays, audio)]
 
 
 def main(argv: Sequence[str] | None = None) -> int:

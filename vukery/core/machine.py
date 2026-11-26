@@ -38,6 +38,7 @@ from vukery.devices.rules import AutofireCoil, Flipper
 from vukery.media import dashboard, protocol
 from vukery.media.scenes import build, scene_name
 from vukery.media.server import DisplayConfig, MediaServer
+from vukery.media.sounds import Sounds
 from vukery.modes.attract import Attract
 from vukery.modes.game import Game
 from vukery.platforms.interfaces import SerialPortInfo
@@ -78,8 +79,11 @@ class Machine(Logs):
             displays = {name: DisplayConfig.from_yaml(name, entry or {})
                         for name, entry in config.section("displays").items()}
             port = int(config.section("media").get("port", protocol.DEFAULT_PORT))
-            # A media server runs when there's something to show: displays, or the vuk me dashboard.
-            self.media: MediaServer | None = MediaServer(self, displays, port) if displays or dashboard else None
+            self.sounds = Sounds.load(config.game_dir, config.section("sound_system"), config.section("sounds"),
+                                      config.section("sound_pools"))
+            # A media server runs when there's something to show or play: displays, sounds, or vuk me.
+            self.media: MediaServer | None = (MediaServer(self, displays, port)
+                                              if displays or dashboard or self.sounds.sounds else None)
         except BaseException:
             if clock is None:  # the loop is ours: don't leave it (and its sockets) open
                 self.loop.close()
@@ -114,6 +118,10 @@ class Machine(Logs):
         The config alone decides; there's no command-line switch.
         """
         return list(self.media.displays) if self.media is not None else []
+
+    def plays_sound(self) -> bool:
+        """Whether there's anything to play: a file in assets/sounds/, or a sounds: entry."""
+        return bool(self.sounds.sounds)
 
     def platform_is_simulated(self) -> bool:
         """The development or test platform: switches can be set from code and from vuk me."""

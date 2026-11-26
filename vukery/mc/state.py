@@ -9,6 +9,7 @@ of it testable without a screen.
 
 import string
 import time
+from collections import deque
 from collections.abc import Callable
 from dataclasses import dataclass
 from types import SimpleNamespace
@@ -116,8 +117,13 @@ def longest_exit(data: dict[str, Any]) -> float:
 
 
 class MediaState:
-    def __init__(self, now: Callable[[], float] = time.monotonic) -> None:
+    def __init__(self, now: Callable[[], float] = time.monotonic, audio: bool = False) -> None:
         self.now = now
+        self.audio = audio   # this media controller plays sound: keep its sound messages for the mixer
+        self.tracks: dict[str, dict[str, Any]] = {}
+        self.sound_files: dict[str, dict[str, Any]] = {}
+        self.played: deque[dict[str, Any]] = deque(maxlen=1000)   # the sounds the engine played, latest last
+        self.sound_messages: deque[dict[str, Any]] = deque()     # for the mixer, until it takes them
         self.displays: dict[str, dict[str, Any]] = {}
         self.scenes: dict[str, dict[str, Any]] = {}
         self.showing: dict[str, str | None] = {}
@@ -139,6 +145,8 @@ class MediaState:
                 self.settled = set(self.showing)  # already in place: no entrances
                 self.players = {int(k): mapping(v) for k, v in mapping(message.get("players")).items()}
                 self.current = message.get("player")
+                self.tracks = mapping(message.get("tracks"))
+                self.sound_files = mapping(message.get("sounds"))
                 self.connected = True
             case {"type": "show", "display": str() as display, "scene": scene}:
                 previous = self.showing.get(display)
@@ -154,6 +162,11 @@ class MediaState:
                 self.current = number
                 if number is None:
                     self.players = {}
+            case {"type": "sound", "action": str() as action}:
+                if action == "play":
+                    self.played.append(message)
+                if self.audio:
+                    self.sound_messages.append(message)
             case {"type": "bye"}:
                 self.engine_stopped = True
             case _:

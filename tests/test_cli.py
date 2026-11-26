@@ -99,7 +99,7 @@ def describe_vuk_it_media_controllers():
 
         started = []
         monkeypatch.setattr(cli, "_start_media_controllers",
-                            lambda game_dir, displays: started.extend(displays) or [])
+                            lambda game_dir, displays, audio: started.extend(displays) or [])
         read_end, write_end = os.pipe()  # vuk us reads switch names from stdin; send "quit"
         os.write(write_end, b"quit\n")
         os.close(write_end)
@@ -142,7 +142,7 @@ def describe_vuk_me():
 
         monkeypatch.setattr(cli.subprocess, "Popen", ClosedDashboard)
         monkeypatch.setattr(cli, "_start_media_controllers",
-                            lambda game_dir, displays: started["media_controllers"].extend(displays) or [])
+                            lambda game_dir, displays, audio: started["media_controllers"].extend(displays) or [])
         game = Path(__file__).parents[1] / "examples" / example
         expect(cli.main(["-C", str(game), "me", "--log-dir", str(tmp_path)])).to_equal(0)
         capsys.readouterr()
@@ -243,9 +243,27 @@ def describe_the_media_controller():
 
         commands = []
         monkeypatch.setattr(cli.subprocess, "Popen", lambda command: commands.append(command))
-        cli._start_media_controllers(Path("game"), ["main", "apron"])
+        cli._start_media_controllers(Path("game"), ["main", "apron"], audio=False)
         expect([c[1:] for c in commands]).to_equal([["-m", "vukery.mc", "game", "--display", "main"],
                                              ["-m", "vukery.mc", "game", "--display", "apron"]])
+
+    def it_has_the_first_display_play_the_sounds(monkeypatch):
+        from pathlib import Path
+
+        from vukery import cli
+
+        commands = cli.media_controller_commands(Path("game"), ["main", "apron"], audio=True)
+        expect([c[3:] for c in commands]).to_equal([["game", "--display", "main", "--audio"],
+                                             ["game", "--display", "apron"]])
+
+    def it_starts_one_just_for_sound_without_displays(monkeypatch):
+        from pathlib import Path
+
+        from vukery import cli
+
+        expect([c[3:] for c in cli.media_controller_commands(Path("game"), [], audio=True)]).to_equal(
+            [["game", "--audio"]])
+        expect(cli.media_controller_commands(Path("game"), [], audio=False)).to_equal([])
 
     def it_explains_a_machine_without_displays(capsys):
         from pathlib import Path
