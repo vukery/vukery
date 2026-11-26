@@ -78,6 +78,7 @@ git clone https://github.com/vukery/vukery.git
 cd vukery
 uv sync
 uv run pytest
+uv run pytest --cov             # the same, plus how much of vukery the specs cover
 uv run mkdocs build --strict    # the docs site, into site/
 ```
 

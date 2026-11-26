@@ -1,5 +1,7 @@
 # Get VUKed!
 
+[![coverage](https://raw.githubusercontent.com/vukery/vukery/badges/coverage.svg)](https://github.com/vukery/vukery/actions/workflows/specs.yml)
+
 An AI-assisted total vukery of a pinball framework with a different mission.
 
 *Pronounced "vuckery."*
