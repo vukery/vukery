@@ -4,7 +4,8 @@
 # MIT License: see vukery/_mpf/NOTICE.
 """FAST I/O Board."""
 
-from mpf.platforms.fast.fast_defines import VALID_IO_BOARDS
+from vukery.core.errors import HardwareError
+from vukery.platforms.fast.fast_defines import VALID_IO_BOARDS
 
 
 class FastIoBoard:
@@ -25,7 +26,8 @@ class FastIoBoard:
         self.switch_count = switch_count
         self.driver_count = driver_count
 
-        assert self.model in VALID_IO_BOARDS, "Invalid I/O board model: {}".format(self.model)
+        if self.model not in VALID_IO_BOARDS:
+            raise HardwareError(f"Invalid I/O board model: {self.model}")
 
     def __repr__(self):
         """Return representation of this I/O board."""

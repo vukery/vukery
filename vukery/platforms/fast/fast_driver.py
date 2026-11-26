@@ -7,16 +7,11 @@ import logging
 from copy import copy
 from dataclasses import dataclass
 
-from mpf.core.platform import DriverConfig
-from mpf.core.utility_functions import Util
-from mpf.exceptions.config_file_error import ConfigFileError
-from mpf.platforms.fast.communicators.base import FastSerialCommunicator
-from mpf.platforms.interfaces.driver_platform_interface import PulseSettings, HoldSettings
+from vukery.core.errors import ConfigError, HardwareError
+from vukery.core.util import Util
+from vukery.platforms.fast.communicators.base import FastSerialCommunicator
+from vukery.platforms.interfaces import DriverConfig, HoldSettings, PulseSettings
 
-MYPY = False
-if MYPY:   # pragma: no cover
-    from mpf.platforms.fast.fast import \
-        FastHardwarePlatform  # pylint: disable-msg=cyclic-import,unused-import
 
 
 @dataclass
@@ -100,14 +95,12 @@ class FASTDriver:
         This is only used for the initial configuration of drivers. Autofire rules update these.
         """
         if mpf_config.default_recycle:
-            raise ConfigFileError("FAST platform does not support default_recycle for coils. "
-                                  f"Use platform_settings:recycle_ms instead. Coil '{mpf_config.name}'.",
-                                  7, self.log.name)
+            raise ConfigError("FAST platform does not support default_recycle for coils. "
+                                  f"Use platform_settings:recycle_ms instead. Coil '{mpf_config.name}'.")
 
         if mpf_config.default_pulse_ms > 255:
-            raise ConfigFileError("FAST platform does not support default_pulse_ms > 255. Use "
-                                  f"platform_settings:pwm2_ms which goes up to 25,500ms. Coil '{mpf_config.name}'.",
-                                  8, self.log.name)
+            raise ConfigError("FAST platform does not support default_pulse_ms > 255. Use "
+                                  f"platform_settings:pwm2_ms which goes up to 25,500ms. Coil '{mpf_config.name}'.")
 
         pwm2_ms, pwm2_power, recycle_ms = self._get_platform_settings(mpf_config, platform_settings)
 
@@ -353,7 +346,7 @@ class FASTDriver:
         # TODO move this to the communicator or something? Since it's only Nano?
 
         # V2 hardware can write rules across node boards
-        if self.communicator.config['controller'] != 'nano':
+        if self.communicator.config.controller != 'nano':
             return
 
         # first 8 switches always work
@@ -361,8 +354,8 @@ class FASTDriver:
             return
 
         if self.get_board_name() != switch.hw_switch.get_board_name():
-            raise AssertionError(f"Driver {coil.number} and switch {switch.hw_switch.number} "
-                                 "are on different boards. Cannot apply rule!")
+            raise ConfigError(f"Driver {coil.number} and switch {switch.hw_switch.number} "
+                              "are on different boards. Cannot apply rule!")
 
     def is_new_config_needed(self, current, new):
         """Determines if bits other than 6 and 7 changed.
@@ -512,7 +505,7 @@ class FASTDriver:
             hold_ms = "00"
 
             if hold_settings.duration > 25500:
-                raise AssertionError("FAST platform does not support hold durations > 25500ms")
+                raise HardwareError("FAST platform does not support hold durations > 25500ms")
             if 25500 >= hold_settings.duration > 255:
                 hold_ms = Util.int_to_hex_string(hold_settings.duration // 100)
                 mode = '70'
@@ -543,8 +536,8 @@ class FASTDriver:
             self.send_config_to_driver(one_shot=True)
 
         # reset not add so we keep on kicking this delay down the road if we keep getting pulses
-        self.communicator.machine.delay.reset(pulse_settings.duration + 1, self._reenable_autofire_if_configured,
-                                              f'fast_driver_{self.number}_delay')
+        self.communicator.host.call_later(f'fast_driver_{self.number}_delay', pulse_settings.duration + 1,
+                                          self._reenable_autofire_if_configured)
 
     def _reenable_autofire_if_configured(self):
         """Reenable autofire if configured.
@@ -561,4 +554,4 @@ class FASTDriver:
 
     def _check_and_clear_delay(self):
         """Check if we have a delay and clear it."""
-        self.communicator.machine.delay.remove(f'fast_driver_{self.number}_delay')
+        self.communicator.host.cancel_call(f'fast_driver_{self.number}_delay')

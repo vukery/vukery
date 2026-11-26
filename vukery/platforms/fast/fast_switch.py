@@ -7,9 +7,8 @@ import logging
 from copy import copy
 from dataclasses import dataclass
 
-from mpf.core.utility_functions import Util
+from vukery.core.util import Util
 
-MYPY = False
 
 
 @dataclass
@@ -42,8 +41,8 @@ class FASTSwitch:
         # Mode 00 mutes switches: do not report this switch from hardware ever
         # The default mode will be overridden by config file switches, so this value only applies
         # to switch numbers not defined in config files. Mute for production mode, or if specified.
-        default_mode = '00' if self.platform.config['net']['mute_unconfigured_switches'] or \
-            self.platform.machine.options["production"] else '01'
+        default_mode = '00' if self.platform.config.net.mute_unconfigured_switches or \
+            self.platform.host.production else '01'
         self.baseline_switch_config = FastSwitchConfig(number=self.hw_number, mode=default_mode,
                                                        debounce_close='00', debounce_open='00')
         self.current_hw_config = self.baseline_switch_config
@@ -106,11 +105,11 @@ class FASTSwitch:
         # Set the debounce from the generic true/false first, then override
         # if the platform settings have specific values
         if config.debounce in ['normal', 'auto']:
-            debounce_open = self.communicator.config['default_normal_debounce_open']
-            debounce_close = self.communicator.config['default_normal_debounce_close']
+            debounce_open = self.communicator.config.default_normal_debounce_open
+            debounce_close = self.communicator.config.default_normal_debounce_close
         else:
-            debounce_open = self.communicator.config['default_quick_debounce_open']
-            debounce_close = self.communicator.config['default_quick_debounce_close']
+            debounce_open = self.communicator.config.default_quick_debounce_open
+            debounce_close = self.communicator.config.default_quick_debounce_close
 
         if 'debounce_open' in platform_settings and platform_settings['debounce_open'] is not None:
             debounce_open = platform_settings['debounce_open']
