@@ -123,3 +123,7 @@ tests/mpf_ported/fast/loop.py
 tests/mpf_ported/fast/config/nano.yaml
     from: mpf/tests/machine_files/fast/config/nano.yaml @ 9ef886f4f263db44704f09a87bfd11229036ab5c (MPF 0.57.6)
     permalink: https://github.com/missionpinball/mpf/blob/9ef886f4f263db44704f09a87bfd11229036ab5c/mpf/tests/machine_files/fast/config/nano.yaml
+
+tests/mpf_ported/fast/config/neuron.yaml
+    from: mpf/tests/machine_files/fast/config/neuron.yaml @ 9ef886f4f263db44704f09a87bfd11229036ab5c (MPF 0.57.6)
+    permalink: https://github.com/missionpinball/mpf/blob/9ef886f4f263db44704f09a87bfd11229036ab5c/mpf/tests/machine_files/fast/config/neuron.yaml
