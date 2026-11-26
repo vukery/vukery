@@ -44,9 +44,6 @@ def _parser() -> argparse.ArgumentParser:
         run.add_argument("--preload", action="store_true", help="load every asset at startup (MPF: -f)")
         run.add_argument("--log-dir", default="log", help="where log files go (default: log/)")
 
-    mc = commands.add_parser("mc", help="run a media controller only (MPF: mpf mc)")
-    mc.add_argument("--display", help="the display to render (default: all of them)")
-    mc.add_argument("--windowed", action="store_true", help="open windows at the displays' size, not full screen")
     commands.add_parser("top", help="terminal dashboard of a running game (MPF: mpf -t)")
     commands.add_parser("console", help="Python prompt attached to the running game (MPF: mpf service)")
 
@@ -230,37 +227,8 @@ def _shut_down(loop: Any) -> None:
 
 def _start_media_controllers(game_dir: Any, displays: list[str]) -> list[Any]:
     """One full-screen media controller process per display (they exit when the engine says bye)."""
-    return [subprocess.Popen([sys.executable, "-m", "vukery.cli", "-C", str(game_dir), "mc", "--display", name])
+    return [subprocess.Popen([sys.executable, "-m", "vukery.mc", str(game_dir), "--display", name])
             for name in displays]
-
-
-def _mc(args: argparse.Namespace) -> int:
-    """Run a media controller for the game in the game folder."""
-    from pathlib import Path
-
-    from vukery.core.config import load_game_config
-    from vukery.core.errors import VukeryError
-    from vukery.media import protocol
-
-    try:
-        config = load_game_config(Path(args.game_dir).resolve())
-    except VukeryError as e:
-        print(f"vuk mc: {e}", file=sys.stderr)
-        return 1
-    displays = config.section("displays")
-    if not displays:
-        print("vuk mc: this game has no displays: section", file=sys.stderr)
-        return 1
-    if args.display and args.display not in displays:
-        print(f"vuk mc: no display named {args.display!r} (displays: {', '.join(displays)})", file=sys.stderr)
-        return 1
-    try:
-        from vukery.mc.app import run
-    except ImportError:
-        print("vuk mc: the media controller needs pyglet (install vukery[mc])", file=sys.stderr)
-        return 1
-    port = int(config.section("media").get("port", protocol.DEFAULT_PORT))
-    return run(port, {name: dict(entry or {}) for name, entry in displays.items()}, args.display, args.windowed)
 
 
 def main(argv: Sequence[str] | None = None) -> int:
@@ -285,8 +253,6 @@ def main(argv: Sequence[str] | None = None) -> int:
             return _specs(args)
         case "us" | "me":
             return _run(args)
-        case "mc":
-            return _mc(args)
         case command:
             print(f"vuk {command} isn't built yet.", file=sys.stderr)
             return 2

@@ -58,7 +58,6 @@ VUK_LOG=debug vuk us
 | `vuk me` | **works** on the simulated platforms | Runs the game with the full-screen [dashboard](dashboard.md) | `mpf both` plus `mpf monitor` |
 | `vuk you` (or `vuk test`) | **works** | Runs the machine's specs with pytest, always in the test environment. Extra arguments go to pytest (`vuk you -k scoring`). | `mpf test` |
 | `vuk us` | **works** in development | Runs the game and a full-screen media controller per display. On the development platform you can also type a switch name in the terminal to tap it. | `mpf`, `mpf game`, `mpf both` |
-| `vuk mc` | **works** | Runs a media controller only (`--display NAME`, `--windowed`) | `mpf mc` |
 | `vuk top` | planned | Terminal dashboard of a running game; works over SSH | `mpf -t` |
 | `vuk console` | planned | Python prompt attached to the running game | `mpf service` |
 | `vuk hardware scan` | planned | Lists boards and firmware | `mpf hardware scan` |
@@ -100,3 +99,4 @@ config. (MPF chose with `mpf game` versus `mpf both`, and `--no-sound`.)
 | `-a`, `-A` (config cache) | not needed: vukery has no config cache |
 | `-b` (no BCP) | not needed: vukery doesn't use BCP |
 | `mpf build` | not needed: no production bundle |
+| `mpf mc` | not needed: `vuk us` starts a media controller per display, and `vuk me` draws them itself |

@@ -5,7 +5,7 @@ rest of the docs never describe something as if it already works.
 
 | Piece | Status | Docs |
 |---|---|---|
-| `vuk` command | `vuk it`, `vuk me`, `vuk us` (development), `vuk you`, `vuk mc` and `vuk doctor` work; the others say they aren't built yet. | [The vuk command](cli.md) |
+| `vuk` command | `vuk it`, `vuk me`, `vuk us` (development), `vuk you` and `vuk doctor` work; the others say they aren't built yet. | [The vuk command](cli.md) |
 | Game engine | Built: MPF's event rules, modes, the game loop (players, balls, turns, extra balls), attract, switches, player variables, config with environments. Runs on the simulated platforms. | [Writing a game](writing-a-game.md) |
 | Modes and scoring | Built: scoring tables (`Score`, `Award`, functions), MPF's per-variable scoring blocks, `BLOCK`, score adjusters (multipliers). | [Modes](modes.md) |
 | Testing games | Built: RSpec-style specs on virtual time with `GameRig` and `expect`. | [Testing a game](testing.md) |

@@ -157,3 +157,38 @@ def describe_vuk_you():
     def it_explains_a_folder_that_isnt_a_machine(tmp_path, capsys):
         assert main(["-C", str(tmp_path), "you"]) == 1
         assert "isn't a machine folder" in capsys.readouterr().err
+
+
+def describe_the_media_controller():
+    """Display windows run as python -m vukery.mc, started by vuk us; there's no vuk mc."""
+
+    def it_has_no_vuk_mc():
+        with pytest.raises(SystemExit):
+            main(["mc"])
+
+    def it_is_started_per_display_by_vuk_us(monkeypatch):
+        from pathlib import Path
+
+        from vukery import cli
+
+        commands = []
+        monkeypatch.setattr(cli.subprocess, "Popen", lambda command: commands.append(command))
+        cli._start_media_controllers(Path("game"), ["main", "apron"])
+        assert [c[1:] for c in commands] == [["-m", "vukery.mc", "game", "--display", "main"],
+                                             ["-m", "vukery.mc", "game", "--display", "apron"]]
+
+    def it_explains_a_machine_without_displays(capsys):
+        from pathlib import Path
+
+        from vukery.mc.__main__ import main as mc
+
+        assert mc([str(Path(__file__).parents[1] / "examples" / "basic")]) == 1
+        assert "no displays: section" in capsys.readouterr().err
+
+    def it_explains_an_unknown_display(capsys):
+        from pathlib import Path
+
+        from vukery.mc.__main__ import main as mc
+
+        assert mc([str(Path(__file__).parents[1] / "examples" / "display"), "--display", "apron"]) == 1
+        assert "no display named 'apron'" in capsys.readouterr().err
