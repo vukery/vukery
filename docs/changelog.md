@@ -6,6 +6,15 @@ vukery is in **0.0.x** while it works toward parity with MPF. Every push to
 
 Check your version with `vuk --version`.
 
+## 0.0.20 (2026-11-26)
+
+- **Scenes are clipped to their display:** an actor moving past the edge is
+  cut off there, in `vuk me`'s display panes too.
+- **Any player's values:** `{players[2].score:,}` (MPF: `(player2|score)`),
+  empty until that player exists.
+- **Fixed:** `vuk me` clipped its scrolling list with the wrong scale on
+  HiDPI screens.
+
 ## 0.0.19 (2026-11-26)
 
 - **Actors move and blink.** `.moves(x=, y=, seconds=, repeat=, back=)` moves

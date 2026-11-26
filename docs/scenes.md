@@ -198,8 +198,15 @@ Text can include the current player's variables, with Python formatting:
 | `{player.ball}` | `2` |
 | `{player.number}` | `1` |
 | `{player.ramps}` | any player variable |
+| `{players[2].score:,}` | player 2's score, whoever's turn it is |
 
-Anything that doesn't exist yet shows as empty.
+Anything that doesn't exist yet shows as empty: `{players[3].score}` before
+there's a third player, say.
+
+### Clipped to the display
+
+Nothing is drawn outside a display, as on real glass: an actor moving past
+the edge is cut off there. That holds for the display panes in `vuk me` too.
 
 ## Testing what's on screen
 
@@ -245,4 +252,5 @@ The message formats are in `vukery/media/protocol.py`.
 | `animations:` on `x` or `y` (scrolls), with `repeat: true` | `.moves(x=..., seconds=..., repeat=True)` |
 | `animations:` on `opacity` (pulsate, flash) | `.blinks(every=..., fade=True)`, or without `fade` for on and off |
 | `(player\|score)` placeholders | `{player.score}` |
+| `(player2\|score)` | `{players[2].score}` |
 | MPF-MC (Kivy) or GMC (Godot) | the pyglet media controller, over vukery's own protocol (no BCP) |
