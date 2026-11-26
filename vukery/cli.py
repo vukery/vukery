@@ -7,8 +7,10 @@ with one verb per concept and options instead of combined command names.
 import argparse
 import platform
 import shutil
+import subprocess
 import sys
 from collections.abc import Sequence
+from typing import Any
 
 from vukery import __version__
 
@@ -115,9 +117,12 @@ def _run(args: argparse.Namespace) -> int:
                     print(f"No switch named {other!r}. Switches: {', '.join(machine.switches.switches)}")
         machine.stop("quit")
 
+    media_controllers: list[Any] = []
     try:
         loop.run_until_complete(machine.start())
         print(f"vukery is running {game_dir.name} ({config.environment}). Ctrl-C to stop.")
+        if machine.media is not None and not args.no_mc:
+            media_controllers = _start_media_controllers(game_dir, list(machine.media.displays))
         if config.platform == "development":
             if sys.stdin.isatty():
                 print("Type a switch name and press Enter to tap it, e.g. s_start.")
@@ -130,8 +135,63 @@ def _run(args: argparse.Namespace) -> int:
         print(f"vuk run: {e}", file=sys.stderr)
         return 1
     finally:
+        _shut_down(loop)
+        for process in media_controllers:
+            try:
+                process.wait(timeout=2)  # they exit on the engine's "bye"
+            except subprocess.TimeoutExpired:
+                process.terminate()
         loop.close()
     return 0
+
+
+def _shut_down(loop: Any) -> None:
+    """Let final messages go out, then cancel whatever is still running."""
+    import asyncio
+
+    if loop.is_closed():
+        return
+    loop.run_until_complete(asyncio.sleep(0.1))
+    pending = [task for task in asyncio.all_tasks(loop) if not task.done()]
+    for task in pending:
+        task.cancel()
+    if pending:
+        loop.run_until_complete(asyncio.gather(*pending, return_exceptions=True))
+
+
+def _start_media_controllers(game_dir: Any, displays: list[str]) -> list[Any]:
+    """One media controller process per display (they exit when the engine says bye)."""
+    return [subprocess.Popen([sys.executable, "-m", "vukery.cli", "-C", str(game_dir), "mc", "--display", name])
+            for name in displays]
+
+
+def _mc(args: argparse.Namespace) -> int:
+    """Run a media controller for the game in the game folder."""
+    from pathlib import Path
+
+    from vukery.core.config import load_game_config
+    from vukery.core.errors import VukeryError
+    from vukery.media import protocol
+
+    try:
+        config = load_game_config(Path(args.game_dir).resolve())
+    except VukeryError as e:
+        print(f"vuk mc: {e}", file=sys.stderr)
+        return 1
+    displays = config.section("displays")
+    if not displays:
+        print("vuk mc: this game has no displays: section", file=sys.stderr)
+        return 1
+    if args.display and args.display not in displays:
+        print(f"vuk mc: no display named {args.display!r} (displays: {', '.join(displays)})", file=sys.stderr)
+        return 1
+    try:
+        from vukery.mc.app import run
+    except ImportError:
+        print("vuk mc: the media controller needs pyglet (install vukery[mc])", file=sys.stderr)
+        return 1
+    port = int(config.section("media").get("port", protocol.DEFAULT_PORT))
+    return run(port, {name: dict(entry or {}) for name, entry in displays.items()}, args.display)
 
 
 def main(argv: Sequence[str] | None = None) -> int:
@@ -145,6 +205,8 @@ def main(argv: Sequence[str] | None = None) -> int:
             return _doctor()
         case "run":
             return _run(args)
+        case "mc":
+            return _mc(args)
         case command:
             print(f"vuk {command} isn't built yet.", file=sys.stderr)
             return 2

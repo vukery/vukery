@@ -19,7 +19,8 @@ Repository = "https://github.com/vukery/vukery"
 mc = ["pyglet>=2.1.19"]  # also needs FFmpeg installed on the system
 
 [dependency-groups]
-dev = ["pytest", "pytest-describe", "pytest-spec", "ruff", "pyright"]
+# pyglet is in dev too, so the examples' media controller works after a plain `uv sync`
+dev = ["pytest", "pytest-describe", "pytest-spec", "ruff", "pyright", "pyglet>=2.1.19"]
 # Build the docs site locally: uv run mkdocs build --strict
 docs = [
     "mkdocs>=1.6.1",
@@ -42,6 +43,10 @@ build-backend = "hatchling.build"
 [tool.ruff]
 line-length = 100
 target-version = "py315"
+
+[tool.ruff.lint.per-file-ignores]
+# Game modes declare `slides = {...}` on the class; asking game authors for ClassVar is noise
+"examples/**" = ["RUF012"]
 
 [tool.pyright]
 include = ["vukery"]
