@@ -6,6 +6,13 @@ vukery is in **0.0.x** while it works toward parity with MPF. Every push to
 
 Check your version with `vuk --version`.
 
+## 0.0.22 (2026-11-26)
+
+- **Fixed:** sounds that started before a media controller connected were
+  never heard: the attract music, which starts at power-on, before `vuk me`'s
+  dashboard or `vuk us`'s displays connect. A media controller that connects
+  late now picks up what's playing, from where it is.
+
 ## 0.0.21 (2026-11-26)
 
 - **Sound.** Every file in `assets/sounds/` is a sound; MPF's `sounds:`,
