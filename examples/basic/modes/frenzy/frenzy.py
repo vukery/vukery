@@ -3,6 +3,8 @@
 Shows priority and scoring blocks. Frenzy (priority 200) runs above Base (100):
 - the target scores 5000 *instead of* Base's 1000 (block=True);
 - slingshots score 100 *as well as* Base's 10 (no block): 110.
+
+Its light (l_frenzy) is on while it runs.
 """
 
 from vukery import Mode, Score
@@ -27,3 +29,7 @@ class Frenzy(Mode):
         # Stop after 10 seconds. Delays are cancelled automatically if the mode stops
         # first (e.g. the ball drains, since stop_on_ball_end is True by default).
         self.delay("over", FRENZY_SECONDS, self.stop)
+        self.machine.lights["l_frenzy"].on()  # lights come from config: lights:
+
+    def mode_stop(self, **_):   # called as the mode stops, for any reason
+        self.machine.lights["l_frenzy"].off()

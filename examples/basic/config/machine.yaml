@@ -42,6 +42,10 @@ coils:
   c_right_sling:
     number: "4"
 
+lights:
+  l_frenzy:
+    number: "0"                 # on the FAST Nano this would be an LED's number, e.g. "0-0"
+
 ball_devices:
   bd_trough:
     ball_switches: s_trough1, s_trough2, s_trough3  # one switch per ball: 3 balls in the machine
@@ -66,6 +70,11 @@ autofire_coils:                 # slingshots and pop bumpers: the switch fires t
 
 game:
   balls_per_game: 3
+
+dashboard:                      # vuk me only: where things sit on its virtual playfield
+  playfield:                    # [x, y] from the bottom-left corner, 0 to 1; anything left out is placed for you
+    s_target: [0.5, 0.62]
+    l_frenzy: [0.5, 0.54]
 
 modes:                          # the game's own modes, from modes/<name>/<name>.py
   - base                        # (attract and game are built in and always loaded)
