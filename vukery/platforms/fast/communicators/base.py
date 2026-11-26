@@ -2,56 +2,50 @@
 # https://github.com/missionpinball/mpf/blob/9ef886f4f263db44704f09a87bfd11229036ab5c/mpf/platforms/fast/communicators/base.py
 # Copyright (c) The Mission Pinball Framework team and other contributors.
 # MIT License: see vukery/_mpf/NOTICE.
-"""Base class for FAST serial interfaces."""
-# mpf/platforms/fast/communicators/base.py
+"""Base class for FAST serial interfaces.
+
+Changes from MPF:
+- Uses the vukery ``PlatformHost`` (``self.host``) instead of MPF's ``machine``.
+- Config is typed (``config.debug``, ``config.port``…) instead of a validated dict.
+- Opening the port is the host's job (``host.open_serial``), so the pyserial
+  transport details are gone from here.
+- The firmware check uses each board's own ``MIN_FW`` (a class attribute here).
+- ``readuntil()`` (unused) is removed.
+"""
 
 import asyncio
 
 from packaging import version
-from serial import EIGHTBITS, PARITY_NONE, STOPBITS_ONE, SerialException
 
-from mpf.core.logging import LogMixin
-from mpf.core.utility_functions import Util
-
-MIN_FW = version.parse('0.00')  # override in subclass
+from vukery.core.errors import HardwareError
+from vukery.core.log import Logs
+from vukery.core.util import Util
 
 
-# pylint: disable-msg=too-many-instance-attributes
-class FastSerialCommunicator(LogMixin):
+class FastSerialCommunicator(Logs):
 
     """Handles the serial communication to the FAST platform."""
 
-    IGNORED_MESSAGES = []
-
-    __slots__ = ["platform", "remote_processor", "config", "writer", "reader", "read_task", "received_msg",
-                 "machine", "fast_debug", "port_debug", "remote_firmware", "send_queue", "write_task",
-                 "pause_sending_until", "pause_sending_flag", "no_response_waiting", "done_waiting",
-                 "ignore_decode_errors", "message_processors", "remote_model", "port", "tasks", "watchdog_cmd"]
+    IGNORED_MESSAGES: list[str] = []
+    MIN_FW = version.parse('0.00')  # override in subclass
 
     def __init__(self, platform, processor, config):
         """Initialize FastSerialCommunicator."""
-        super().__init__()  # Initialize logging
         self.platform = platform
         self.remote_processor = processor.upper()
         self.remote_model = str()
         self.config = config
-        self.writer = None
-        self.reader = None
+        self.serial = None  # the open SerialPort
         self.tasks = list()  # higher level tasks subclasses might need
         self.read_task = None
         self.write_task = None
         self.received_msg = b''
-        self.log = None
-        self.machine = platform.machine
-        self.fast_debug = platform.debug
+        self.host = platform.host
         self.port = None  # string of the port we're connected to
-        self.port_debug = config['debug']
-
-        # TODO some connections have more than one processor, should there be a processor object?
+        self.port_debug = config.debug
         self.remote_firmware = None
 
         self.send_queue = asyncio.Queue()  # Tuples of ( message, pause_until_string)
-
         self.pause_sending_until = ''
         self.pause_sending_flag = asyncio.Event()
         self.no_response_waiting = asyncio.Event()
@@ -59,19 +53,18 @@ class FastSerialCommunicator(LogMixin):
         self.no_response_waiting.set()  # Initially, we're not waiting for any response
 
         self.ignore_decode_errors = True
+        self.failure = None  # an error raised while processing a message from the board
 
         self.message_processors = {'XX:': self._process_xx,
                                    'ID:': self._process_id}
 
-        if config.get('watchdog', None):
-            self.watchdog_cmd = f"WD:{config['watchdog']:02X}"
+        watchdog = getattr(config, 'watchdog', None)
+        if watchdog:
+            self.watchdog_cmd = f"WD:{watchdog:02X}"
         else:
             self.watchdog_cmd = None
 
-        # TODO change these to not be hardcoded
-        # TODO do something with the URL endpoint
-        self.configure_logging(logger=f'FAST [{self.remote_processor}]', console_level=config['debug'],
-                               file_level=config['debug'], url_base='https://fastpinball.com/mpf/error')
+        self.configure_logging(f'FAST [{self.remote_processor}]', config.debug)
 
     def __repr__(self):
         """Return representation of FAST processor."""
@@ -83,67 +76,28 @@ class FastSerialCommunicator(LogMixin):
 
     async def connect(self):
         """Connect to the port(s) for this serial interface."""
-        for port in self.config['port']:
-            # If this is an auto-detect that failed to detect, the port will
-            # just be 'auto' and there's no reason to try and connect to it.
+        for port in self.config.port:
             if port == 'auto':
-                continue
-            self.log.info("Trying to connect to %s at %sbps", port, self.config['baud'])
-            success = False
-
-            while not success:
-                try:
-                    connector = self.machine.clock.open_serial_connection(
-                        url=port, baudrate=self.config['baud'], limit=0, xonxoff=False,
-                        bytesize=EIGHTBITS, parity=PARITY_NONE, stopbits=STOPBITS_ONE)
-                    self.reader, self.writer = await connector
-                except SerialException:
-                    if not self.machine.options["production"]:
-                        break
-
-                    # if we are in production mode, retry
-                    await asyncio.sleep(.1)
-                    self.log.warning("Connection to port %s failed. Will retry.", port)
-                else:
-                    # we got a connection
-                    self.log.info("Connected to %s at %sbps", port, self.config['baud'])
-                    self.port = port
-                    success = True
-                    break
-
-            if success:
-                break
-        else:
-            self.log.error("Failed to connect to any of the specified ports.")
-            raise SerialException(f"{self} could not connect to a serial port. Is it open in CoolTerm? ;)")
-
-        serial = self.writer.transport.serial
-        if hasattr(serial, "set_low_latency_mode"):
+                continue  # the platform resolves 'auto' to real ports before connecting
+            self.log.info("Trying to connect to %s at %sbps", port, self.config.baud)
             try:
-                serial.set_low_latency_mode(True)
-                self.log.debug("Connected via low latency mode for %s.", self.config['port'])
-            except (NotImplementedError, ValueError) as e:
-                self.log.debug("Connected via standard mode for %s. %s", self.config['port'], e)
-
-        # defaults are slightly high for our use case
-        self.writer.transport.set_write_buffer_limits(2048, 1024)
-
-        # read everything which is sitting in the serial
-        self.writer.transport.serial.reset_input_buffer()
-        # clear buffer
-        # pylint: disable-msg=protected-access
-        self.reader._buffer = bytearray()
+                self.serial = await self.host.open_serial(port, self.config.baud)
+            except OSError as e:
+                self.log.warning("Connection to port %s failed: %s", port, e)
+                continue
+            self.log.info("Connected to %s at %sbps", port, self.config.baud)
+            self.port = port
+            break
+        else:
+            raise HardwareError(f"{self} could not connect to any of its serial ports: {self.config.port}")
 
         self.ignore_decode_errors = True
-
         await self.clear_board_serial_buffer()
-
         self.ignore_decode_errors = False
 
-        self.write_task = asyncio.create_task(self._socket_writer())
+        self.write_task = self.host.create_task(self._socket_writer())
         self.write_task.add_done_callback(Util.raise_exceptions)
-
-        self.read_task = asyncio.create_task(self._socket_reader())
+        self.read_task = self.host.create_task(self._socket_reader())
         self.read_task.add_done_callback(Util.raise_exceptions)
 
     async def clear_board_serial_buffer(self):
@@ -170,9 +124,11 @@ class FastSerialCommunicator(LogMixin):
         self.log.info("Connected to %s with firmware v%s",
                       self.remote_model, self.remote_firmware)
 
-        if version.parse(self.remote_firmware) < MIN_FW:
-            raise AssertionError(f'Firmware version mismatch. MPF requires the {self.remote_processor} processor '
-                                 f'to be firmware {MIN_FW}, but yours is {self.remote_firmware}')
+        if version.parse(self.remote_firmware) < self.MIN_FW:
+            # str(Version('1.05')) prints as '1.5', so show it in FAST's two-digit notation
+            minimum = '.'.join(f'{part:02}' for part in self.MIN_FW.release)
+            raise HardwareError(f'Firmware version mismatch. vukery requires the {self.remote_processor} '
+                                f'processor to be firmware {minimum} or newer, but yours is {self.remote_firmware}')
 
         self.done_processing_msg_response()
 
@@ -180,39 +136,20 @@ class FastSerialCommunicator(LogMixin):
         self.error_log(f"PORT CONFIG ERROR: You config lists port '{self.port}' for the {self.remote_processor} "
                        f"connection, but the ID: response shows that port is the {processor} connection. "
                        f"Please update your config.")
-        self.machine.stop('FAST Serial port mismatch')
-
-    # pylint: disable-msg=inconsistent-return-statements
-    async def readuntil(self, separator, min_chars: int = 0):
-        """Read until separator.
-
-        Args:
-        ----
-            separator: Read until this separator byte.
-            min_chars: Minimum message length before separator
-        """
-        assert self.reader is not None
-        buffer = b''
-        while True:
-            char = await self.reader.readexactly(1)
-            buffer += char
-            if char == separator and len(buffer) > min_chars:
-                if self.port_debug:
-                    self.log.info("<<<< %s", buffer)
-                return buffer
+        self.host.stop('FAST Serial port mismatch')
 
     def start_watchdog(self):
         """Start listening for commands and schedule watchdog."""
         if self.watchdog_cmd:
             self._watchdog_task()  # send one now
-            self.tasks.append(self.machine.clock.schedule_interval(
+            self.tasks.append(self.host.schedule_interval(
                 self._watchdog_task,
-                self.config['watchdog'] / 2000))
+                self.config.watchdog / 2000))
 
     def start_tasks(self):
         """Start periodic tasks, etc.
 
-        Called once on MPF boot, not at game start.
+        Called once on boot, not at game start.
         """
 
     def stopping(self):
@@ -242,17 +179,9 @@ class FastSerialCommunicator(LogMixin):
             self.write_task.cancel()
             self.write_task = None
 
-        if self.writer:
-            self.writer.close()
-            try:
-                self.machine.clock.loop.run_until_complete(self.writer.wait_closed())
-            except RuntimeError as e:
-                if 'Event loop stopped before Future completed.' in str(e):
-                    self.log.warning("Event loop stopped before writer could close. "
-                                     "This may not be an issue if the event loop was stopped intentionally.")
-                else:
-                    raise e
-            self.writer = None
+        if self.serial:
+            self.serial.close()
+            self.serial = None
 
     async def send_and_wait_for_response(self, msg, pause_sending_until, log_msg=None):
         """Sends a message and awaits until the response is received.
@@ -269,7 +198,6 @@ class FastSerialCommunicator(LogMixin):
         self.no_response_waiting.clear()
         self.send_with_confirmation(msg, pause_sending_until, log_msg)
 
-    # pylint: disable-msg=too-many-arguments
     async def send_and_wait_for_response_processed(self, msg, pause_sending_until, timeout=1,
                                                    max_retries=0, log_msg=None):
         """Send a message and wait for the response to be processed.
@@ -295,7 +223,6 @@ class FastSerialCommunicator(LogMixin):
         self.done_waiting.clear()
 
         retries = 0
-
         while max_retries == -1 or retries <= max_retries:
             try:
                 await asyncio.wait_for(self.send_and_wait_for_response(msg, pause_sending_until,
@@ -306,11 +233,14 @@ class FastSerialCommunicator(LogMixin):
                 retries += 1
 
         await self.done_waiting.wait()
+        if self.failure:
+            raise self.failure
 
     def done_processing_msg_response(self):
         """Releases the wait for the response to be processed.
 
         This is used in conjunction with send_and_wait_for_response_processed().
+
         May be called safely if there's no wait to release.
         """
         self.done_waiting.set()
@@ -319,12 +249,6 @@ class FastSerialCommunicator(LogMixin):
         """Sends a message without blocking (returns immediately).
 
         Will hold future messages in the queue until the response is received.
-
-        Parameters
-        ----------
-            msg (_type_): _description_
-            pause_sending_until (_type_): _description_
-            log_msg (_type_, optional): _description_. Defaults to None.
         """
         if log_msg:
             self.send_queue.put_nowait((f'{msg}\r'.encode(), pause_sending_until, log_msg))
@@ -340,7 +264,6 @@ class FastSerialCommunicator(LogMixin):
 
     def send_bytes(self, msg, log_msg):
         """Send a raw list of bytes to the communicator."""
-        # Forcing log_msg since bytes are not human readable
         self.send_queue.put_nowait((msg, None, log_msg))
 
     def parse_incoming_raw_bytes(self, msg):
@@ -363,8 +286,7 @@ class FastSerialCommunicator(LogMixin):
             try:
                 msg = msg.decode()
             except UnicodeDecodeError:
-
-                if self.machine.is_shutting_down:
+                if self.host.is_shutting_down:
                     return
 
                 self.log.warning("Interference / bad data received: %s", msg)
@@ -377,7 +299,7 @@ class FastSerialCommunicator(LogMixin):
             self._dispatch_incoming_msg(msg)
 
     def _dispatch_incoming_msg(self, msg):
-        # Figures out what to do with incoming messages
+
         if msg in self.IGNORED_MESSAGES:
             return
 
@@ -387,8 +309,6 @@ class FastSerialCommunicator(LogMixin):
             self.no_response_waiting.set()
 
         # if the msg_header matches the first chars of the self.pause_sending_until, unpause sending
-        # Note that the msg_header includes the colon (e.g. "DL:", "SA:") and therefore
-        # pause_sending_until must also include the colon.
         if self.pause_sending_flag.is_set() and self.pause_sending_until.startswith(msg_header):
             self._resume_sending()
 
@@ -414,15 +334,28 @@ class FastSerialCommunicator(LogMixin):
             resp = await self.read(128)
             if resp is None:
                 return
-            self.parse_incoming_raw_bytes(resp)
+            try:
+                self.parse_incoming_raw_bytes(resp)
+            except Exception as e:  # pylint: disable-msg=broad-except
+                self._fail(e)
+                return
+
+    def _fail(self, error):
+        """A message from the board couldn't be handled (bad firmware, config mismatch…).
+
+        vukery hands the error to whoever is waiting on a response, then stops
+        the machine, so startup fails with a clear error.
+        """
+        self.log.error("Stopping: %s", error)
+        self.failure = error
+        self.no_response_waiting.set()
+        self.done_waiting.set()
+        self.host.stop(f"{self}: {error}")
 
     async def read(self, n=-1):
-        """Read up to `n` bytes from the stream and log the result if debug is true.
-
-        See :func:`StreamReader.read` for details about read and the `n` parameter.
-        """
+        """Read up to `n` bytes from the serial port."""
         try:
-            resp = await self.reader.read(n)
+            resp = await self.serial.read(n)
         except asyncio.CancelledError:  # pylint: disable-msg=try-except-raise
             raise
         except Exception as e:  # pylint: disable-msg=broad-except
@@ -432,7 +365,7 @@ class FastSerialCommunicator(LogMixin):
         # we either got empty response (-> socket closed) or an error
         if not resp:
             self.log.warning("Serial closed.")
-            self.machine.stop("Serial %s closed.", self.config["port"])
+            self.host.stop(f"Serial {self.port} closed.")
             return None
 
         return resp
@@ -446,14 +379,14 @@ class FastSerialCommunicator(LogMixin):
                 if pause_sending_until is not None:
                     self.pause_sending(pause_sending_until)
 
-                # Sends a message
                 self.write_to_port(msg, log_msg)
 
+                # This wait returns right away (the flag was just set); messages are
+                # paced by no_response_waiting. Kept as is so the wire traffic matches.
                 if self.pause_sending_flag.is_set():
                     await self.pause_sending_flag.wait()
 
-            # TODO better way to catch shutting down?
-            except SerialException as e:
+            except OSError as e:
                 self.log.error(e)
 
     def write_to_port(self, msg, log_msg=None):
@@ -465,6 +398,6 @@ class FastSerialCommunicator(LogMixin):
                 self.log.info(">>>> %s", msg)
 
         try:
-            self.writer.write(msg)
+            self.serial.write(msg)
         except AttributeError:
             self.log.warning("Serial connection is not open. Cannot send message: %s", msg)

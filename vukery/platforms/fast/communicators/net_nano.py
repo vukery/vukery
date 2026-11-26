@@ -2,12 +2,15 @@
 # https://github.com/missionpinball/mpf/blob/9ef886f4f263db44704f09a87bfd11229036ab5c/mpf/platforms/fast/communicators/net_nano.py
 # Copyright (c) The Mission Pinball Framework team and other contributors.
 # MIT License: see vukery/_mpf/NOTICE.
-"""FAST Nano Serial Interface."""
-# mpf/platforms/fast/communicators/net_nano.py
+"""FAST Nano Serial Interface.
+
+Changes from MPF: vukery imports, and a Nano reboot stops the machine through
+``host.stop``.
+"""
 
 from packaging import version
 
-from mpf.platforms.fast.communicators.net_neuron import FastNetNeuronCommunicator
+from vukery.platforms.fast.communicators.net_neuron import FastNetNeuronCommunicator
 
 
 class FastNetNanoCommunicator(FastNetNeuronCommunicator):
@@ -34,7 +37,7 @@ class FastNetNanoCommunicator(FastNetNeuronCommunicator):
 
     def _process_boot_message(self, msg):
         if msg == '00':  # rebooting
-            self.machine.stop("FAST NET Nano rebooted")
+            self.host.stop("FAST NET Nano rebooted")
 
         if msg == '02':  # reboot done
             self._process_reboot_done(msg)
