@@ -5,7 +5,7 @@ import asyncio
 import pytest
 
 from vukery.core.clock import settle
-from vukery.core.events import BLOCK, EventHandlerError, EventManager
+from vukery.core.events import BLOCK, Block, EventHandlerError, EventManager
 
 
 @pytest.fixture
@@ -149,19 +149,37 @@ def describe_events():
         def it_stops_lower_priority_blockable_handlers(events, loop):
             seen = []
             events.add_handler("s_pop_active", lambda: (seen.append("mode"), BLOCK)[1], priority=200,
-                               blockable=True)
-            events.add_handler("s_pop_active", lambda: seen.append("base"), priority=100, blockable=True)
+                               facility="score")
+            events.add_handler("s_pop_active", lambda: seen.append("base"), priority=100, facility="score")
             events.post("s_pop_active")
             settle(loop)
             assert seen == ["mode"]
 
         def it_doesnt_stop_handlers_that_arent_blockable(events, loop):
             seen = []
-            events.add_handler("s_pop_active", lambda: BLOCK, priority=200, blockable=True)
+            events.add_handler("s_pop_active", lambda: BLOCK, priority=200, facility="score")
             events.add_handler("s_pop_active", lambda: seen.append("audit"), priority=100)
             events.post("s_pop_active")
             settle(loop)
             assert seen == ["audit"]
+
+        def it_stops_only_the_named_facility(events, loop):
+            seen = []
+            events.add_handler("s_pop_active", lambda: Block("score"), priority=200, facility="score")
+            events.add_handler("s_pop_active", lambda: seen.append("base score"), priority=100, facility="score")
+            events.add_handler("s_pop_active", lambda: seen.append("base sound"), priority=100,
+                               facility="handlers")
+            events.post("s_pop_active")
+            settle(loop)
+            assert seen == ["base sound"]
+
+        def it_doesnt_stop_handlers_at_the_same_priority(events, loop):
+            seen = []
+            events.add_handler("e", lambda: BLOCK, priority=100, facility="score")
+            events.add_handler("e", lambda: seen.append("same priority"), priority=100, facility="score")
+            events.post("e")
+            settle(loop)
+            assert seen == ["same priority"]
 
     def describe_errors():
         def it_says_which_handler_failed_on_which_event(events, loop):
