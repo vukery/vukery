@@ -3,6 +3,12 @@
 The `examples/` folder holds complete games, kept dead simple on purpose.
 More will be added as vukery grows.
 
+| Example | Displays | Shows |
+|---|---|---|
+| `basic` | none | the game engine, modes, scoring, tests |
+| `display` | one | slides with live values |
+| `dual_display` | two | a media controller per display, slides per display |
+
 ## `examples/basic`
 
 The smallest complete vukery game, with no display or sound:
@@ -55,3 +61,31 @@ uv run pytest
 | `modes/start_screen/start_screen.py` | the slide shown between games |
 | `modes/base/base.py` | scoring and the score slide |
 | `tests/test_display.py` | the specs |
+
+## `examples/dual_display`
+
+`examples/basic` with two displays: an 800×480 main screen and a 480×272
+apron screen. `vuk it` opens two windows, one media controller process
+each.
+
+| Display | Between games | During a game |
+|---|---|---|
+| `main` | the title | the score |
+| `apron` | "PRESS START" | the player and ball |
+
+Each mode shows its slides on specific displays:
+
+```python
+def mode_start(self, **_):
+    self.show_slide("score", display="main")
+    self.show_slide("ball_info", display="apron")
+```
+
+Its 7 specs check that a media controller loads for each display and what
+each display shows, from the title screen through a two-player game and back.
+
+```console
+cd examples/dual_display
+uv run vuk it
+uv run pytest
+```

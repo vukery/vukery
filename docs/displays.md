@@ -3,7 +3,8 @@
 !!! note "0.0.x"
     Slides with text, on one or more displays, drawn by the pyglet media
     controller. Images, video, sound, animations and transitions come
-    later. The complete example is [`examples/display`](examples.md).
+    later. The complete examples are [`examples/display` and
+    `examples/dual_display`](examples.md).
 
 vukery's game engine decides what each display shows. A **media
 controller**, a separate process, only draws it. The default media

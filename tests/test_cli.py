@@ -62,3 +62,6 @@ def describe_vuk_it_media_controllers():
 
     def it_starts_one_per_display(monkeypatch, capsys, tmp_path):
         assert _started(monkeypatch, capsys, tmp_path, "display") == ["main"]
+
+    def it_starts_one_for_each_of_two_displays(monkeypatch, capsys, tmp_path):
+        assert _started(monkeypatch, capsys, tmp_path, "dual_display") == ["main", "apron"]
