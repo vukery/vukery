@@ -6,6 +6,36 @@ vukery is in **0.0.x** while it works toward parity with MPF. Every push to
 
 Check your version with `vuk --version`.
 
+## 0.0.18 (2026-11-26)
+
+- **Shows:** YAML files in their mode's folder, played with
+  `self.play_show(...)` and MPF's `show_player` options. Write one as a
+  frames grid over a light group, or as MPF's list of steps (lights, coils,
+  events, fades). Tokens, loops, speed, keys, pause and resume, and MPF's
+  built-in shows. See [Shows](shows.md).
+- **The light stack:** each light shows its highest-priority color, as in
+  MPF. Shows borrow lights and give them back when they stop; a mode's shows
+  stop with the mode.
+- **Light groups:** `light_groups:` in `machine.yaml`, ordered lists of
+  lights that work like a light.
+- **Scenes replace slides:** a `Scene` holds actors (`Text`, or another
+  scene placed inside it). Actors can `.enters(side)` and `.exits(side)`.
+  Scenes are `@scene` functions in a mode's `scenes.py`, shown with
+  `self.show_scene(...)`. The media protocol is now version 2. See
+  [Displays and scenes](scenes.md).
+- **Coil starting points:** the [Coils](devices/coils.md) page has typical
+  settings for each kind of coil, from 46 public MPF machines.
+- **Indented YAML:** examples, the machine template and the docs write one
+  setting per line, with bare hardware numbers (`number: 1`). Coils read a
+  bare number as text, as switches and lights already did. `vuk me` writes
+  pane sizes the same way.
+- **`vuk doctor` is now `vuk health`.** It reports the version that's
+  actually running (editable installs included), where vukery was installed
+  from, pyglet, and whether pyglet found FFmpeg's libraries.
+- **Specs** use `expect(...)` everywhere; new matchers: `not_to_equal`,
+  `to_be_true` / `to_be_false`, `to_be_none`, `to_contain`,
+  `to_be_close_to`, `to_be_greater_than` / `to_be_less_than`.
+
 ## 0.0.17 (2026-11-26)
 
 - **Coverage from 74% to 83%:** 78 new specs.
