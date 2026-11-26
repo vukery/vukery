@@ -3,7 +3,7 @@
 # Copyright (c) The Mission Pinball Framework team and other contributors.
 # MIT License: see vukery/_mpf/NOTICE.
 """A switch connected to a FAST controller."""
-import logging
+from vukery.core.log import get_logger
 from copy import copy
 from dataclasses import dataclass
 
@@ -31,7 +31,7 @@ class FASTSwitch:
 
     def __init__(self, communicator, hw_number, ) -> None:
         """Initialize switch."""
-        self.log = logging.getLogger('FAST Switch')
+        self.log = get_logger('fast.switch')
         self.communicator = communicator
         self.number = hw_number  # must be int to work with the rest of MPF
         self.hw_number = Util.int_to_hex_string(hw_number)  # hex version the FAST hw actually uses

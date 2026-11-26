@@ -3,7 +3,7 @@
 # Copyright (c) The Mission Pinball Framework team and other contributors.
 # MIT License: see vukery/_mpf/NOTICE.
 """A driver/coil in the FAST platform."""
-import logging
+from vukery.core.log import get_logger
 from copy import copy
 from dataclasses import dataclass
 
@@ -43,7 +43,7 @@ class FASTDriver:
         This is called once for each physical driver on the connected hardware,
         regardless of whether it's configured in MPF.
         """
-        self.log = logging.getLogger('FAST Driver')
+        self.log = get_logger('fast.driver')
         self.communicator = communicator
         self.number = hw_number  # must be int to work with the rest of MPF
         self.hw_number = Util.int_to_hex_string(hw_number)  # hex version the FAST hw actually uses

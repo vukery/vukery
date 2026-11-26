@@ -6,7 +6,7 @@
 
 Changes from MPF: the clock comes from the vukery host (``host.now()``).
 """
-import logging
+from vukery.core.log import get_logger
 
 from typing import Optional
 from typing import List
@@ -27,7 +27,7 @@ class FASTRGBLED:
         self.host = platform.host
         self.platform = platform
         self.hardware_fade_ms = 0
-        self.log = logging.getLogger('FASTLED')
+        self.log = get_logger('fast.led')
         self.channels = [None, None, None]      # type: List[Optional[FASTLEDChannel]]
         # All FAST LEDs are 3 element RGB and are set using hex strings
         self.log.debug("Creating FAST RGB LED at hardware address: %s", self.number)
@@ -79,7 +79,7 @@ class FASTExpLED(FASTRGBLED):
         self.host = platform.host
         self.platform = platform
         self.hardware_fade_ms = hardware_fade_ms
-        self.log = logging.getLogger('FASTLED')
+        self.log = get_logger('fast.led')
         self.channels = [None, None, None]      # type: List[Optional[FASTLEDChannel]]
         # All FAST LEDs are 3 element RGB and are set using hex strings
         self.log.debug("Creating FAST RGB LED on expansion board at hardware address: %s", self.number)

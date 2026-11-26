@@ -19,8 +19,13 @@ from vukery.devices.coil import Coil, CoilConfig
 from vukery.devices.light import Light, LightConfig
 from vukery.platforms.fast.config import FastConfig
 from vukery.platforms.fast.fast import FastHardwarePlatform
-from vukery.platforms.interfaces import (DriverSettings, PulseSettings, SerialPortInfo, SwitchConfig,
-                                         SwitchSettings)
+from vukery.platforms.interfaces import (
+    DriverSettings,
+    PulseSettings,
+    SerialPortInfo,
+    SwitchConfig,
+    SwitchSettings,
+)
 
 MPF_FAST = Path(__file__).parents[2] / "mpf_ported" / "fast"
 

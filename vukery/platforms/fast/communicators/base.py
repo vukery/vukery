@@ -64,7 +64,7 @@ class FastSerialCommunicator(Logs):
         else:
             self.watchdog_cmd = None
 
-        self.configure_logging(f'FAST [{self.remote_processor}]', config.debug)
+        self.configure_logging(f'fast.{processor.lower()}', config.debug)
 
     def __repr__(self):
         """Return representation of FAST processor."""

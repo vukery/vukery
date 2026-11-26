@@ -29,10 +29,16 @@ from vukery.platforms.fast.communicators.rgb import FastRgbCommunicator
 from vukery.platforms.fast.config import FastConfig
 from vukery.platforms.fast.fast_driver import FASTDriver
 from vukery.platforms.fast.fast_io_board import FastIoBoard
-from vukery.platforms.fast.fast_led import FASTLEDChannel, FASTRGBLED
+from vukery.platforms.fast.fast_led import FASTRGBLED, FASTLEDChannel
 from vukery.platforms.fast.fast_port_detector import FastPortDetector
 from vukery.platforms.fast.fast_switch import FASTSwitch
-from vukery.platforms.interfaces import DriverConfig, DriverSettings, PlatformHost, SwitchConfig, SwitchSettings
+from vukery.platforms.interfaces import (
+    DriverConfig,
+    DriverSettings,
+    PlatformHost,
+    SwitchConfig,
+    SwitchSettings,
+)
 
 SWITCH_PLATFORM_SETTINGS = {'debounce_open': None, 'debounce_close': None}
 COIL_PLATFORM_SETTINGS = {'recycle_ms': None, 'pwm2_ms': None}
@@ -48,7 +54,7 @@ class FastHardwarePlatform(Logs):
         """Initialize FAST hardware platform."""
         self.host = host
         self.config = config
-        self.configure_logging("FAST", config.debug)
+        self.configure_logging("fast", config.debug)
 
         if config.net is None:
             raise ConfigError("fast: needs a net: section")
