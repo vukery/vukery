@@ -50,3 +50,5 @@ testpaths = ["tests"]
 # RSpec-style specs: describe_*/it_* functions (pytest-describe), tree output (pytest-spec)
 addopts = "--spec"
 describe_prefixes = ["describe_", "context_"]
+# Warnings (unclosed ports, event loops, sockets...) fail the run instead of scrolling past
+filterwarnings = ["error"]

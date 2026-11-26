@@ -136,14 +136,14 @@ class FastHardwarePlatform(Logs):
             communicator = FastNetNanoCommunicator(platform=self, processor='net', config=net)
 
         await communicator.connect()
+        self.serial_connections['net'] = communicator  # registered before init, so stop() closes it on failure
         await communicator.init()
-        self.serial_connections['net'] = communicator
 
         if self.config.rgb:
             rgb = FastRgbCommunicator(platform=self, processor='rgb', config=self.config.rgb)
             await rgb.connect()
-            await rgb.init()
             self.serial_connections['rgb'] = rgb
+            await rgb.init()
 
     async def _resolve_auto_ports(self):
         """Replace ``port: auto`` with the detected port for each connection that uses it."""

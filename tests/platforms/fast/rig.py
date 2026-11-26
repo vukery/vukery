@@ -183,6 +183,14 @@ class FastRig:
         self.run(asyncio.sleep(seconds))
 
     def start(self) -> None:
+        """Boot the platform. If startup fails, everything is cleaned up before the error propagates."""
+        try:
+            self._start()
+        except BaseException:
+            self.stop()
+            raise
+
+    def _start(self) -> None:
         self.run(self.platform.initialize())
         for name, entry in (self.config.get("switches") or {}).items():
             invert = str(entry.get("type", "NO")).upper() == "NC"
@@ -204,8 +212,15 @@ class FastRig:
         self.settle()
 
     def stop(self) -> None:
+        if self.loop.is_closed():
+            return
         self.platform.stop()
         self.settle()
+        pending = [task for task in asyncio.all_tasks(self.loop) if not task.done()]
+        for task in pending:
+            task.cancel()
+        if pending:
+            self.loop.run_until_complete(asyncio.gather(*pending, return_exceptions=True))
         self.loop.close()
 
     # --- autofire coils (MPF: autofire_coils:), enough to set hardware rules
