@@ -53,6 +53,17 @@ def describe_sounds():
                                                    "preload": False})
         expect(welcome["sounds"]["base_bgm"]["file"]).to_contain("music.ogg")
 
+    def it_tells_a_media_controller_that_connects_late_whats_playing(game):
+        _base(game).play_sound("base_bgm")
+        game.advance(3)
+        playing = game.machine.media.welcome()["playing"]
+        expect([(p["sound"], round(p["elapsed"], 3)) for p in playing]).to_equal([("base_bgm", 3.0)])
+
+    def it_forgets_what_a_mode_played_when_it_stops(game):
+        _base(game).play_sound("base_bgm")
+        game.drain()
+        expect([p["sound"] for p in game.machine.media.welcome()["playing"]]).not_to_contain("base_bgm")
+
     def it_plays_a_sound_with_its_settings(game):
         _base(game).play_sound("base_bgm", start_at=50)
         played = game.display.played[-1]
@@ -80,6 +91,7 @@ def describe_sounds():
 
     def describe_pools():
         def it_plays_one_of_a_pools_sounds(game):
+            game.machine.media.random.seed(2)   # the same picks every run
             for _ in range(20):
                 _base(game).play_sound("pings")
             expect(game).to_have_played("pings", times=20)

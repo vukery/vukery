@@ -99,6 +99,17 @@ def describe_audio():
         audio.frame()
         expect(list(audio._static)).to_equal(["boom"])
 
+    def it_picks_up_whats_already_playing_when_it_connects(pyglet, tmp_path):
+        state, clock = _connected(tmp_path)
+        clock.time = 10
+        state.apply({**_welcome(state), "tracks": {"sfx": {"volume": 0.5}},
+                     "playing": [{"type": "sound", "action": "play", "id": 7, "sound": "boom", "name": "boom",
+                                  "track": "sfx", "volume": 1.0, "loops": -1, "elapsed": 3.5}]})
+        audio = Audio(state)
+        audio.frame()
+        expect(audio.players[7].at).to_be_close_to(1.5)   # 3.5 s into a 2 s loop
+        expect(list(state.played)).to_equal([])           # not played again, as far as specs go
+
     def it_waits_for_the_engine(pyglet):
         audio = Audio(MediaState(audio=True))
         audio.frame()

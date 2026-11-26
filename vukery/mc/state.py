@@ -147,6 +147,9 @@ class MediaState:
                 self.current = message.get("player")
                 self.tracks = mapping(message.get("tracks"))
                 self.sound_files = mapping(message.get("sounds"))
+                if self.audio:   # start over with what's playing now (connected late, or the engine restarted)
+                    self.sound_messages.clear()
+                    self.sound_messages.extend(message.get("playing") or [])
                 self.connected = True
             case {"type": "show", "display": str() as display, "scene": scene}:
                 previous = self.showing.get(display)

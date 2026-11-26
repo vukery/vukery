@@ -17,6 +17,9 @@ sound's length, then plays what it says. It follows MPF's sound system:
   ``release`` seconds, starting ``release_point`` seconds before the sound
   ends (or when it's stopped).
 - **Volume:** the sound's, times its track's, times any ducking on that track.
+- **Joining late:** a play message with ``elapsed`` (from the welcome of a
+  media controller that connected after the sound started) starts it that
+  far in; one that's already over doesn't play.
 """
 
 import math
@@ -43,6 +46,7 @@ class Playing:
     started_at: float | None = None
     ends_at: float = math.inf     # when it stops by itself
     order: int = 0
+    elapsed: float = 0.0          # how long ago it started, when we joined late
 
     @property
     def first_pass(self) -> float:
@@ -99,7 +103,8 @@ class Mixer:
         sound = Playing(int(message["id"]), str(message["sound"]), str(message["track"]), float(message["volume"]),
                         int(message.get("priority", 0)), int(message.get("loops", 0)),
                         float(message.get("start_at", 0.0)), self.length(str(message["sound"])),
-                        message.get("ducking"), message.get("max_queue_time"), now, order=self._order)
+                        message.get("ducking"), message.get("max_queue_time"), now, order=self._order,
+                        elapsed=float(message.get("elapsed", 0.0)))
         self.update()
         on_track = [p for p in self.playing if p.track == sound.track]
         if len(on_track) < self._limit(sound.track):
@@ -137,6 +142,15 @@ class Mixer:
 
     # --- reading
 
+    def position(self, sound: Playing) -> float:
+        """Seconds into the file a playing sound is now (where to start a player that joins late)."""
+        if sound.started_at is None:
+            return 0.0
+        elapsed = self.now() - sound.started_at
+        if elapsed < sound.first_pass or not sound.length:
+            return sound.start_at + elapsed
+        return (elapsed - sound.first_pass) % sound.length
+
     def update(self) -> None:
         """Let sounds that are done end, drop queued sounds that waited too long, and start the next ones."""
         now = self.now()
@@ -171,15 +185,15 @@ class Mixer:
         return int(self.tracks.get(track, {}).get("simultaneous_sounds", 8))
 
     def _start(self, sound: Playing, now: float) -> None:
-        sound.started_at = now
+        sound.started_at = started = now - sound.elapsed
         if sound.length is not None and sound.loops >= 0:
-            sound.ends_at = now + sound.first_pass + sound.loops * sound.length
+            sound.ends_at = started + sound.first_pass + sound.loops * sound.length
         self.playing.append(sound)
         if sound.ducking:
             duck = sound.ducking
             release_at = sound.ends_at - float(duck.get("release_point", 0))
             self._ducks[sound.id] = _Duck(str(duck["target"]), float(duck.get("attenuation", 1.0)),
-                                          float(duck.get("attack", 0.01)), now, float(duck.get("release", 0.01)),
+                                          float(duck.get("attack", 0.01)), started, float(duck.get("release", 0.01)),
                                           release_at)
 
     def _end(self, sound: Playing, now: float) -> None:
