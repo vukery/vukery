@@ -103,3 +103,7 @@ vukery/platforms/fast/fast_port_detector.py
 tests/mpf_ported/fast/test_Fast.py
     from: mpf/tests/test_Fast.py @ 9ef886f4f263db44704f09a87bfd11229036ab5c (MPF 0.57.6)
     permalink: https://github.com/missionpinball/mpf/blob/9ef886f4f263db44704f09a87bfd11229036ab5c/mpf/tests/test_Fast.py
+
+tests/mpf_ported/fast/test_Fast_Nano.py
+    from: mpf/tests/test_Fast_Nano.py @ 9ef886f4f263db44704f09a87bfd11229036ab5c (MPF 0.57.6)
+    permalink: https://github.com/missionpinball/mpf/blob/9ef886f4f263db44704f09a87bfd11229036ab5c/mpf/tests/test_Fast_Nano.py
