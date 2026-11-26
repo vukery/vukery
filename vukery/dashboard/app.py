@@ -55,10 +55,12 @@ SWITCH_ON = (80, 210, 120)
 COIL_ON = (245, 95, 60)
 DROP = (255, 205, 60)
 
-FONT = 12               # points; text never resizes, the list scrolls instead
-SMALL = 10
-TITLE = 13
-LINE = 20               # line height of the game and devices text
+FONT = 18               # the list's text, in points; it never resizes: the list scrolls instead
+SMALL = 14              # the list's hints and place tags
+TITLE = 20              # the list's section titles
+PANE_TITLE = 13         # the other panes' titles
+LABEL = 11              # names shown on the backbox and playfield
+LINE = 30               # line height of the game and devices text
 SCROLLBAR = 10
 SPOT = 7                # radius of a placed switch or light
 HOLD = 0.15             # seconds a press waits, to tell a click from a drag
@@ -183,8 +185,10 @@ class DashboardView:
         rows, self.list_total = lay.list_rows(self.state.layout, LINE)
         self.scroll = min(self.scroll, lay.scroll_limit(self.list_total, self.list_area.h))
         top = self.list_area.y + self.list_area.h
-        self.list_hits = [(lay.Rect(self.list_area.x, top - row.top - row.height, self.list_area.w, row.height),
-                           row.name, row.kind) for row in rows if row.kind in ("switch", "light")]
+        width = self.list_area.w / lay.COLUMNS
+        self.list_hits = [(lay.Rect(self.list_area.x + row.column * width, top - row.top - row.height, width,
+                                    row.height), row.name, row.kind)
+                          for row in rows if row.kind in ("switch", "light")]
         switches = {s["name"] for s in self.state.layout.get("switches", [])}
         self.spot_hits = []
         for place in PLACES:
@@ -230,13 +234,14 @@ class DashboardView:
                             pyglet.graphics.Group(order=1, parent=scroll))
         self.keep: list[Any] = []
         self.marks: list[tuple[str, str, Any]] = []   # (name, kind, shape): recolored every frame
-        self.flippers: list[tuple[str, Any, Any]] = []
+        self.flippers: list[tuple[str, Any]] = []
         for name, rect in self.panes.items():
             self.keep.append(pyglet.shapes.Rectangle(rect.x, rect.y, rect.w, rect.h, color=PANE,
                                                      batch=self.batch, group=self.groups[0]))
             if name != "list":
                 title = name.capitalize() if name in PLACES else f"Display: {name}"
-                self.keep.append(self._label(title, rect.x + 10, rect.y + rect.h - 8, TITLE, DIM, anchor_y="top"))
+                self.keep.append(self._label(title, rect.x + 10, rect.y + rect.h - 8, PANE_TITLE, DIM,
+                                             anchor_y="top"))
         self._build_list()
         for place in PLACES:
             self._build_place(place)
@@ -257,39 +262,54 @@ class DashboardView:
         rows, _ = lay.list_rows(self.state.layout, LINE)
         marks_group, text_group = self.list_groups
         top = self.list_area.y + self.list_area.h
-        x = self.list_area.x + 10
+        column_width = self.list_area.w / lay.COLUMNS
         place_of = {name: place for place in PLACES for name in self.positions[place]}
+        self.game_labels: list[Any] = []
+        self.devices_labels: list[Any] = []
         hints = {"Switches": ("click: press · right-click: lock" if self.state.layout.get("switch_input")
                               else "from the hardware") + (" · drag to place" if self.can_change() else ""),
                  "Lights": "drag to place" if self.can_change() else ""}
         for row in rows:
             y = top - row.top - row.height  # the row's bottom, before scrolling
+            x = self.list_area.x + 10 + row.column * column_width
             match row.kind:
                 case "title":
                     self.keep.append(self._label(row.name, x - 4, y + 10, TITLE, TEXT, anchor_y="bottom",
                                                  group=text_group, bold=True))
                     if hint := hints.get(row.name):
-                        self.keep.append(self._label(hint, x + 80, y + 10, SMALL, DIM, anchor_y="bottom",
+                        self.keep.append(self._label(hint, x + TITLE * 6, y + 12, SMALL, DIM, anchor_y="bottom",
                                                      group=text_group))
                 case "switch" | "light" | "coil":
-                    cy = y + row.height / 2
-                    shape = (pyglet.shapes.Circle(x + 6, cy, 6, color=OFF, batch=self.batch, group=marks_group)
-                             if row.kind == "light" else
-                             pyglet.shapes.Rectangle(x, cy - 6, 12, 12, color=OFF, batch=self.batch,
+                    cy, size = y + row.height / 2, 18
+                    shape = (pyglet.shapes.Circle(x + size / 2, cy, size / 2, color=OFF, batch=self.batch,
+                                                  group=marks_group) if row.kind == "light" else
+                             pyglet.shapes.Rectangle(x, cy - size / 2, size, size, color=OFF, batch=self.batch,
                                                      group=marks_group))
                     self.marks.append((row.name, row.kind, shape))
-                    self.keep.append(self._label(row.name, x + 22, cy, FONT, TEXT, group=text_group))
-                    if row.name in place_of:
-                        self.keep.append(self._label(place_of[row.name], self.list_area.x + self.list_area.w - 80,
-                                                     cy, SMALL, DIM, group=text_group))
+                    tag = {"backbox": "bb", "playfield": "pf"}.get(place_of.get(row.name, ""), "")
+                    room = column_width - size - 24 - (SMALL * 2.4 if tag else 0)
+                    self._fitted_label(row.name, x + size + 10, cy, room, text_group)
+                    if tag:  # where it's placed: bb (backbox) or pf (playfield)
+                        self.keep.append(self._label(tag, x + column_width - SMALL * 2.6, cy, SMALL, DIM,
+                                                     group=text_group))
                 case "game":
-                    self.game_label = self._label("", x, y + row.height, FONT, TEXT, anchor_y="top",
-                                                  width=self.list_area.w - 20, group=text_group)
+                    self.game_labels.append(self._label("", x, y + row.height, FONT, TEXT, anchor_y="top",
+                                                        width=column_width - 20, group=text_group))
                 case "devices":
-                    self.devices_label = self._label("", x, y + row.height, FONT, TEXT, anchor_y="top",
-                                                     width=self.list_area.w - 20, group=text_group)
+                    self.devices_labels.append(self._label("", x, y + row.height, FONT, TEXT, anchor_y="top",
+                                                           width=column_width - 20, group=text_group))
                 case _:
                     pass
+
+    def _fitted_label(self, text: str, x: float, y: float, room: float, group: Any) -> None:
+        """A list name, shortened with … if it's wider than its column."""
+        label = self._label(text, x, y, FONT, TEXT, group=group)
+        if label.content_width > room:
+            short = text
+            while short and label.content_width > room:
+                short = short[:-1]
+                label.text = short + "…"
+        self.keep.append(label)
 
     def _build_place(self, place: str) -> None:
         import pyglet
@@ -299,18 +319,15 @@ class DashboardView:
         sprite = pyglet.sprite.Sprite(image, x=area.x, y=area.y, batch=self.batch, group=self.groups[1])
         sprite.scale_x, sprite.scale_y = area.w / image.width, area.h / image.height
         self.keep.append(sprite)
-        if place == "playfield":
-            length = area.w * 0.17
+        if place == "playfield":  # the art shows the flippers at rest; this one is drawn while its coil is on
+            length = area.w * lay.FLIPPER_LENGTH
             for name, (fx, fy, direction) in lay.flipper_spots(self.state.layout).items():
                 x, y = area.at(fx, fy)
-                rest = (x + direction * length * math.cos(0.45), y - length * math.sin(0.45))
-                up = (x + direction * length * math.cos(0.35), y + length * math.sin(0.35))
-                down_line = pyglet.shapes.Line(x, y, *rest, thickness=6, color=OFF, batch=self.batch,
-                                               group=self.groups[2])
-                up_line = pyglet.shapes.Line(x, y, *up, thickness=6, color=COIL_ON, batch=self.batch,
+                up = (x + direction * length * math.cos(lay.FLIPPER_UP), y + length * math.sin(lay.FLIPPER_UP))
+                up_line = pyglet.shapes.Line(x, y, *up, thickness=8, color=COIL_ON, batch=self.batch,
                                              group=self.groups[2])
                 coil = next(f["coil"] for f in self.state.layout["flippers"] if f["name"] == name)
-                self.flippers.append((coil, down_line, up_line))
+                self.flippers.append((coil, up_line))
         for rect, name, kind in self.spot_hits:
             if not area.contains(rect.x + rect.w / 2, rect.y + rect.h / 2) or name not in self.positions[place]:
                 continue
@@ -337,15 +354,16 @@ class DashboardView:
                     shape.color = _light_color(state.light(name))
                 case _:
                     shape.color = COIL_ON if state.coil_on(name) else OFF
-        for coil, down_line, up_line in self.flippers:
-            up = state.coil_on(coil)
-            down_line.visible, up_line.visible = not up, up
-        game = "\n".join(state.game_lines() if state.connected else ["waiting for the engine…"])
-        if self.game_label.text != game:
-            self.game_label.text = game
-        devices = "\n".join(state.device_lines()) or "none"
-        if self.devices_label.text != devices:
-            self.devices_label.text = devices
+        for coil, up_line in self.flippers:
+            up_line.visible = state.coil_on(coil)
+        waiting: tuple[list[str], list[str]] = (["waiting for the engine…"], [])
+        game = state.game_columns() if state.connected else waiting
+        devices = state.device_columns()
+        for labels, columns in ((self.game_labels, game), (self.devices_labels, devices)):
+            for label, lines in zip(labels, columns, strict=True):
+                text = "\n".join(lines)
+                if label.text != text:
+                    label.text = text
 
         self.window.switch_to()
         pyglet.gl.glClearColor(BACKGROUND[0] / 255, BACKGROUND[1] / 255, BACKGROUND[2] / 255, 1)
@@ -362,11 +380,11 @@ class DashboardView:
         if self.carried:
             c = self.carried
             pyglet.shapes.Circle(c.x, c.y, SPOT + 2, color=DROP).draw()
-            pyglet.text.Label(c.name, x=int(c.x + 14), y=int(c.y), font_size=SMALL, color=WHITE,
+            pyglet.text.Label(c.name, x=int(c.x + 14), y=int(c.y), font_size=LABEL, color=WHITE,
                               anchor_y="center").draw()
         elif self.hover:
             name, hx, hy = self.hover
-            label = pyglet.text.Label(name, x=int(hx), y=int(hy + SPOT + 6), font_size=SMALL, color=WHITE,
+            label = pyglet.text.Label(name, x=int(hx), y=int(hy + SPOT + 6), font_size=LABEL, color=WHITE,
                                       anchor_x="center", anchor_y="bottom")
             pyglet.shapes.Rectangle(label.x - label.content_width / 2 - 4, label.y - 2, label.content_width + 8,
                                     label.content_height + 4, color=(20, 20, 24)).draw()

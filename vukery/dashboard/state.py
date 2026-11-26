@@ -76,3 +76,15 @@ class DashboardState(MediaState):
         lines += ["", "Modes (priority)"]
         lines += [f"  {name}  {priority}" for name, priority in self.devices.get("modes", [])]
         return lines
+
+    def game_columns(self) -> tuple[list[str], list[str]]:
+        """The game section in two columns: whose turn and every score; the running modes."""
+        lines = self.game_lines()
+        split = lines.index("")
+        return lines[:split], lines[split + 1:]
+
+    def device_columns(self) -> tuple[list[str], list[str]]:
+        """The devices section in two columns, the left one filling first."""
+        lines = self.device_lines() or ["none"]
+        half = -(-len(lines) // 2)
+        return lines[:half], lines[half:]
