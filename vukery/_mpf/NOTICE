@@ -51,3 +51,7 @@ Imported files (appended by scripts/import_mpf.py)
 vukery/platforms/fast/communicators/base.py
     from: mpf/platforms/fast/communicators/base.py @ 9ef886f4f263db44704f09a87bfd11229036ab5c (MPF 0.57.6)
     permalink: https://github.com/missionpinball/mpf/blob/9ef886f4f263db44704f09a87bfd11229036ab5c/mpf/platforms/fast/communicators/base.py
+
+vukery/platforms/fast/communicators/net_neuron.py
+    from: mpf/platforms/fast/communicators/net_neuron.py @ 9ef886f4f263db44704f09a87bfd11229036ab5c (MPF 0.57.6)
+    permalink: https://github.com/missionpinball/mpf/blob/9ef886f4f263db44704f09a87bfd11229036ab5c/mpf/platforms/fast/communicators/net_neuron.py
