@@ -15,7 +15,7 @@
 ``VUK_LOG`` sets one level for everything on the fly, overriding the whole
 ``logging:`` config (like Rails' log level)::
 
-    VUK_LOG=debug vuk run
+    VUK_LOG=debug vuk it
 
 Levels: debug, info, warning, error. Per-component levels only come from the
 ``logging:`` config section::

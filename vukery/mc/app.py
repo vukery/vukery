@@ -1,6 +1,6 @@
 """The default media controller: pyglet windows, one per display, fed by the engine.
 
-Runs as its own process (``vuk mc``), started by ``vuk run``. It connects to
+Runs as its own process (``vuk mc``), started by ``vuk it``. It connects to
 the engine, retrying until the engine is up, and draws what ``MediaState``
 says. pyglet is only imported here, so the engine never needs it.
 """

@@ -1,7 +1,7 @@
 # Logging
 
 !!! note "0.0.x"
-    Logging is built, tested, and started by `vuk run`.
+    Logging is built, tested, and started by `vuk it`.
 
 vukery's logs look like MPF's, but each environment writes to one file
 instead of a new one every run, and every component can be switched on or
@@ -65,7 +65,7 @@ More names are added as more of vukery is built.
 `logging:` config, components included:
 
 ```console
-VUK_LOG=debug vuk run
+VUK_LOG=debug vuk it
 ```
 
 It accepts `debug`, `info`, `warning` or `error`. To change one component,

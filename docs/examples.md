@@ -19,7 +19,7 @@ taking turns.
 
 ```console
 cd examples/basic
-uv run vuk run          # then type s_start, s_target, s_left_sling…
+uv run vuk it          # then type s_start, s_target, s_left_sling…
 uv run pytest           # the specs
 ```
 
@@ -45,7 +45,7 @@ two players taking turns.
 
 ```console
 cd examples/display
-uv run vuk run          # opens the display window; type s_start, s_target…
+uv run vuk it          # opens the display window; type s_start, s_target…
 uv run pytest
 ```
 

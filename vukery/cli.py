@@ -31,7 +31,7 @@ def _parser() -> argparse.ArgumentParser:
                         help="the game folder (default: the current folder)")
     commands = parser.add_subparsers(dest="command", metavar="COMMAND")
 
-    run = commands.add_parser("run", help="run the game (MPF: mpf, mpf game, mpf both)")
+    run = commands.add_parser("it", help="run the game in this folder (MPF: mpf, mpf game, mpf both)")
     run.add_argument("--hardware", action="store_true", help="use real hardware in development")
     run.add_argument("--no-mc", action="store_true", help="don't start the media controllers")
     run.add_argument("--no-sound", action="store_true", help="run without audio")
@@ -96,7 +96,7 @@ def _run(args: argparse.Namespace) -> int:
         setup_logging(logging_config, config.environment, log_dir)
         machine = Machine(config, hardware=args.hardware)
     except VukeryError as e:
-        print(f"vuk run: {e}", file=sys.stderr)
+        print(f"vuk it: {e}", file=sys.stderr)
         return 1
 
     loop = machine.loop
@@ -132,7 +132,7 @@ def _run(args: argparse.Namespace) -> int:
     except KeyboardInterrupt:
         machine.stop("Ctrl-C")
     except VukeryError as e:
-        print(f"vuk run: {e}", file=sys.stderr)
+        print(f"vuk it: {e}", file=sys.stderr)
         return 1
     finally:
         _shut_down(loop)
@@ -203,7 +203,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             return 0
         case "doctor":
             return _doctor()
-        case "run":
+        case "it":
             return _run(args)
         case "mc":
             return _mc(args)

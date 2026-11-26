@@ -186,7 +186,7 @@ Every switch posts `<switch>_active` and `<switch>_inactive`. Modes post
 
 ```console
 cd my_game
-uv run vuk run
+uv run vuk it
 ```
 
 In development the machine is simulated. Type a switch name and press Enter

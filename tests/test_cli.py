@@ -12,19 +12,23 @@ def describe_vuk():
 
     def it_has_no_env_flag():  # the environment comes from VUK_ENV
         with pytest.raises(SystemExit):
-            main(["--env", "production", "run"])
+            main(["--env", "production", "it"])
 
     def it_has_no_log_flag():  # log levels come from VUK_LOG
         with pytest.raises(SystemExit):
-            main(["--log", "fast=debug", "run"])
+            main(["--log", "fast=debug", "it"])
 
     def it_runs_doctor(capsys):
         assert main(["doctor"]) == 0
         assert "Python" in capsys.readouterr().out
 
     def it_explains_a_folder_that_isnt_a_game(capsys, tmp_path):
-        assert main(["-C", str(tmp_path), "run"]) == 1
+        assert main(["-C", str(tmp_path), "it"]) == 1
         assert "has no config/ folder" in capsys.readouterr().err
+
+    def it_runs_a_game_with_vuk_it_not_run():
+        with pytest.raises(SystemExit):
+            main(["run"])
 
     def it_says_when_a_command_isnt_built_yet(capsys):
         assert main(["hardware", "scan"]) == 2

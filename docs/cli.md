@@ -4,10 +4,14 @@
 each one does one thing.
 
 ```console
+cd my_game
+vuk it          # run the game in this folder
+vuk doctor      # check your setup
 vuk --help
-vuk --version
-vuk doctor
 ```
+
+`vuk it` runs the game whose `config/` folder is in the current folder (or
+in the folder given with `-C DIR`).
 
 ## Environment variables
 
@@ -20,8 +24,8 @@ not command-line flags.
 | `VUK_LOG` | One log level for everything (see [Logging](logging.md)) | `debug`, `info`, `warning`, `error` | from the `logging:` config |
 
 ```console
-VUK_ENV=production vuk run
-VUK_LOG=debug vuk run
+VUK_ENV=production vuk it
+VUK_LOG=debug vuk it
 ```
 
 ### Environments
@@ -36,7 +40,7 @@ VUK_LOG=debug vuk run
 | Command | Status | What it does | MPF equivalent |
 |---|---|---|---|
 | `vuk doctor` | **works** | Shows versions and checks for FFmpeg | `mpf diagnosis` |
-| `vuk run` | **works** in development | Runs the game and a media controller per display. In development, type a switch name to tap it. | `mpf`, `mpf game`, `mpf both` |
+| `vuk it` | **works** in development | Runs the game and a media controller per display. In development, type a switch name to tap it. | `mpf`, `mpf game`, `mpf both` |
 | `vuk mc` | **works** | Runs a media controller only (`--display NAME`) | `mpf mc` |
 | `vuk view` | planned | Playfield GUI: lights, switches, coils | `mpf monitor` |
 | `vuk top` | planned | Terminal dashboard of a running game; works over SSH | `mpf -t` |
@@ -53,7 +57,7 @@ VUK_LOG=debug vuk run
 
 A command that isn't built yet says so and exits with code 2.
 
-### `vuk run` options
+### `vuk it` options
 
 | Option | Status | What it does | MPF flag |
 |---|---|---|---|

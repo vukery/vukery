@@ -18,8 +18,8 @@ displays:
     height: 480
 ```
 
-`vuk run` starts one media controller window per display. To start them
-yourself, run `vuk run --no-mc` and then `vuk mc --display main`.
+`vuk it` starts one media controller window per display. To start them
+yourself, run `vuk it --no-mc` and then `vuk mc --display main`.
 
 ## Slides (Python)
 
