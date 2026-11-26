@@ -53,7 +53,7 @@ VUK_LOG=debug vuk us
 
 | Command | Status | What it does | MPF equivalent |
 |---|---|---|---|
-| `vuk doctor` | **works** | Shows versions and checks for FFmpeg | `mpf diagnosis` |
+| `vuk doctor` | **works** | Shows versions, where vukery was installed from, pyglet and FFmpeg | `mpf diagnosis` |
 | `vuk it NAME` | **works** | Creates a machine folder, ready to play and test | `mpf create_config` |
 | `vuk me` | **works** on the simulated platforms | Runs the game with the [dashboard](dashboard.md), in a window | `mpf both` plus `mpf monitor` |
 | `vuk you` (or `vuk test`) | **works** | Runs the specs with pytest, always in the test environment, and measures coverage (`--no-cov` turns it off). In a machine folder it covers `modes/`; in vukery itself, the `vukery/` package. Extra arguments go to pytest (`vuk you -k scoring`). | `mpf test` |

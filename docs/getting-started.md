@@ -20,8 +20,15 @@ uv tool install "vukery[mc] @ git+https://github.com/vukery/vukery"
 vuk doctor
 ```
 
-`vuk doctor` prints the vukery, Python and platform versions, and whether
-FFmpeg was found.
+`vuk doctor` prints:
+- the vukery version, and where it was installed from (git and the commit,
+  or a folder);
+- the Python and platform versions;
+- pyglet's version, and whether pyglet found FFmpeg's libraries (text scenes
+  don't need them; video and sound will).
+
+To update, run `uv tool upgrade vukery`. To replace an install from somewhere
+else (a local checkout, say), run the install again with `--force`.
 
 ## Make a machine: `vuk it`
 

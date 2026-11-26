@@ -56,6 +56,25 @@ def describe_vuk():
         expect(main(["doctor"])).to_equal(0)
         expect(capsys.readouterr().out).to_contain("Python")
 
+    @pytest.mark.parametrize(("direct_url", "says"), [
+        ('{"url": "https://github.com/vukery/vukery", "vcs_info": {"vcs": "git", "commit_id": "62a2e29abc"}}',
+         "git https://github.com/vukery/vukery at 62a2e29"),
+        ('{"url": "file:///src/vukery", "dir_info": {"editable": true}}', "/src/vukery (editable"),
+        ('{"url": "file:///src/vukery", "dir_info": {}}', "/src/vukery"),
+        (None, "a package index"),
+    ])
+    def it_says_where_vukery_was_installed_from(monkeypatch, direct_url, says):
+        import importlib.metadata
+
+        from vukery.cli import installed_from
+
+        class Installed:
+            def read_text(self, name):
+                return direct_url
+
+        monkeypatch.setattr(importlib.metadata, "distribution", lambda name: Installed())
+        expect(installed_from()).to_contain(says)
+
     def it_explains_a_folder_that_isnt_a_game(capsys, tmp_path):
         expect(main(["-C", str(tmp_path), "us"])).to_equal(1)
         expect(capsys.readouterr().err).to_contain("has no config/ folder")
