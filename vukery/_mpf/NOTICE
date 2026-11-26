@@ -59,3 +59,7 @@ vukery/platforms/fast/communicators/net_neuron.py
 vukery/platforms/fast/communicators/net_nano.py
     from: mpf/platforms/fast/communicators/net_nano.py @ 9ef886f4f263db44704f09a87bfd11229036ab5c (MPF 0.57.6)
     permalink: https://github.com/missionpinball/mpf/blob/9ef886f4f263db44704f09a87bfd11229036ab5c/mpf/platforms/fast/communicators/net_nano.py
+
+vukery/platforms/fast/communicators/rgb.py
+    from: mpf/platforms/fast/communicators/rgb.py @ 9ef886f4f263db44704f09a87bfd11229036ab5c (MPF 0.57.6)
+    permalink: https://github.com/missionpinball/mpf/blob/9ef886f4f263db44704f09a87bfd11229036ab5c/mpf/platforms/fast/communicators/rgb.py
