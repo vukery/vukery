@@ -14,6 +14,12 @@ Check your version with `vuk --version`.
   empty until that player exists.
 - **Fixed:** `vuk me` clipped its scrolling list with the wrong scale on
   HiDPI screens.
+- **Plunger lanes:** a ball device with `mechanical_eject: true`, and
+  `eject_targets:` on the trough. On the simulated platforms an eject moves
+  the ball into its target, as on MPF's smart_virtual platform: after
+  pressing start, the ball sits in the shooter lane until you shoot it
+  (click its switch in `vuk me`). Balls start only in troughs, and only a
+  device tagged `drain` reports drains.
 
 ## 0.0.19 (2026-11-26)
 
