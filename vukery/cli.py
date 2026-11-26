@@ -6,6 +6,7 @@ with one verb per concept and options instead of combined command names.
 
 import argparse
 import platform
+import shutil
 import subprocess
 import sys
 from collections.abc import Sequence
@@ -100,13 +101,16 @@ def _health() -> int:
         print("pyglet: not installed. Displays and vuk me need it: install vukery[mc]")
         return 0
     print(f"pyglet {pyglet.version}")
+    command = shutil.which("ffmpeg")
+    print(f"ffmpeg command: {command} (decodes sounds other than .wav)" if command else
+          "ffmpeg command: not found. Only .wav sounds will play (macOS: brew install ffmpeg; Debian: apt install ffmpeg)")
     pyglet.options["shadow_window"] = False  # no window: this may run where there's no screen
     from pyglet.media.codecs import have_ffmpeg
 
     if have_ffmpeg():
-        print("FFmpeg libraries: found (pyglet plays sound and video with them)")
+        print("FFmpeg libraries: found (for video, later)")
     else:
-        print("FFmpeg libraries: not found. Scenes and .wav sounds work; .ogg, .mp3 and other sounds need them "
+        print("FFmpeg libraries: not found. Only video will need them "
               "(macOS: brew install ffmpeg; Debian: apt install ffmpeg)")
     return 0
 

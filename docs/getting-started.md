@@ -24,9 +24,10 @@ vuk health
 - the vukery version, and where it was installed from (git and the commit,
   or a folder);
 - the Python and platform versions;
-- pyglet's version, and whether pyglet found FFmpeg's libraries (scenes and
-  `.wav` sounds don't need them; `.ogg`, `.mp3` and the other sound files do,
-  and so will video).
+- pyglet's version;
+- whether the `ffmpeg` command is there: vukery decodes every sound but `.wav`
+  with it;
+- whether pyglet found FFmpeg's libraries (only video will need them).
 
 To update, run `uv tool upgrade vukery`. To replace an install from somewhere
 else (a local checkout, say), run the install again with `--force`.

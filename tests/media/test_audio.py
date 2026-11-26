@@ -1,5 +1,6 @@
 """The audio output, with a stand-in for pyglet: what it starts, how loud, and what it stops."""
 
+import importlib.machinery
 import sys
 import types
 
@@ -40,6 +41,7 @@ def pyglet(monkeypatch):
     media.Player, media.load, media.exceptions = Player, Source, exceptions
     fake.media = media
     for name, module in (("pyglet", fake), ("pyglet.media", media), ("pyglet.media.exceptions", exceptions)):
+        module.__spec__ = importlib.machinery.ModuleSpec(name, None)   # so tools that inspect modules don't trip
         monkeypatch.setitem(sys.modules, name, module)
     return fake
 
@@ -53,11 +55,11 @@ class Clock:
 
 
 def _connected(tmp_path):
-    (tmp_path / "boom.ogg").write_bytes(b"x")
+    (tmp_path / "boom.wav").write_bytes(b"x")
     clock = Clock()
     state = MediaState(now=clock, audio=True)
     state.apply({"type": "welcome", "tracks": {"sfx": {"volume": 0.5, "simultaneous_sounds": 8}},
-                 "sounds": {"boom": {"file": str(tmp_path / "boom.ogg"), "track": "sfx"}}})
+                 "sounds": {"boom": {"file": str(tmp_path / "boom.wav"), "track": "sfx"}}})
     return state, clock
 
 
@@ -67,7 +69,7 @@ def _welcome(state):
 
 def _play(state, sound_id, **options):
     state.apply({"type": "sound", "action": "play", "id": sound_id, "sound": "boom", "name": "boom", "track": "sfx",
-                 "volume": 0.8, **options})
+                 "volume": 0.8} | options)
 
 
 def describe_audio():
@@ -109,6 +111,20 @@ def describe_audio():
         audio.frame()
         expect(audio.players[7].at).to_be_close_to(1.5)   # 3.5 s into a 2 s loop
         expect(list(state.played)).to_equal([])           # not played again, as far as specs go
+
+    def it_skips_a_sound_it_cant_decode_and_plays_the_rest(pyglet, tmp_path, monkeypatch):
+        from vukery.mc import decode
+
+        state, _ = _connected(tmp_path)
+        (tmp_path / "song.ogg").write_bytes(b"x")
+        state.sound_files["song"] = {"file": str(tmp_path / "song.ogg"), "track": "sfx"}
+        monkeypatch.setattr(decode.shutil, "which", lambda _name: None)   # no ffmpeg command
+        audio = Audio(state)
+        _play(state, 1, sound="song")
+        _play(state, 2)
+        audio.frame()
+        expect(sorted(audio.players)).to_equal([2])   # the .wav still plays
+        expect(audio.broken).to_be_false()
 
     def it_waits_for_the_engine(pyglet):
         audio = Audio(MediaState(audio=True))
