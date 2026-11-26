@@ -1,3 +1,11 @@
+"""Small hex and PWM helpers used by hardware platforms (copied from MPF's Util)."""
+
+import asyncio
+
+
+class Util:
+    """Static helpers. Each method keeps its MPF provenance comment."""
+
 # Copied from the Mission Pinball Framework (MPF) 0.57.6:
 # https://github.com/missionpinball/mpf/blob/9ef886f4f263db44704f09a87bfd11229036ab5c/mpf/core/utility_functions.py#L293-L310
 # Copyright (c) The Mission Pinball Framework team and other contributors.
