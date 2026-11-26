@@ -1,4 +1,6 @@
-# vukery
+# Get VUKed!
+
+An AI-assisted total vukery of a pinball framework with a different mission.
 
 *Pronounced "vuckery."*
 
@@ -18,7 +20,9 @@ This framework will not be the answer for all pinball projects, but if
 successful, I hope it will make building simpler pinball games easier with an
 emphasis on modular design, unit testing and a conventional deployment plan.
 
-> **Status:** planning and early trials. Nothing here is usable yet.
+> **Status: 0.0.x, early.** A game engine, scoring, displays and the FAST
+> Nano are in, with three example games. Not yet tried on a real machine.
+> See the [status page](https://github.com/vukery/vukery/blob/main/docs/status.md).
 
 ## The opinions
 
@@ -52,6 +56,13 @@ with CobraPin to follow.
 
 The docs will be published at [vukery.com](https://vukery.com), built
 from the `docs/` folder, once there's something to document.
+
+## Contributing
+
+vukery is an AI-driven project. You can open pull requests, but they'll
+probably not be merged. Issues (bugs, questions, ideas) are welcome. Want it
+different? **vuk yourself**: fork it, it's MIT licensed. See
+[CONTRIBUTING](https://github.com/vukery/vukery/blob/main/CONTRIBUTING.md).
 
 ## Credits and license
 
