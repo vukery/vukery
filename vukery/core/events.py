@@ -20,9 +20,11 @@ The rules:
      ``queue.wait()`` to pause the rest until it calls ``queue.clear()``.
 5. **Callbacks run after the queue empties, newest first** (MPF pops them
    off a stack).
-6. **Blocking:** a handler that returns ``BLOCK`` stops lower-priority
-   handlers of that event that were added with ``blockable=True``. That's
-   MPF's ``|block``.
+6. **Blocking (MPF's ``|block`` and "blocking facilities"):** a handler
+   can be added with a ``facility`` name. A handler that returns
+   ``Block(name)`` stops lower-priority handlers of the same event in that
+   facility; ``BLOCK`` (``Block("all")``) stops lower-priority handlers in
+   every facility. Handlers without a facility always run.
 """
 
 import asyncio
@@ -37,14 +39,17 @@ from vukery.core.log import get_logger
 log = get_logger("events")
 
 
+@dataclass(frozen=True)
 class Block:
-    """Returned by a handler to stop lower-priority, blockable handlers of the same event."""
+    """Returned by a handler: stop lower-priority handlers of this event in ``facility``."""
+
+    facility: str = "all"
 
     def __repr__(self) -> str:
-        return "BLOCK"
+        return "BLOCK" if self.facility == "all" else f"Block({self.facility!r})"
 
 
-BLOCK = Block()
+BLOCK = Block()  # stops lower-priority handlers in every facility
 
 
 class EventHandlerError(Exception):
@@ -56,7 +61,7 @@ class Handler:
     event: str
     callback: Callable[..., Any]
     priority: int
-    blockable: bool
+    facility: str | None  # blocking facility; None: never blocked
     kwargs: dict[str, Any]
     key: int
 
@@ -114,9 +119,12 @@ class EventManager:
     # --- handlers
 
     def add_handler(self, event: str, callback: Callable[..., Any], priority: int = 1,
-                    blockable: bool = False, **kwargs: Any) -> Handler:
-        """Run ``callback(**event_kwargs)`` when ``event`` is posted. Returns a handle for removal."""
-        handler = Handler(event, callback, priority, blockable, kwargs, next(self._keys))
+                    facility: str | None = None, **kwargs: Any) -> Handler:
+        """Run ``callback(**event_kwargs)`` when ``event`` is posted. Returns a handle for removal.
+
+        ``facility``: the blocking facility this handler belongs to (see rule 6).
+        """
+        handler = Handler(event, callback, priority, facility, kwargs, next(self._keys))
         handlers = self.handlers.setdefault(event, [])
         handlers.append(handler)
         handlers.sort(key=lambda h: h.priority, reverse=True)  # stable: ties keep insertion order
@@ -232,10 +240,12 @@ class EventManager:
 
     def _run_handlers(self, posted: _Posted) -> Any:
         kwargs = posted.kwargs
-        blocked_below: int | None = None
+        blocked: dict[str, int] = {}  # facility -> priority below which handlers are skipped
         result: Any = None
         for handler in list(self.handlers.get(posted.event, [])):
-            if handler.blockable and blocked_below is not None and handler.priority < blocked_below:
+            if handler.facility is not None and (
+                    handler.priority < blocked.get("all", handler.priority)
+                    or handler.priority < blocked.get(handler.facility, handler.priority)):
                 continue
             merged = {**kwargs, **handler.kwargs}
             try:
@@ -249,9 +259,8 @@ class EventManager:
                     changes: dict[str, Any] = outcome  # type: ignore[assignment]
                     kwargs.update(changes)
                     result = kwargs
-                case _, Block():
-                    blocked_below = handler.priority if blocked_below is None else max(blocked_below,
-                                                                                         handler.priority)
+                case _, Block(facility=facility):
+                    blocked[facility] = max(blocked.get(facility, handler.priority), handler.priority)
                 case _:
                     pass
         return True if posted.kind == "boolean" else result

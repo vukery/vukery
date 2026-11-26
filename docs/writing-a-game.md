@@ -82,77 +82,30 @@ points you to modes if your config has `variable_player`, `event_player`,
 
 ## Modes (Python)
 
-Game logic lives in modes. A mode is a class that extends `Mode`, in
-`modes/<name>/<name>.py`, named for what it does:
+Game logic lives in modes: Python classes in `modes/<name>/<name>.py`.
 
 ```python
-from vukery import BLOCK, Mode, on
+from vukery import Mode
 
 
 class Base(Mode):
-    priority = 100
-    start_on = "ball_started"
+    priority = 100               # higher runs first, and can block lower
+    start_on = "ball_started"    # starts with every ball
 
-    @on.switch("s_target")
-    def target(self):
-        self.score(1000)
-
-    @on.switch("s_left_sling")
-    @on.switch("s_right_sling")
-    def sling(self):
-        self.score(10)
+    scoring = {                  # MPF: variable_player
+        "s_target": 1000,
+        "s_left_sling": 10,
+    }
 ```
 
-### Mode settings
-
-| Setting | Default | What it does | MPF |
-|---|---|---|---|
-| `priority` | `100` | Higher runs first; a mode's handlers run at its priority | `mode: priority` |
-| `start_on` | none | Event name(s) that start the mode | `start_events` |
-| `stop_on` | none | Event name(s) that stop it | `stop_events` |
-| `game_mode` | `True` | Only runs during a game, and stops when it ends | `game_mode` |
-| `stop_on_ball_end` | `True` | Stops at the end of each ball | `stop_on_ball_end` |
-| `name` | from the class | `HoleScore` → `hole_score` | the mode folder name |
-
-For code that runs the whole time the machine is on, set `game_mode = False`
-and `start_on = "reset_complete"`.
-
-### Reacting to things
-
-| Decorator | Runs when |
-|---|---|
-| `@on.switch("s_target")` | the switch goes active |
-| `@on.switch("s_target", state="inactive")` | it goes inactive |
-| `@on.switch("s_hole", hold=2)` | it has stayed active for 2 seconds |
-| `@on.event("ball_started")` | the event is posted; the method gets its arguments |
-
-**Blocking (MPF's `|block`).** Return `BLOCK` from a handler to stop
-lower-priority modes from handling the same switch hit or event.
-
-### What a mode can do
-
-| | |
-|---|---|
-| `self.score(points)` | Add to the current player's score |
-| `self.player` | The current player: `self.player.score`, `self.player.ball`, your own variables |
-| `self.post("event_name", **args)` | Post an event |
-| `self.delay("name", seconds, callback)` | Call later; cancelled when the mode stops |
-| `self.cancel_delay("name")` | |
-| `mode_start()` / `mode_stop()` | Override to run code as the mode starts or stops |
-| `self.machine` | Everything else: `switches`, `coils`, `lights`, `events`, `game` |
-
-### Player variables
-
-Set any attribute on a player and it becomes a player variable:
-`self.player.ramps += 1`. Each change posts `player_<name>` with `value`,
-`prev_value`, `change` and `player_num`, as in MPF. Starting values can go in
-config:
-
-```yaml
-player_vars:
-  ramps:
-    initial_value: 0
-```
+The [Modes](modes.md) page covers everything about them:
+- settings and priority;
+- scoring tables;
+- blocking;
+- score adjusters (multipliers);
+- handlers and player variables;
+- the lifecycle;
+- a "coming from MPF" table.
 
 ## Events
 
@@ -195,11 +148,5 @@ to tap it, for example `s_start` and then `s_target`. Logs go to
 
 ## Coming from MPF
 
-| MPF | vukery |
-|---|---|
-| `mode:` YAML, plus `code:` | A `Mode` class in `modes/<name>/<name>.py` |
-| `variable_player: s_target_active: score: 1000` | `@on.switch("s_target")` and `self.score(1000)` |
-| `score: 1000\|block` | `return BLOCK` |
-| `event_player` | `self.post(...)` |
-| conditional events (`event{condition}`) | an `if` in the handler |
-| `CustomCode` | a `Mode` with `game_mode = False` |
+The section names in config are MPF's. Game logic moves from YAML to modes:
+see [Modes: Coming from MPF](modes.md#coming-from-mpf).

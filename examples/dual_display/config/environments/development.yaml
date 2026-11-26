@@ -1,3 +1,5 @@
-# development: the simulated machine (balls leave the trough by themselves)
+# Merged over config/machine.yaml when VUK_ENV=development (the default for `vuk it`).
+# development runs on a simulated machine: troughs start full, and an ejected
+# ball leaves the trough by itself. Type switch names to "hit" them.
 logging:
-  level: info
+  level: info        # VUK_LOG=debug overrides this for one run

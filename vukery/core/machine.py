@@ -168,6 +168,13 @@ class Machine(Logs):
         self.platform.stop()
         self.events.stop()
 
+    def adjust_score(self, points: float, source: str | None) -> int:
+        """Pass points through every running mode's ``adjust_score``, highest priority first."""
+        for mode in self.modes.running():
+            if type(mode).adjust_score is not Mode.adjust_score:
+                points = mode.adjust_score(points, source)
+        return round(points)
+
     def trough(self) -> Trough | None:
         for device in self.ball_devices.values():
             if "trough" in device.config.tags:

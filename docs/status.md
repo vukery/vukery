@@ -7,6 +7,7 @@ rest of the docs never describe something as if it already works.
 |---|---|---|
 | `vuk` command | `vuk it` (development) and `vuk doctor` work; the others say they aren't built yet. | [The vuk command](cli.md) |
 | Game engine | Built: MPF's event rules, modes, the game loop (players, balls, turns, extra balls), attract, switches, player variables, config with environments. Runs on the simulated platforms. | [Writing a game](writing-a-game.md) |
+| Modes and scoring | Built: scoring tables (`Score`, `Award`, functions), MPF's per-variable scoring blocks, `BLOCK`, score adjusters (multipliers). | [Modes](modes.md) |
 | Testing games | Built: RSpec-style specs on virtual time with `GameRig` and `expect`. | [Testing a game](testing.md) |
 | Examples | `examples/basic` (no media), `examples/display` (one display) and `examples/dual_display` (two displays). | [Examples](examples.md) |
 | Displays and slides | Built: text slides on any number of displays, slide priorities, live player values, the pyglet media controller, the media protocol. Images, video, sound and animations come later. | [Displays and slides](displays.md) |

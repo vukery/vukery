@@ -14,6 +14,7 @@ nav:
   - Status (0.0.x): status.md
   - Getting started: getting-started.md
   - Writing a game: writing-a-game.md
+  - Modes: modes.md
   - Displays and slides: displays.md
   - Testing a game: testing.md
   - Examples: examples.md

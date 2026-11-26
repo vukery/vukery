@@ -1,12 +1,13 @@
 # examples/display: examples/basic plus one display showing the score.
 #
-# A trough with three balls, a start button, two flippers, two slingshots
-# and one target. Section and setting names are MPF's.
+# YAML describes the *machine*: what's wired where. Game logic (scoring,
+# what happens when) lives in Python, in modes/. Section and setting names
+# are MPF's, so an MPF machine config mostly carries over as is.
 
 switches:
   s_start:
-    number: "0"
-    tags: start
+    number: "0"        # the hardware number; on the simulated platforms any unique string works
+    tags: start        # the start button: vukery's attract and game modes listen for this tag
   s_trough1:
     number: "1"
   s_trough2:
@@ -27,11 +28,11 @@ switches:
 coils:
   c_trough_eject:
     number: "0"
-    default_pulse_ms: 20
+    default_pulse_ms: 20      # how long the coil fires (vukery enforces its limits)
   c_left_flipper:
     number: "1"
     default_pulse_ms: 30
-    default_hold_power: 0.125
+    default_hold_power: 0.125 # flippers hold at low power while the button is held
   c_right_flipper:
     number: "2"
     default_pulse_ms: 30
@@ -43,19 +44,19 @@ coils:
 
 ball_devices:
   bd_trough:
-    ball_switches: s_trough1, s_trough2, s_trough3
-    eject_coil: c_trough_eject
-    tags: trough, home, drain
+    ball_switches: s_trough1, s_trough2, s_trough3  # one switch per ball: 3 balls in the machine
+    eject_coil: c_trough_eject                      # fired to serve a ball
+    tags: trough, home, drain   # trough: where balls drain to; home: a game can only start when it's full
 
-flippers:
+flippers:                       # hardware rules: the controller fires these itself, instantly
   left_flipper:
     main_coil: c_left_flipper
-    activation_switch: s_left_flipper
+    activation_switch: s_left_flipper   # on at ball_started, off at ball_will_end (MPF's defaults)
   right_flipper:
     main_coil: c_right_flipper
     activation_switch: s_right_flipper
 
-autofire_coils:
+autofire_coils:                 # slingshots and pop bumpers: the switch fires the coil
   left_sling:
     coil: c_left_sling
     switch: s_left_sling
@@ -66,11 +67,11 @@ autofire_coils:
 game:
   balls_per_game: 3
 
-modes:
-  - start_screen
-  - base
+modes:                          # the game's own modes, from modes/<name>/<name>.py
+  - start_screen                # "PRESS START" between games
+  - base                        # scoring and the score display
 
-displays:
-  main:
+displays:                       # having this section is what loads a media controller
+  main:                         # one media controller window per display
     width: 800
     height: 480

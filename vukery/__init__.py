@@ -2,12 +2,13 @@
 
 Game code needs only this::
 
-    from vukery import BLOCK, Mode, on
+    from vukery import BLOCK, Award, Mode, Score, on
 """
 
 from vukery.core.events import BLOCK
 from vukery.core.modes import Mode, on
+from vukery.core.scoring import Award, Score
 
-__version__ = "0.0.3"
+__version__ = "0.0.4"
 
-__all__ = ["BLOCK", "Mode", "__version__", "on"]
+__all__ = ["BLOCK", "Award", "Mode", "Score", "__version__", "on"]
