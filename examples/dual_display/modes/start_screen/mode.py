@@ -1,7 +1,8 @@
 """Between games: a title on the main display, "press start" on the apron."""
 
 from vukery import Mode
-from vukery.media.slides import Slide, Text
+
+from .slides import SLIDES
 
 
 class StartScreen(Mode):
@@ -10,11 +11,7 @@ class StartScreen(Mode):
     stop_on = "game_start"
     game_mode = False         # runs outside games
     stop_on_ball_end = False
-
-    slides = {
-        "title": Slide(Text("vukery", y=0.5, size=0.25, color="ffcc00")),
-        "press_start": Slide(Text("PRESS START", y=0.5, size=0.2), background="202060"),
-    }
+    slides = SLIDES
 
     def mode_start(self, **_):
         # display= picks the screen (MPF: slide_player target:). Each display keeps

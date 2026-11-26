@@ -1,7 +1,7 @@
 # Modes
 
 Game logic lives in modes. A mode is a Python class that extends `Mode`, in
-`modes/<name>/<name>.py`, listed under `modes:` in the config. Name it for
+`modes/<name>/mode.py`, listed under `modes:` in the config. Name it for
 what it does (`HoleScore`, `Frenzy`). vukery has no `CustomCode`: anything
 that hooks into the machine is a mode.
 
@@ -24,6 +24,41 @@ class Frenzy(Mode):
 
 The complete, commented example is `examples/basic` (its `base` and `frenzy`
 modes).
+
+## A mode's files
+
+A mode is a folder. Its main file is always `mode.py`, and **the
+recommended way is to split the mode's parts into files next to it**:
+
+```text
+modes/base/
+  mode.py       the Mode class: its settings and rules
+  scoring.py    SCORING = {...}
+  slides.py     SLIDES = {...}
+```
+
+```python
+# modes/base/mode.py
+from vukery import Mode
+
+from .scoring import SCORING   # a file next to this one
+from .slides import SLIDES
+
+
+class Base(Mode):
+    priority = 100
+    start_on = "ball_started"
+    scoring = SCORING
+    slides = SLIDES
+```
+
+- **Any file name works:** `scoring.py` and `slides.py` are conventions.
+  Add whatever keeps `mode.py` readable (`rules.py`, `lights.py`…), and
+  import it with a relative import (`from .rules import …`).
+- **A small mode can stay in one file:** everything in `mode.py`, as in
+  `examples/basic`. Both ways load the same.
+- `examples/display`, `examples/dual_display` and every machine `vuk it`
+  creates use split files.
 
 ## Settings
 
@@ -230,7 +265,7 @@ A mode stops on its `stop_on` events, at the end of each ball
 
 | MPF | vukery |
 |---|---|
-| `mode:` YAML plus `code:` | a `Mode` class in `modes/<name>/<name>.py` |
+| `mode:` YAML plus `code:` | a `Mode` class in `modes/<name>/mode.py` |
 | `mode: priority: 200` | `priority = 200` |
 | `start_events` / `stop_events` | `start_on` / `stop_on` |
 | `variable_player: s_target_active: score: 1000` | `scoring = {"s_target": 1000}` |

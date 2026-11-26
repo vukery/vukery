@@ -82,7 +82,9 @@ points you to modes if your config has `variable_player`, `event_player`,
 
 ## Modes (Python)
 
-Game logic lives in modes: Python classes in `modes/<name>/<name>.py`.
+Game logic lives in modes: Python classes in `modes/<name>/mode.py`, with
+their parts (the scoring table, slides…) in files next to it. See
+[Modes: A mode's files](modes.md#a-modes-files).
 
 ```python
 from vukery import Mode

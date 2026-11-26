@@ -95,7 +95,7 @@ def game(tmp_path):
     (tmp_path / "config" / "machine.yaml").write_text(yaml.safe_dump(config))
     for name, code in MODES.items():
         (tmp_path / "modes" / name).mkdir(parents=True)
-        (tmp_path / "modes" / name / f"{name}.py").write_text(textwrap.dedent(code))
+        (tmp_path / "modes" / name / "mode.py").write_text(textwrap.dedent(code))
     rig = GameRig(tmp_path)
     rig.start_game()
     yield rig

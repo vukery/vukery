@@ -106,8 +106,11 @@ dashboard:
   doesn't fit.
 - **Panes left out keep their default size.** Without the file, the list is
   40% wide and the backbox gets 55% of the middle column's height.
-- **The file is for `vuk me` only.** `vuk it` creates it, and it's the
-  `dashboard:` section of the config, merged like any other config file.
+- **The positions are where each light and switch physically sits** on
+  your machine, whatever it's doing. `vuk me` draws with them, and light
+  groups and shows will be able to order lights by them. `vuk it` creates
+  the file; it's the `dashboard:` section of the config, merged like any
+  other config file.
 
 ## Status (0.0.x)
 
