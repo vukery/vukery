@@ -31,15 +31,18 @@ def _parser() -> argparse.ArgumentParser:
                         help="the game folder (default: the current folder)")
     commands = parser.add_subparsers(dest="command", metavar="COMMAND")
 
-    run = commands.add_parser("it", help="run the game in this folder (MPF: mpf, mpf game, mpf both)")
-    run.add_argument("--hardware", action="store_true", help="use real hardware in development")
-    run.add_argument("--preload", action="store_true", help="load every asset at startup (MPF: -f)")
-    run.add_argument("--log-dir", default="log", help="where log files go (default: log/)")
+    it = commands.add_parser("it", help="run the game, displays full screen, no dashboard: how a machine runs "
+                                        "(MPF: mpf both)")
+    me = commands.add_parser("me", help="run the game with the full-screen vuk me dashboard, to play it on "
+                                        "your computer (MPF: mpf both plus mpf monitor)")
+    for run in (it, me):
+        run.add_argument("--hardware", action="store_true", help="use real hardware in development")
+        run.add_argument("--preload", action="store_true", help="load every asset at startup (MPF: -f)")
+        run.add_argument("--log-dir", default="log", help="where log files go (default: log/)")
 
     mc = commands.add_parser("mc", help="run a media controller only (MPF: mpf mc)")
     mc.add_argument("--display", help="the display to render (default: all of them)")
-
-    commands.add_parser("view", help="the playfield GUI: lights, switches, coils (MPF: mpf monitor)")
+    mc.add_argument("--windowed", action="store_true", help="open windows at the displays' size, not full screen")
     commands.add_parser("top", help="terminal dashboard of a running game (MPF: mpf -t)")
     commands.add_parser("console", help="Python prompt attached to the running game (MPF: mpf service)")
 
@@ -76,8 +79,14 @@ def _doctor() -> int:
 
 
 def _run(args: argparse.Namespace) -> int:
-    """Run the game in the game folder until Ctrl-C (or "quit")."""
+    """Run the game in the game folder until Ctrl-C (or "quit").
+
+    ``vuk it`` starts a full-screen media controller per display. ``vuk me``
+    starts the dashboard instead, which draws the displays itself, and stops
+    the game when the dashboard closes.
+    """
     import asyncio
+    import importlib.util
     import os
     from pathlib import Path
 
@@ -92,9 +101,13 @@ def _run(args: argparse.Namespace) -> int:
         logging_config = LoggingConfig.from_yaml(config.section("logging")).with_vuk_log(os.environ.get("VUK_LOG"))
         log_dir = None if config.environment == "test" else game_dir / args.log_dir
         setup_logging(logging_config, config.environment, log_dir)
-        machine = Machine(config, hardware=args.hardware)
+        dashboard = args.command == "me"
+        if dashboard and importlib.util.find_spec("pyglet") is None:
+            print("vuk me: the dashboard needs pyglet (install vukery[mc])", file=sys.stderr)
+            return 1
+        machine = Machine(config, hardware=args.hardware, dashboard=dashboard)
     except VukeryError as e:
-        print(f"vuk it: {e}", file=sys.stderr)
+        print(f"vuk {args.command}: {e}", file=sys.stderr)
         return 1
 
     loop = machine.loop
@@ -115,21 +128,32 @@ def _run(args: argparse.Namespace) -> int:
                     print(f"No switch named {other!r}. Switches: {', '.join(machine.switches.switches)}")
         machine.stop("quit")
 
+    async def until_closed(process: Any) -> None:
+        """vuk me: the game runs while the dashboard is open."""
+        while process.poll() is None:
+            await asyncio.sleep(0.2)
+        machine.stop("the dashboard closed")
+
     media_controllers: list[Any] = []
     try:
         loop.run_until_complete(machine.start())
         print(f"vukery is running {game_dir.name} ({config.environment}). Ctrl-C to stop.")
-        media_controllers = _start_media_controllers(game_dir, machine.media_controllers())
-        if config.platform == "development":
+        if dashboard:
+            assert machine.media is not None
+            media_controllers = [subprocess.Popen([sys.executable, "-m", "vukery.dashboard", str(machine.media.port)])]
+            loop.run_until_complete(until_closed(media_controllers[0]))
+        elif config.platform == "development":
+            media_controllers = _start_media_controllers(game_dir, machine.media_controllers())
             if sys.stdin.isatty():
                 print("Type a switch name and press Enter to tap it, e.g. s_start.")
             loop.run_until_complete(type_switches())
         else:
+            media_controllers = _start_media_controllers(game_dir, machine.media_controllers())
             loop.run_forever()
     except KeyboardInterrupt:
         machine.stop("Ctrl-C")
     except VukeryError as e:
-        print(f"vuk it: {e}", file=sys.stderr)
+        print(f"vuk {args.command}: {e}", file=sys.stderr)
         return 1
     finally:
         _shut_down(loop)
@@ -157,7 +181,7 @@ def _shut_down(loop: Any) -> None:
 
 
 def _start_media_controllers(game_dir: Any, displays: list[str]) -> list[Any]:
-    """One media controller process per display (they exit when the engine says bye)."""
+    """One full-screen media controller process per display (they exit when the engine says bye)."""
     return [subprocess.Popen([sys.executable, "-m", "vukery.cli", "-C", str(game_dir), "mc", "--display", name])
             for name in displays]
 
@@ -188,7 +212,7 @@ def _mc(args: argparse.Namespace) -> int:
         print("vuk mc: the media controller needs pyglet (install vukery[mc])", file=sys.stderr)
         return 1
     port = int(config.section("media").get("port", protocol.DEFAULT_PORT))
-    return run(port, {name: dict(entry or {}) for name, entry in displays.items()}, args.display)
+    return run(port, {name: dict(entry or {}) for name, entry in displays.items()}, args.display, args.windowed)
 
 
 def main(argv: Sequence[str] | None = None) -> int:
@@ -200,7 +224,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             return 0
         case "doctor":
             return _doctor()
-        case "it":
+        case "it" | "me":
             return _run(args)
         case "mc":
             return _mc(args)

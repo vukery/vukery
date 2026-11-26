@@ -38,6 +38,7 @@ from vukery.core.machine import Machine
 from vukery.core.modes import Mode
 from vukery.core.player import Player
 from vukery.core.switches import Switch
+from vukery.dashboard.state import DashboardState
 from vukery.mc.state import MediaState
 
 __all__ = ["GameRig", "expect"]
@@ -46,20 +47,25 @@ __all__ = ["GameRig", "expect"]
 class GameRig:
     """Runs a game folder in the test environment, for specs."""
 
-    def __init__(self, game_dir: Path | str, simulate_balls: bool = True, fill_troughs: bool = True):
+    def __init__(self, game_dir: Path | str, simulate_balls: bool = True, fill_troughs: bool = True,
+                 dashboard: bool = False):
         """``simulate_balls``: ejected balls leave the trough by themselves (as in development).
-        ``fill_troughs``: every trough switch starts active (all balls home)."""
+        ``fill_troughs``: every trough switch starts active (all balls home).
+        ``dashboard``: attach an in-process vuk me dashboard, as ``rig.dashboard``."""
         self.loop = asyncio.new_event_loop()
         self.clock = VirtualClock(self.loop)
         try:
-            self.machine = Machine.from_folder(Path(game_dir), env="test", clock=self.clock)
+            self.machine = Machine.from_folder(Path(game_dir), env="test", clock=self.clock, dashboard=dashboard)
             self.machine.platform.simulate_balls = simulate_balls
             self.posted: list[tuple[str, dict[str, Any]]] = []
             self.machine.events.monitors.append(lambda event, kwargs: self.posted.append((event, kwargs)))
             self.display = MediaState()  # an in-process media controller: what the screens would show
             self.loop.run_until_complete(self.machine.start())
+            self.dashboard = DashboardState(now=self.clock.now)  # what vuk me would show
             if self.machine.media is not None:
                 self.machine.media.attach(self.display.apply)
+                if dashboard:
+                    self.machine.media.attach(self.dashboard.apply, dashboard=True)
             if fill_troughs:
                 for device in self.machine.ball_devices.values():
                     for name in device.config.ball_switches:

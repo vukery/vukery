@@ -60,6 +60,8 @@ class Coil:
         self.config = config
         self.name = config.name
         self.platform_max_pulse_ms = max_pulse_ms
+        self.pulses = 0        # how many times the engine has pulsed it (for vuk me)
+        self.enabled = False   # held on by the engine
         self.hw_driver = platform.configure_driver(self.driver_config(), config.number, config.platform_settings)
 
     # --- resolved settings (MPF's get_and_verify_* rules, with real range checks)
@@ -143,6 +145,7 @@ class Coil:
             self.timed_enable(pulse_ms=ms, pulse_power=power)
             return
         self.hw_driver.pulse(PulseSettings(power=power, duration=ms))
+        self.pulses += 1
 
     def enable(self, pulse_ms: int | None = None, pulse_power: float | None = None,
                hold_power: float | None = None) -> None:
@@ -151,6 +154,7 @@ class Coil:
             raise CoilLimitError(f"Coil {self.name} can't be enabled: it has no hold power "
                                  "(set default_hold_power, max_hold_power or allow_enable)")
         self.hw_driver.enable(PulseSettings(power=power, duration=ms), HoldSettings(power=hold))
+        self.enabled = True
 
     def timed_enable(self, timed_enable_ms: int | None = None, hold_power: float | None = None,
                      pulse_ms: int | None = None, pulse_power: float | None = None) -> None:
@@ -158,6 +162,8 @@ class Coil:
             PulseSettings(power=self.pulse_power(pulse_power), duration=self.pulse_ms(pulse_ms)),
             HoldSettings(power=self.hold_power(hold_power), duration=self.timed_enable_ms(timed_enable_ms)),
         )
+        self.pulses += 1
 
     def disable(self) -> None:
         self.hw_driver.disable()
+        self.enabled = False
