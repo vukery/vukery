@@ -6,6 +6,18 @@ vukery is in **0.0.x** while it works toward parity with MPF. Every push to
 
 Check your version with `vuk --version`.
 
+## 0.0.15 (2026-11-26)
+
+- **A mode is a folder, and its main file is `mode.py`:** `modes/<name>/mode.py`.
+  Rename `modes/<name>/<name>.py` to `mode.py`; vukery tells you which.
+- **Split a mode into files** next to `mode.py` (`scoring.py`,
+  `slides.py`…) and import them (`from .scoring import SCORING`). That's the
+  recommended layout; one file still works.
+- `examples/display`, `examples/dual_display` and new machines from `vuk it`
+  use split files; `examples/basic` stays in one file per mode.
+- `config/dashboard.yaml`'s positions are where each light and switch
+  physically sits.
+
 ## 0.0.14 (2026-11-25)
 
 - **The dashboard's list is in two columns,** with 1.5× larger text. The

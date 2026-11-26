@@ -35,9 +35,11 @@ think one is wrong, say so instead of working around it.
 
   Change the copied code only in later commits. Never hand-copy MPF code,
   and never copy from a local `site-packages`.
-- **No game logic in YAML.** YAML describes the machine: hardware,
-  devices, settings, asset settings, the dashboard's playfield layout. Conditions,
-  shows and slides are Python.
+- **No game logic in YAML.** YAML describes the machine (hardware,
+  devices, settings, asset settings, where each light and switch physically
+  sits, in `config/dashboard.yaml`) and **shows**, which are timed data:
+  YAML files in the root of the folder of the mode they belong to (being
+  designed). Conditions, rules and slides are Python.
 - **No `CustomCode`.** Anything that hooks into the machine is a `Mode`,
   named for what it does (`HoleScore`, not `Custom`). Always-on code uses
   `game_mode = False`. Customize a built-in mode by subclassing it.
@@ -83,8 +85,10 @@ think one is wrong, say so instead of working around it.
 - **Game folder layout:**
   - `config/`, with `config/environments/<env>` deep-merged over the
     shared files;
-  - `modes/`, with `modes/vukery/` reserved for game-specific overrides
-    and monkey patches;
+  - `modes/<name>/`, one folder per mode: the class in `mode.py`, its parts
+    in files next to it (`scoring.py`, `slides.py`…). Split is the default;
+    one file is allowed (only `examples/basic` does it). `modes/vukery/` is
+    reserved for game-specific overrides and monkey patches;
   - `assets/{sounds,images,videos,fonts}/`, where assets are named by file
     name without the extension.
 - **Modular:** build one implementation, but keep a clean plug-in

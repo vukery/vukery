@@ -57,8 +57,8 @@ The files:
 | [`config/machine.yaml`](https://github.com/vukery/vukery/blob/main/examples/basic/config/machine.yaml) | switches, coils, a light, the trough, flippers, slingshots, `game:` and `modes:` |
 | [`config/dashboard.yaml`](https://github.com/vukery/vukery/blob/main/examples/basic/config/dashboard.yaml) | `vuk me`'s pane sizes and playfield positions |
 | [`config/environments/development.yaml`](https://github.com/vukery/vukery/blob/main/examples/basic/config/environments/development.yaml) | logging for development |
-| [`modes/base/base.py`](https://github.com/vukery/vukery/blob/main/examples/basic/modes/base/base.py) | the scoring table, and lighting Frenzy |
-| [`modes/frenzy/frenzy.py`](https://github.com/vukery/vukery/blob/main/examples/basic/modes/frenzy/frenzy.py) | priority, `Score(block=True)`, a timed mode, a light |
+| [`modes/base/mode.py`](https://github.com/vukery/vukery/blob/main/examples/basic/modes/base/mode.py) | the scoring table, and lighting Frenzy |
+| [`modes/frenzy/mode.py`](https://github.com/vukery/vukery/blob/main/examples/basic/modes/frenzy/mode.py) | priority, `Score(block=True)`, a timed mode, a light |
 | [`tests/test_basic.py`](https://github.com/vukery/vukery/blob/main/examples/basic/tests/test_basic.py) | the specs |
 
 ## `examples/display`
@@ -83,8 +83,8 @@ uv run vuk you
 | File | What's in it |
 |---|---|
 | [`config/machine.yaml`](https://github.com/vukery/vukery/blob/main/examples/display/config/machine.yaml) | `examples/basic`'s machine, plus `displays:` |
-| [`modes/start_screen/start_screen.py`](https://github.com/vukery/vukery/blob/main/examples/display/modes/start_screen/start_screen.py) | the slide shown between games |
-| [`modes/base/base.py`](https://github.com/vukery/vukery/blob/main/examples/display/modes/base/base.py) | scoring and the score slide |
+| [`modes/start_screen/mode.py`](https://github.com/vukery/vukery/blob/main/examples/display/modes/start_screen/mode.py), [`slides.py`](https://github.com/vukery/vukery/blob/main/examples/display/modes/start_screen/slides.py) | the slide shown between games |
+| [`modes/base/mode.py`](https://github.com/vukery/vukery/blob/main/examples/display/modes/base/mode.py), [`scoring.py`](https://github.com/vukery/vukery/blob/main/examples/display/modes/base/scoring.py), [`slides.py`](https://github.com/vukery/vukery/blob/main/examples/display/modes/base/slides.py) | the mode, its scoring table and its score slide, in their own files |
 | [`tests/test_display.py`](https://github.com/vukery/vukery/blob/main/examples/display/tests/test_display.py) | the specs |
 
 ## `examples/dual_display`
