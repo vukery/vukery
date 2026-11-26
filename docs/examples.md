@@ -46,7 +46,7 @@ game.
 
 ```console
 cd examples/basic
-uv run vuk it          # then type s_start, s_target, s_left_sling…
+uv run vuk me          # click s_start, then s_target, s_left_sling…
 uv run pytest           # the specs
 ```
 
@@ -54,10 +54,10 @@ The files:
 
 | File | What's in it |
 |---|---|
-| [`config/machine.yaml`](https://github.com/vukery/vukery/blob/main/examples/basic/config/machine.yaml) | switches, coils, the trough, flippers, slingshots, `game:` and `modes:` |
+| [`config/machine.yaml`](https://github.com/vukery/vukery/blob/main/examples/basic/config/machine.yaml) | switches, coils, a light, the trough, flippers, slingshots, `game:`, `dashboard:` and `modes:` |
 | [`config/environments/development.yaml`](https://github.com/vukery/vukery/blob/main/examples/basic/config/environments/development.yaml) | logging for development |
 | [`modes/base/base.py`](https://github.com/vukery/vukery/blob/main/examples/basic/modes/base/base.py) | the scoring table, and lighting Frenzy |
-| [`modes/frenzy/frenzy.py`](https://github.com/vukery/vukery/blob/main/examples/basic/modes/frenzy/frenzy.py) | priority, `Score(block=True)`, a timed mode |
+| [`modes/frenzy/frenzy.py`](https://github.com/vukery/vukery/blob/main/examples/basic/modes/frenzy/frenzy.py) | priority, `Score(block=True)`, a timed mode, a light |
 | [`tests/test_basic.py`](https://github.com/vukery/vukery/blob/main/examples/basic/tests/test_basic.py) | the specs |
 
 ## `examples/display`
@@ -75,7 +75,7 @@ two players taking turns.
 
 ```console
 cd examples/display
-uv run vuk it          # opens the display window; type s_start, s_target…
+uv run vuk me          # the display shows in the dashboard's backbox
 uv run pytest
 ```
 
@@ -91,8 +91,8 @@ uv run pytest
 [Browse it on GitHub](https://github.com/vukery/vukery/tree/main/examples/dual_display)
 
 `examples/basic` with two displays: an 800×480 main screen and a 480×272
-apron screen. `vuk it` opens two windows, one media controller process
-each.
+apron screen. `vuk it` opens two full-screen windows, one media controller
+process each; `vuk me` shows both in its backbox.
 
 | Display | Between games | During a game |
 |---|---|---|
@@ -112,6 +112,6 @@ each display shows, from the title screen through a two-player game and back.
 
 ```console
 cd examples/dual_display
-uv run vuk it
+uv run vuk me
 uv run pytest
 ```

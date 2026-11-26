@@ -6,6 +6,23 @@ vukery is in **0.0.x** while it works toward parity with MPF. Every push to
 
 Check your version with `vuk --version`.
 
+## 0.0.8 (2026-11-25)
+
+- **`vuk me`:** play a game on your computer with a full-screen dashboard
+  in three columns:
+  - switches, lights, coils and other devices;
+  - a virtual backbox with the game's displays, over the game and its
+    running modes;
+  - a virtual playfield to click.
+
+  Positions go in a new `dashboard: playfield:` config section. The
+  dashboard can never fire a coil. It replaces the planned `vuk view`.
+- **`vuk it` is how a machine runs:** displays open full screen, each on
+  its own monitor (`screen:` picks one). `vuk mc --windowed` opens a
+  display at its configured size.
+- **The examples page links to every example** on GitHub, ready to copy.
+- `examples/basic` gets a light, lit while Frenzy runs.
+
 ## 0.0.7 (2026-11-25)
 
 - **Every earlier push now has a version and a tag** (v0.0.1 to v0.0.6),

@@ -36,7 +36,7 @@ think one is wrong, say so instead of working around it.
   Change the copied code only in later commits. Never hand-copy MPF code,
   and never copy from a local `site-packages`.
 - **No game logic in YAML.** YAML describes the machine: hardware,
-  devices, settings, asset settings, the vuk view layout. Conditions,
+  devices, settings, asset settings, the dashboard's playfield layout. Conditions,
   shows and slides are Python.
 - **No `CustomCode`.** Anything that hooks into the machine is a `Mode`,
   named for what it does (`HoleScore`, not `Custom`). Always-on code uses
@@ -57,7 +57,7 @@ think one is wrong, say so instead of working around it.
     "virtual" or "smart_virtual";
   - game code never branches on the environment.
 - **Coil safety isn't optional.** Pulse and hold limits are enforced in
-  the engine, and `vuk view` can never fire a coil.
+  the engine, and the `vuk me` dashboard can never fire a coil.
 
 ## Conventions
 

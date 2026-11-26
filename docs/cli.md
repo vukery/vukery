@@ -5,13 +5,20 @@ each one does one thing.
 
 ```console
 cd my_game
-vuk it          # run the game in this folder
+vuk me          # play the game on your computer, with the dashboard
+vuk it          # run the game the way a machine does: displays full screen
 vuk doctor      # check your setup
 vuk --help
 ```
 
-`vuk it` runs the game whose `config/` folder is in the current folder (or
-in the folder given with `-C DIR`).
+Both run the game whose `config/` folder is in the current folder (or in
+the folder given with `-C DIR`):
+
+- **`vuk me`** is for working on a game. The game runs with a full-screen
+  [dashboard](dashboard.md) showing every switch, light, coil and mode, the
+  displays, and a virtual playfield you click to play.
+- **`vuk it`** is how a machine runs, usually with `VUK_ENV=production`: the
+  game and its displays, full screen, with no dashboard.
 
 ## Environment variables
 
@@ -40,9 +47,9 @@ VUK_LOG=debug vuk it
 | Command | Status | What it does | MPF equivalent |
 |---|---|---|---|
 | `vuk doctor` | **works** | Shows versions and checks for FFmpeg | `mpf diagnosis` |
-| `vuk it` | **works** in development | Runs the game and a media controller per display. In development, type a switch name to tap it. | `mpf`, `mpf game`, `mpf both` |
-| `vuk mc` | **works** | Runs a media controller only (`--display NAME`) | `mpf mc` |
-| `vuk view` | planned | Playfield GUI: lights, switches, coils | `mpf monitor` |
+| `vuk me` | **works** on the simulated platforms | Runs the game with the full-screen [dashboard](dashboard.md) | `mpf both` plus `mpf monitor` |
+| `vuk it` | **works** in development | Runs the game and a full-screen media controller per display. On the development platform you can also type a switch name in the terminal to tap it. | `mpf`, `mpf game`, `mpf both` |
+| `vuk mc` | **works** | Runs a media controller only (`--display NAME`, `--windowed`) | `mpf mc` |
 | `vuk top` | planned | Terminal dashboard of a running game; works over SSH | `mpf -t` |
 | `vuk console` | planned | Python prompt attached to the running game | `mpf service` |
 | `vuk hardware scan` | planned | Lists boards and firmware | `mpf hardware scan` |
@@ -57,10 +64,11 @@ VUK_LOG=debug vuk it
 
 A command that isn't built yet says so and exits with code 2.
 
-### `vuk it` options
+### `vuk it` and `vuk me` options
 
-The config decides whether media controllers start: one per display in
-`displays:`, none without it. Sound will work the same way, from the
+The config decides whether media controllers start: `vuk it` starts one per
+display in `displays:`, none without it. `vuk me` starts none, because the
+dashboard draws the displays itself. Sound will work the same way, from the
 config. (MPF chose with `mpf game` versus `mpf both`, and `--no-sound`.)
 
 | Option | Status | What it does | MPF flag |
