@@ -95,6 +95,13 @@ class Machine(Logs):
             case other, _:
                 raise ConfigError(f"hardware: platform: {other!r} isn't supported (development, test or fast)")
 
+    def media_controllers(self) -> list[str]:
+        """The displays that need a media controller: one per display in ``displays:``, or none.
+
+        The config alone decides; there's no command-line switch.
+        """
+        return list(self.media.displays) if self.media is not None else []
+
     def platform_simulates_balls(self) -> bool:
         return isinstance(self.platform, SimulatedPlatform) and self.platform.simulate_balls
 

@@ -18,6 +18,10 @@ def game():
 
 def describe_basic():
     def describe_at_power_on():
+        def it_loads_no_media_controller(game):  # no displays: in the config
+            expect(game.machine.media).to_equal(None)
+            expect(game.machine.media_controllers()).to_equal([])
+
         def it_runs_attract(game):
             expect(game.mode("attract")).to_be_running()
             expect(game.mode("base")).to_be_stopped()

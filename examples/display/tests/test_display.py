@@ -17,6 +17,10 @@ def game():
 
 
 def describe_display():
+    def describe_media_controller():
+        def it_loads_one_for_its_display(game):  # displays: main in the config
+            expect(game.machine.media_controllers()).to_equal(["main"])
+
     def describe_between_games():
         def it_shows_press_start(game):
             expect(game.slide()).to_equal("start_screen")

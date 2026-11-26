@@ -119,8 +119,7 @@ def _run(args: argparse.Namespace) -> int:
     try:
         loop.run_until_complete(machine.start())
         print(f"vukery is running {game_dir.name} ({config.environment}). Ctrl-C to stop.")
-        if machine.media is not None:  # the config decides: displays: means media controllers
-            media_controllers = _start_media_controllers(game_dir, list(machine.media.displays))
+        media_controllers = _start_media_controllers(game_dir, machine.media_controllers())
         if config.platform == "development":
             if sys.stdin.isatty():
                 print("Type a switch name and press Enter to tap it, e.g. s_start.")

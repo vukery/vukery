@@ -33,3 +33,32 @@ def describe_vuk():
     def it_says_when_a_command_isnt_built_yet(capsys):
         assert main(["hardware", "scan"]) == 2
         assert "isn't built yet" in capsys.readouterr().err
+
+
+def describe_vuk_it_media_controllers():
+    """vuk it starts exactly the media controllers the config asks for."""
+
+    def _started(monkeypatch, capsys, tmp_path, example):
+        import os
+        from pathlib import Path
+
+        import vukery.cli as cli
+
+        started = []
+        monkeypatch.setattr(cli, "_start_media_controllers",
+                            lambda game_dir, displays: started.extend(displays) or [])
+        read_end, write_end = os.pipe()  # vuk it reads switch names from stdin; send "quit"
+        os.write(write_end, b"quit\n")
+        os.close(write_end)
+        with os.fdopen(read_end) as stdin:
+            monkeypatch.setattr("sys.stdin", stdin)
+            game = Path(__file__).parents[1] / "examples" / example
+            assert cli.main(["-C", str(game), "it", "--log-dir", str(tmp_path)]) == 0
+        capsys.readouterr()
+        return started
+
+    def it_starts_none_for_a_game_without_displays(monkeypatch, capsys, tmp_path):
+        assert _started(monkeypatch, capsys, tmp_path, "basic") == []
+
+    def it_starts_one_per_display(monkeypatch, capsys, tmp_path):
+        assert _started(monkeypatch, capsys, tmp_path, "display") == ["main"]
