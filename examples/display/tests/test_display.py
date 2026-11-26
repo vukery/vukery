@@ -21,7 +21,7 @@ def game():
 def describe_display():
     def describe_media_controller():
         def it_loads_one_for_its_display(game):  # displays: main in the config
-            # vuk it starts one media controller per display in the config
+            # vuk us starts one media controller per display in the config
             expect(game.machine.media_controllers()).to_equal(["main"])
 
     def describe_between_games():

@@ -20,7 +20,7 @@ displays:
 ```
 
 **The config decides whether there's a media controller.** With a
-`displays:` section, `vuk it` starts one full-screen media controller window
+`displays:` section, `vuk us` starts one full-screen media controller window
 per display. Without one, none is loaded. There's no command-line switch for
 it. To run a game without its display in one environment, leave
 `displays:` out of the config that environment uses.

@@ -1,6 +1,6 @@
 [project]
 name = "vukery"
-version = "0.0.8"
+version = "0.0.9"
 description = "A very opinionated pinball framework based on the Mission Pinball Framework, built to be simple, lean and LLM-friendly."
 readme = "README.md"
 license = "MIT"
@@ -15,7 +15,7 @@ Homepage = "https://vukery.com"
 Repository = "https://github.com/vukery/vukery"
 
 [project.optional-dependencies]
-# The default media controller and vukery view
+# The default media controller and the vuk me dashboard
 mc = ["pyglet>=2.1.19"]  # also needs FFmpeg installed on the system
 
 [dependency-groups]

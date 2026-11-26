@@ -8,7 +8,7 @@ cd my_game
 uv run vuk me       # Esc closes the dashboard and stops the game
 ```
 
-`vuk it` is how a machine runs: the game, plus the displays full screen, and
+`vuk us` is how a machine runs: the game, plus the displays full screen, and
 no dashboard. See [The vuk command](cli.md).
 
 ## What's on it
@@ -18,7 +18,7 @@ The dashboard has three columns:
 | Column | What it shows |
 |---|---|
 | **1. Devices** | Four panes: **switches** (green while active), **lights** (in their current color), **coils** (orange while held, or for a moment after a pulse), and **devices**: balls in each trough, and whether each flipper and autofire coil is enabled |
-| **2. Backbox and game** | Top: a square **virtual backbox** with the game's displays in it, stacked in config order and drawn just as `vuk it` draws them. Bottom: the **game**: whose turn it is, the ball, every player's score, and the running modes with their priorities |
+| **2. Backbox and game** | Top: a square **virtual backbox** with the game's displays in it, stacked in config order and drawn just as `vuk us` draws them. Bottom: the **game**: whose turn it is, the ball, every player's score, and the running modes with their priorities |
 | **3. Playfield** | A **virtual playfield** with its switches (squares), lights (circles) and flippers, which flip up while their coil is on |
 
 ## Playing with switches

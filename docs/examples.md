@@ -91,7 +91,7 @@ uv run pytest
 [Browse it on GitHub](https://github.com/vukery/vukery/tree/main/examples/dual_display)
 
 `examples/basic` with two displays: an 800×480 main screen and a 480×272
-apron screen. `vuk it` opens two full-screen windows, one media controller
+apron screen. `vuk us` opens two full-screen windows, one media controller
 process each; `vuk me` shows both in its backbox.
 
 | Display | Between games | During a game |

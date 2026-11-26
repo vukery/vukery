@@ -30,7 +30,7 @@ class DisplayConfig:
     name: str
     width: int = 800
     height: int = 480
-    screen: int | None = None  # which monitor vuk it puts it on, full screen (default: the next one)
+    screen: int | None = None  # which monitor vuk us puts it on, full screen (default: the next one)
 
     @classmethod
     def from_yaml(cls, name: str, data: dict[str, Any]) -> DisplayConfig:
