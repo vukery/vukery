@@ -38,6 +38,7 @@ from vukery.core.machine import Machine
 from vukery.core.modes import Mode
 from vukery.core.player import Player
 from vukery.core.switches import Switch
+from vukery.mc.state import MediaState
 
 __all__ = ["GameRig", "expect"]
 
@@ -55,7 +56,10 @@ class GameRig:
             self.machine.platform.simulate_balls = simulate_balls
             self.posted: list[tuple[str, dict[str, Any]]] = []
             self.machine.events.monitors.append(lambda event, kwargs: self.posted.append((event, kwargs)))
+            self.display = MediaState()  # an in-process media controller: what the screens would show
             self.loop.run_until_complete(self.machine.start())
+            if self.machine.media is not None:
+                self.machine.media.attach(self.display.apply)
             if fill_troughs:
                 for device in self.machine.ball_devices.values():
                     for name in device.config.ball_switches:
@@ -154,6 +158,19 @@ class GameRig:
 
     def switches(self, name: str) -> Switch:
         return self.machine.switches[name]
+
+    def screen(self, display: str | None = None) -> list[str]:
+        """The text on a display right now (the first display by default)."""
+        return [text.text for text in self.display.texts(display or self._first_display())]
+
+    def slide(self, display: str | None = None) -> str | None:
+        """The name of the slide on a display right now."""
+        return self.display.showing.get(display or self._first_display())
+
+    def _first_display(self) -> str:
+        if self.machine.media is None:
+            raise ConfigError("This game has no displays")
+        return self.machine.media.default_display
 
     def times_posted(self, event: str) -> int:
         return sum(1 for name, _ in self.posted if name == event)
