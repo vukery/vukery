@@ -41,3 +41,28 @@
             return f"{source_int:02X}"
 
         raise ValueError("invalid source int: %s" % source_int)
+
+# Copied from the Mission Pinball Framework (MPF) 0.57.6:
+# https://github.com/missionpinball/mpf/blob/9ef886f4f263db44704f09a87bfd11229036ab5c/mpf/core/utility_functions.py#L353-L372
+# Copyright (c) The Mission Pinball Framework team and other contributors.
+# MIT License: see vukery/_mpf/NOTICE.
+    @staticmethod
+    def pwm8_to_hex_string(source_int: int) -> str:
+        """Convert an int to a PWM8 string."""
+        lookup_table = {
+            0: '00',  # 00000000
+            1: '01',  # 00000001
+            2: '88',  # 10001000
+            3: '92',  # 10010010
+            4: 'AA',  # 10101010
+            5: 'BA',  # 10111010
+            6: 'EE',  # 11101110
+            7: 'FE',  # 11111110
+            8: 'FF',  # 11111111
+        }
+
+        if 0 <= source_int <= 8:
+            return lookup_table[source_int]
+
+        raise ValueError("%s is invalid pwm hex value. (Expected value "
+                         "0-8)" % source_int)

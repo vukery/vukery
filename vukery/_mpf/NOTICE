@@ -143,3 +143,7 @@ vukery/core/util.py
 vukery/core/util.py
     from: lines 336-351 of mpf/core/utility_functions.py @ 9ef886f4f263db44704f09a87bfd11229036ab5c (MPF 0.57.6)
     permalink: https://github.com/missionpinball/mpf/blob/9ef886f4f263db44704f09a87bfd11229036ab5c/mpf/core/utility_functions.py#L336-L351
+
+vukery/core/util.py
+    from: lines 353-372 of mpf/core/utility_functions.py @ 9ef886f4f263db44704f09a87bfd11229036ab5c (MPF 0.57.6)
+    permalink: https://github.com/missionpinball/mpf/blob/9ef886f4f263db44704f09a87bfd11229036ab5c/mpf/core/utility_functions.py#L353-L372
