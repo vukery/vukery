@@ -6,6 +6,21 @@ vukery is in **0.0.x** while it works toward parity with MPF. Every push to
 
 Check your version with `vuk --version`.
 
+## 0.0.9 (2026-11-25)
+
+- **`vuk it NAME` creates a machine folder,** much like `rails new`. You get:
+  - a commented machine config, with development and production
+    environments;
+  - a base mode and specs for the whole game flow;
+  - asset folders and `modes/vukery/`;
+  - a `pyproject.toml` that pins vukery.
+
+  Leave out the name and it asks. It replaces the planned `vuk new`.
+- **`vuk us` runs a machine** (it was `vuk it`): the game and its displays,
+  full screen.
+- **Getting started** now walks through installing `vuk` and making a
+  machine.
+
 ## 0.0.8 (2026-11-25)
 
 - **`vuk me`:** play a game on your computer with a full-screen dashboard

@@ -146,7 +146,7 @@ In development the machine is simulated. The [dashboard](dashboard.md)
 shows the whole machine: click `s_start` to start a game, then click
 switches on the playfield. Esc stops it. Logs go to `log/development.log`.
 
-On the machine itself, `vuk it` runs the game with its displays full screen
+On the machine itself, `vuk us` runs the game with its displays full screen
 (see [The vuk command](cli.md)).
 
 ## Coming from MPF

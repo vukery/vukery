@@ -4,20 +4,26 @@
 each one does one thing.
 
 ```console
-cd my_game
+vuk it my_machine  # create a machine, ready to play and test
+cd my_machine
 vuk me             # play the game on your computer, with the dashboard
-vuk it          # run the game the way a machine does: displays full screen
+vuk us             # run the game the way a machine does: displays full screen
 vuk doctor         # check your setup
 vuk --help
 ```
 
-Both run the game whose `config/` folder is in the current folder (or in
-the folder given with `-C DIR`):
+- **`vuk it NAME`** creates a new machine folder, much like `rails new`: a
+  commented machine config, a base mode, specs, asset folders, and a
+  `pyproject.toml` that pins vukery. Leave out the name and it asks. See
+  [Getting started](getting-started.md#make-a-machine-vuk-it).
+
+`vuk me` and `vuk us` run the game whose `config/` folder is in the current
+folder (or in the folder given with `-C DIR`):
 
 - **`vuk me`** is for working on a game. The game runs with a full-screen
   [dashboard](dashboard.md) showing every switch, light, coil and mode, the
   displays, and a virtual playfield you click to play.
-- **`vuk it`** is how a machine runs, usually with `VUK_ENV=production`: the
+- **`vuk us`** is how a machine runs, usually with `VUK_ENV=production`: the
   game and its displays, full screen, with no dashboard.
 
 ## Environment variables
@@ -31,8 +37,8 @@ not command-line flags.
 | `VUK_LOG` | One log level for everything (see [Logging](logging.md)) | `debug`, `info`, `warning`, `error` | from the `logging:` config |
 
 ```console
-VUK_ENV=production vuk it
-VUK_LOG=debug vuk it
+VUK_ENV=production vuk us
+VUK_LOG=debug vuk us
 ```
 
 ### Environments
@@ -47,8 +53,9 @@ VUK_LOG=debug vuk it
 | Command | Status | What it does | MPF equivalent |
 |---|---|---|---|
 | `vuk doctor` | **works** | Shows versions and checks for FFmpeg | `mpf diagnosis` |
+| `vuk it NAME` | **works** | Creates a machine folder, ready to play and test | `mpf create_config` |
 | `vuk me` | **works** on the simulated platforms | Runs the game with the full-screen [dashboard](dashboard.md) | `mpf both` plus `mpf monitor` |
-| `vuk it` | **works** in development | Runs the game and a full-screen media controller per display. On the development platform you can also type a switch name in the terminal to tap it. | `mpf`, `mpf game`, `mpf both` |
+| `vuk us` | **works** in development | Runs the game and a full-screen media controller per display. On the development platform you can also type a switch name in the terminal to tap it. | `mpf`, `mpf game`, `mpf both` |
 | `vuk mc` | **works** | Runs a media controller only (`--display NAME`, `--windowed`) | `mpf mc` |
 | `vuk top` | planned | Terminal dashboard of a running game; works over SSH | `mpf -t` |
 | `vuk console` | planned | Python prompt attached to the running game | `mpf service` |
@@ -57,16 +64,15 @@ VUK_LOG=debug vuk it
 | `vuk hardware lights` | planned | Walks every LED | |
 | `vuk hardware coil NAME` | planned | Pulses one coil, after asking | |
 | `vuk test` | planned | Runs the game's specs | `mpf test` |
-| `vuk new NAME` | planned | Creates a game folder | `mpf create_config` |
 | `vuk generate mode\|show\|slide NAME` | planned | Adds a mode, show or slide | `mpf create_config` |
 | `vuk wire` | planned | FAST wiring instructions from your config | `mpf wire` |
 | `vuk stubs` | planned | Typed stubs from your machine config | |
 
 A command that isn't built yet says so and exits with code 2.
 
-### `vuk it` and `vuk me` options
+### `vuk us` and `vuk me` options
 
-The config decides whether media controllers start: `vuk it` starts one per
+The config decides whether media controllers start: `vuk us` starts one per
 display in `displays:`, none without it. `vuk me` starts none, because the
 dashboard draws the displays itself. Sound will work the same way, from the
 config. (MPF chose with `mpf game` versus `mpf both`, and `--no-sound`.)
