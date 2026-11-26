@@ -200,7 +200,7 @@ def describe_scoring_values():
     def it_describes_an_award():
         from vukery import Award
 
-        assert repr(Award(lanes=1)) == "Award(lanes=1, block=False)"
+        expect(repr(Award(lanes=1))).to_equal("Award(lanes=1, block=False)")
 
     @pytest.mark.parametrize("value", [True, "1000", 2.5])
     def it_refuses_things_that_arent_points(value):

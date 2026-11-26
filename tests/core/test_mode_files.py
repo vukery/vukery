@@ -51,7 +51,8 @@ def describe_mode_files():
     }''', "    scoring = SCORING")
         code = code.replace("self.player.targets % TARGETS_FOR_FRENZY == 0", "frenzy_due(self.player.targets)")
         (base / "mode.py").write_text(code)
-        assert "from .scoring import SCORING" in code and "frenzy_due(self.player.targets)" in code
+        expect(code).to_contain("from .scoring import SCORING")
+        expect(code).to_contain("frenzy_due(self.player.targets)")
         game = GameRig(machine)
         try:
             game.start_game()

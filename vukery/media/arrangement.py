@@ -147,11 +147,9 @@ def write_config(path: Path, arrangement: Arrangement,
              "  # Pane sizes, as a % of the window. The playfield is as wide as its 1:2 shape",
              "  # needs (at most 33%); the backbox and displays take the rest.",
              "  panes:"]
-    panes = arrangement.to_panes()
-    width = max(len(name) for name in panes) + 1
-    for name, size in panes.items():
-        sizes = ", ".join(f"{key}: {value}" for key, value in size.items())
-        lines.append(f"    {name + ':':<{width}} {{{sizes}}}")
+    for name, size in arrangement.to_panes().items():
+        lines.append(f"    {name}:")
+        lines += [f"      {key}: {value}" for key, value in size.items()]
     for place in PLACES:
         placed = positions.get(place, {}) if positions is not None else mapping(dashboard.get(place))
         if placed:

@@ -5,13 +5,14 @@ import pytest
 from tests.helpers import basic_machine
 from vukery.core.config import environment, load_game_config
 from vukery.core.errors import ConfigError
+from vukery.testing import expect
 
 
 def describe_config():
     def describe_environments():
         def it_reads_vuk_env(monkeypatch):
             monkeypatch.setenv("VUK_ENV", "production")
-            assert environment() == "production"
+            expect(environment()).to_equal("production")
 
         def it_refuses_an_environment_it_doesnt_know(monkeypatch):
             monkeypatch.setenv("VUK_ENV", "staging")
@@ -22,7 +23,7 @@ def describe_config():
             folder = basic_machine(tmp_path, files={"config/environments/test/game.yaml": "game: {balls_per_game: 5}\n",
                                                     "config/environments/test/more.yaml": "game: {max_players: 2}\n"})
             game = load_game_config(folder, "test").section("game")
-            assert (game["balls_per_game"], game["max_players"]) == (5, 2)
+            expect((game["balls_per_game"], game["max_players"])).to_equal((5, 2))
 
         def it_refuses_a_file_and_a_folder_for_the_same_environment(tmp_path):
             folder = basic_machine(tmp_path, files={"config/environments/test.yaml": "game: {}\n",

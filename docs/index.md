@@ -34,7 +34,8 @@ a great choice.
 ## The opinions
 
 - **Game logic is Python.** YAML describes the machine (hardware, wiring,
-  devices, settings) and never contains `if` statements, shows or slides.
+  devices, settings) and never contains `if` statements or scenes. Shows,
+  which are timed data, are YAML files in their mode's folder.
 - **Simple.** One way to do things, with names that say what they do.
   There's no `CustomCode`: everything that hooks into the machine is a
   `Mode`.
@@ -51,7 +52,7 @@ a great choice.
 - **Rails-style conventions.** `assets/` folders, `development` / `test` /
   `production` environments, and a `modes/vukery/` folder for game-specific
   overrides.
-- **No kivy, no Godot, no BCP.** The media controller (slides, sound, video) uses
+- **No kivy, no Godot, no BCP.** The media controller (scenes, sound, video) uses
   pyglet and talks to the engine over a small JSON protocol.
 
 ## Hardware

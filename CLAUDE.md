@@ -38,8 +38,8 @@ think one is wrong, say so instead of working around it.
 - **No game logic in YAML.** YAML describes the machine (hardware,
   devices, settings, asset settings, where each light and switch physically
   sits, in `config/dashboard.yaml`) and **shows**, which are timed data:
-  YAML files in the root of the folder of the mode they belong to (being
-  designed). Conditions, rules and slides are Python.
+  YAML files in the root of the folder of the mode they belong to.
+  Conditions, rules and scenes are Python.
 - **No `CustomCode`.** Anything that hooks into the machine is a `Mode`,
   named for what it does (`HoleScore`, not `Custom`). Always-on code uses
   `game_mode = False`. Customize a built-in mode by subclassing it.
@@ -73,7 +73,8 @@ think one is wrong, say so instead of working around it.
 - **Keep MPF's names wherever there's an equivalent:** events
   (`ball_started`, `mode_<name>_started`, `<switch>_active`), hardware YAML
   keys and device fields. That's what makes MPF games easy to migrate with
-  an LLM.
+  an LLM. Core config and hardware config (`fast:`, `io_loop`, device
+  settings) stay 1:1 with MPF: don't rename them.
 - **One method per concept, with options. Never combined helper names.**
   Tests use pytest with pytest-describe (`describe_` / `context_` /
   `it_`):
@@ -81,13 +82,14 @@ think one is wrong, say so instead of working around it.
     `every=`) replaces MPF's `hit_and_release_switch` family;
   - `game.advance(seconds)` is always a separate, consecutive call;
   - assertions are `expect(...)` matchers named after MPF's assertions
-    (`expect(game.mode("base")).to_be_running()`).
+    (`expect(game.mode("base")).to_be_running()`), **never a bare `assert`**.
+    Add a matcher to `vukery.testing` when one is missing.
 - **Game folder layout:**
   - `config/`, with `config/environments/<env>` deep-merged over the
     shared files;
   - `modes/<name>/`, one folder per mode: `mode.py` holds the class and
     whatever configures it (settings, the scoring table); bigger parts go
-    in files next to it (`slides.py`, helper modules, shows). One file is
+    in files next to it (`scenes.py`, helper modules, shows). One file is
     allowed (only `examples/basic` does it). `modes/vukery/` is reserved for
     game-specific overrides and monkey patches;
   - `assets/{sounds,images,videos,fonts}/`, where assets are named by file
@@ -109,7 +111,7 @@ think one is wrong, say so instead of working around it.
   was decided, why, and what it costs.
 - **Examples are the tutorial.** Code in `examples/` (config, modes, specs) has
   comments on the lines that show a concept (priority, scoring, blocks,
-  slides…), not on every line. Keep them current when an example changes.
+  scenes…), not on every line. Keep them current when an example changes.
 - **Build the docs as you build the features.** Every user-visible change
   updates its page in `docs/` and the table in `docs/status.md` in the same
   commit. Pages say plainly what works in 0.0.x and what's planned, and never

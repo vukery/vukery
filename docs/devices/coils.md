@@ -38,6 +38,39 @@ coils:
 | `default_recycle` | none | FAST: use `platform_settings: recycle_ms` instead |
 | `platform_settings` | | FAST: `recycle_ms`, `pwm2_ms` |
 
+## Starting points by use
+
+What to start from for each kind of coil. These are the typical values in 46
+public MPF machine configs on GitHub (November 2026), thanks to everyone who
+shares their machines. Each machine counts once, forks and copies are
+counted once, and "most machines" is the middle half of them.
+
+| Use | `default_pulse_ms` | Most machines | Hold | Machines |
+|---|---|---|---|---|
+| Flipper, single-wound (one coil pulses, then holds) | `25` | 20 to 35 | `default_hold_power: 0.125` (most: 0.1 to 0.25) | 6 |
+| Flipper, dual-wound: the main (power) winding | `20` | 20 to 30 | none: the hold winding holds | 14 |
+| Flipper, dual-wound: the hold winding | | | `allow_enable: true`, or `default_hold_power` 0.5 to 1.0 | 27 |
+| Slingshot | `15` | 10 to 25 | | 26 |
+| Pop bumper | `20` | 12 to 37 | | 21 |
+| Trough eject | `20` | 16 to 30 | | 30 |
+| Plunger or auto-launch | `20` | 18 to 38 | | 17 |
+| Saucer, scoop or VUK eject | `25` | 20 to 34 | | 23 |
+| Drop target bank reset | `35` | 24 to 68 | | 18 |
+| Knocker | `40` | | | 5 |
+| Chime or bell | `20` | | | 5 |
+| Diverter | | | `default_hold_power: 0.5` (held while diverting) | 2 |
+
+- **Treat them as a place to start, not an answer.** The right pulse depends
+  on the coil, the voltage, the mech and how worn it is. Start at the low
+  end, watch the shot, and raise it a few milliseconds at a time.
+- **Keep hold power low.** Holding a coil at full power for long burns it.
+  Single-wound flippers hold at about an eighth of full power.
+- **Pop bumpers and slingshots** fire as hardware rules (`autofire_coils`),
+  so the board fires them instantly; their pulse is the coil's
+  `default_pulse_ms`.
+- Dual-wound flippers aren't supported in vukery yet (see [Status](../status.md));
+  their figures are here for when they are.
+
 ## Limits are enforced
 
 vukery checks every pulse and enable before it reaches the hardware:

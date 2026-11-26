@@ -4,8 +4,8 @@
     The game engine runs on the simulated `development` and `test`
     platforms: switches, coils, lights, a simple trough, single-wound
     flippers, autofire coils, the attract and game modes, and your own
-    modes, and text slides on displays ([Displays and slides](displays.md)).
-    Ball saves, tilt, shows and sound come later. The complete examples are
+    modes, [shows](shows.md), and scenes on displays ([Displays and scenes](scenes.md)).
+    Ball saves, tilt and sound come later. The complete examples are
     [`examples/basic` and `examples/display`](examples.md).
 
 ## A game folder
@@ -36,15 +36,18 @@ YAML describes the machine. Sections and settings are MPF's:
 ```yaml
 switches:
   s_start:
-    number: "0"
+    number: 0
     tags: start               # the start button
-  s_trough1: {number: "1"}
-  s_trough2: {number: "2"}
-  s_target:  {number: "8"}
+  s_trough1:
+    number: 1
+  s_trough2:
+    number: 2
+  s_target:
+    number: 8
 
 coils:
   c_trough_eject:
-    number: "0"
+    number: 0
     default_pulse_ms: 20
 
 ball_devices:
@@ -71,6 +74,11 @@ modes:
   - base
 ```
 
+**Write it as indented YAML,** one setting per line, as above. Hardware
+numbers can be bare (`number: 1`) and are read as text; quote one that
+starts with a zero (`number: "010"`), which YAML would otherwise read as an
+octal number.
+
 **Supported sections so far:** `switches`, `coils`, `lights`,
 `ball_devices` (troughs), `flippers` (single-wound, no EOS),
 `autofire_coils`, `game`, `modes`, `player_vars`, `displays`, `media`,
@@ -83,7 +91,7 @@ points you to modes if your config has `variable_player`, `event_player`,
 ## Modes (Python)
 
 Game logic lives in modes: Python classes in `modes/<name>/mode.py`, with
-their bigger parts (slides, helper code) in files next to it. See
+their bigger parts (scenes, shows, helper code) in files next to it. See
 [Modes: A mode's files](modes.md#a-modes-files).
 
 ```python

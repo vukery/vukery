@@ -5,7 +5,7 @@ import pytest
 from tests.helpers import basic_machine
 from vukery.core.errors import ConfigError
 from vukery.devices.light import LightConfig, parse_color
-from vukery.testing import GameRig
+from vukery.testing import GameRig, expect
 
 
 def _rig(tmp_path, lights):
@@ -31,7 +31,7 @@ def describe_lights():
     def describe_colors():
         @pytest.mark.parametrize("value", ["ff8800", (255, 136, 0), [255, 136, 0]])
         def it_takes_hex_or_three_numbers(value):
-            assert parse_color(value) == (255, 136, 0)
+            expect(parse_color(value)).to_equal((255, 136, 0))
 
         @pytest.mark.parametrize(("value", "message"), [("ff88zz", "Not a color"), ((300, 0, 0), "0-255"),
                                                         ("orange", "Not a color")])
@@ -44,7 +44,7 @@ def describe_lights():
             rig = _rig(tmp_path, {"l_x": {"number": "7", "type": "grb"}})
             try:
                 rig.machine.lights["l_x"].color("ff0000")  # red
-                assert (_channel(rig, "7-0"), _channel(rig, "7-1"), _channel(rig, "7-2")) == (0.0, 1.0, 0.0)
+                expect((_channel(rig, "7-0"), _channel(rig, "7-1"), _channel(rig, "7-2"))).to_equal((0.0, 1.0, 0.0))
             finally:
                 rig.stop()
 
@@ -53,7 +53,7 @@ def describe_lights():
                                   "l_b": {"previous": "l_a", "type": "rgb"}})
             try:
                 rig.machine.lights["l_b"].color("0000ff")
-                assert _channel(rig, "2-2") == 1.0  # l_a is 1-0..1-2, so l_b starts at 2-0
+                expect(_channel(rig, "2-2")).to_equal(1.0)  # l_a is 1-0..1-2, so l_b starts at 2-0
             finally:
                 rig.stop()
 
@@ -62,7 +62,7 @@ def describe_lights():
             try:
                 rig.machine.lights["l_w"].color("ffffff")  # all white: the white channel only
                 channels = [_channel(rig, n) for n in ("5-0", "5-1", "5-2", "6-0")]
-                assert channels == [0.0, 0.0, 0.0, 1.0]
+                expect(channels).to_equal([0.0, 0.0, 0.0, 1.0])
             finally:
                 rig.stop()
 
@@ -90,9 +90,9 @@ def describe_lights():
                 light = rig.machine.lights["l_x"]
                 light.color("ffffff", fade_ms=1000)
                 rig.advance(0.5)
-                assert light.current_color() == (128, 128, 128)
-                assert _channel(rig, "3-0") == pytest.approx(0.5, abs=0.01)
+                expect(light.current_color()).to_equal((128, 128, 128))
+                expect(_channel(rig, "3-0")).to_be_close_to(0.5, within=0.01)
                 rig.advance(0.6)
-                assert light.current_color() == (255, 255, 255)
+                expect(light.current_color()).to_equal((255, 255, 255))
             finally:
                 rig.stop()

@@ -15,8 +15,8 @@ cp -r vukery/examples/basic my_game
 | Example | Displays | Shows |
 |---|---|---|
 | [`basic`](https://github.com/vukery/vukery/tree/main/examples/basic) | none | the game engine, modes, scoring tables, priority and blocking, tests |
-| [`display`](https://github.com/vukery/vukery/tree/main/examples/display) | one | slides with live values |
-| [`dual_display`](https://github.com/vukery/vukery/tree/main/examples/dual_display) | two | a media controller per display, slides per display |
+| [`display`](https://github.com/vukery/vukery/tree/main/examples/display) | one | scenes with live values and an entrance |
+| [`dual_display`](https://github.com/vukery/vukery/tree/main/examples/dual_display) | two | a media controller per display, scenes per display |
 
 ## `examples/basic`
 
@@ -83,8 +83,8 @@ uv run vuk you
 | File | What's in it |
 |---|---|
 | [`config/machine.yaml`](https://github.com/vukery/vukery/blob/main/examples/display/config/machine.yaml) | `examples/basic`'s machine, plus `displays:` |
-| [`modes/start_screen/mode.py`](https://github.com/vukery/vukery/blob/main/examples/display/modes/start_screen/mode.py), [`slides.py`](https://github.com/vukery/vukery/blob/main/examples/display/modes/start_screen/slides.py) | the slide shown between games |
-| [`modes/base/mode.py`](https://github.com/vukery/vukery/blob/main/examples/display/modes/base/mode.py), [`slides.py`](https://github.com/vukery/vukery/blob/main/examples/display/modes/base/slides.py) | the mode and its scoring table; its score slide in a file next to it |
+| [`modes/start_screen/mode.py`](https://github.com/vukery/vukery/blob/main/examples/display/modes/start_screen/mode.py), [`scenes.py`](https://github.com/vukery/vukery/blob/main/examples/display/modes/start_screen/scenes.py) | the scene shown between games |
+| [`modes/base/mode.py`](https://github.com/vukery/vukery/blob/main/examples/display/modes/base/mode.py), [`scenes.py`](https://github.com/vukery/vukery/blob/main/examples/display/modes/base/scenes.py) | the mode and its scoring table; its score scene in a file next to it |
 | [`tests/test_display.py`](https://github.com/vukery/vukery/blob/main/examples/display/tests/test_display.py) | the specs |
 
 ## `examples/dual_display`
@@ -100,12 +100,12 @@ process each; `vuk me` shows each in its own pane.
 | `main` | the title | the score |
 | `apron` | "PRESS START" | the player and ball |
 
-Each mode shows its slides on specific displays:
+Each mode shows its scenes on specific displays:
 
 ```python
 def mode_start(self, **_):
-    self.show_slide("score", display="main")
-    self.show_slide("ball_info", display="apron")
+    self.show_scene(score, display="main")
+    self.show_scene(ball_info, display="apron")
 ```
 
 Its 7 specs check that a media controller loads for each display and what

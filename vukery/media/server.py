@@ -1,8 +1,8 @@
 """The engine's side of the media protocol: decides what each display shows.
 
-Modes show slides with a priority (the mode's priority plus their own, as in
-MPF's ``slide_player``). Each display shows its highest-priority slide, and a
-mode's slides go away when it stops. Media controllers are told only what
+Modes show scenes with a priority (the mode's priority plus their own, as in
+MPF's ``slide_player``). Each display shows its highest-priority scene, and a
+mode's scenes go away when it stops. Media controllers are told only what
 changed.
 """
 
@@ -16,7 +16,7 @@ from typing import TYPE_CHECKING, Any
 from vukery.core.errors import ConfigError
 from vukery.core.log import Logs
 from vukery.media import dashboard, protocol
-from vukery.media.slides import Slide
+from vukery.media.scenes import Scene
 
 if TYPE_CHECKING:
     from vukery.core.machine import Machine
@@ -44,7 +44,7 @@ class DisplayConfig:
 
 @dataclass
 class _Shown:
-    slide: str
+    scene: str
     display: str
     priority: int
     mode: str
@@ -69,7 +69,7 @@ class MediaServer(Logs):
         self.machine = machine
         self.displays = displays
         self.port = port
-        self.slides: dict[str, Slide] = {}
+        self.scenes: dict[str, dict[str, Any]] = {}   # name -> the scene, as data
         self.showing: dict[str, str | None] = {name: None for name in displays}
         self._stack: list[_Shown] = []
         self._order = count()
@@ -85,39 +85,40 @@ class MediaServer(Logs):
     def default_display(self) -> str:
         return next(iter(self.displays))
 
-    # --- slides
+    # --- scenes
 
-    def define(self, name: str, slide: Slide, mode: str) -> None:
-        if name in self.slides:
-            raise ConfigError(f"Slide {name!r} is defined twice (again in mode {mode})")
-        self.slides[name] = slide
+    def define(self, name: str, scene: Scene, mode: str) -> None:
+        if name in self.scenes:
+            raise ConfigError(f"Scene {name!r} is defined twice (again in mode {mode})")
+        self.scenes[name] = scene.to_data()
 
-    def show(self, mode: Mode, slide: str, display: str | None = None, priority: int = 0) -> None:
+    def show(self, mode: Mode, scene: str, display: str | None = None, priority: int = 0) -> None:
         if not self.displays:
-            return  # running for the dashboard only, with no displays to show slides on
-        if slide not in self.slides:
-            raise ConfigError(f"Mode {mode.name} shows slide {slide!r}, which isn't defined")
+            return  # running for the dashboard only, with no displays to show scenes on
+        if scene not in self.scenes:
+            raise ConfigError(f"Mode {mode.name} shows scene {scene!r}, which isn't defined "
+                              "(list its function in the mode's scenes)")
         display = display or self.default_display
         if display not in self.displays:
-            raise ConfigError(f"Mode {mode.name} shows slide {slide!r} on display {display!r}, "
+            raise ConfigError(f"Mode {mode.name} shows scene {scene!r} on display {display!r}, "
                               f"which isn't in displays: ({', '.join(self.displays)})")
-        self._stack = [s for s in self._stack if not (s.slide == slide and s.display == display)]
-        self._stack.append(_Shown(slide, display, mode.priority + priority, mode.name, next(self._order)))
+        self._stack = [s for s in self._stack if not (s.scene == scene and s.display == display)]
+        self._stack.append(_Shown(scene, display, mode.priority + priority, mode.name, next(self._order)))
         self._update(display)
 
-    def remove(self, mode: Mode, slide: str | None = None) -> None:
-        """Remove one of a mode's slides, or all of them."""
-        touched = {s.display for s in self._stack if s.mode == mode.name and slide in (None, s.slide)}
-        self._stack = [s for s in self._stack if not (s.mode == mode.name and slide in (None, s.slide))]
+    def remove(self, mode: Mode, scene: str | None = None) -> None:
+        """Remove one of a mode's scenes, or all of them."""
+        touched = {s.display for s in self._stack if s.mode == mode.name and scene in (None, s.scene)}
+        self._stack = [s for s in self._stack if not (s.mode == mode.name and scene in (None, s.scene))]
         for display in touched:
             self._update(display)
 
     def _update(self, display: str) -> None:
         candidates = [s for s in self._stack if s.display == display]
-        top = max(candidates, key=lambda s: (s.priority, s.order)).slide if candidates else None
+        top = max(candidates, key=lambda s: (s.priority, s.order)).scene if candidates else None
         if self.showing.get(display) != top:
             self.showing[display] = top
-            self._send({"type": "show", "display": display, "slide": top})
+            self._send({"type": "show", "display": display, "scene": top})
 
     # --- game state for widgets
 
@@ -145,7 +146,7 @@ class MediaServer(Logs):
             "type": "welcome",
             "version": protocol.VERSION,
             "displays": {name: {"width": d.width, "height": d.height} for name, d in self.displays.items()},
-            "slides": {name: slide.to_data() for name, slide in self.slides.items()},
+            "scenes": dict(self.scenes),
             "showing": dict(self.showing),
             "player": game.player.number if game and game.player else None,
             "players": players,

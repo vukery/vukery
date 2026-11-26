@@ -26,15 +26,15 @@ def describe_vuk_it():
                      "tests/test_my_machine.py", "pyproject.toml", "README.md", ".gitignore", ".python-version",
                      "assets/sounds/.gitkeep", "assets/images/.gitkeep", "assets/videos/.gitkeep",
                      "assets/fonts/.gitkeep"):
-            assert (folder / path).is_file(), path
-        assert len(created) == 15
+            expect((folder / path).is_file()).to_be_true()
+        expect(len(created)).to_equal(15)
 
     def it_fills_in_the_name_and_pins_this_vukery(made):
         folder, created = made
         for path in created:
-            assert "{{" not in (folder / path).read_text(), path
-        assert f"vukery@v{__version__}" in (folder / "pyproject.toml").read_text()
-        assert 'name = "my-machine"' in (folder / "pyproject.toml").read_text()
+            expect((folder / path).read_text()).not_to_contain("{{")  # path
+        expect((folder / "pyproject.toml").read_text()).to_contain(f"vukery@v{__version__}")
+        expect((folder / "pyproject.toml").read_text()).to_contain('name = "my-machine"')
 
     def it_makes_a_machine_that_plays(made):
         folder, _ = made
@@ -50,8 +50,8 @@ def describe_vuk_it():
         folder, _ = made
         result = subprocess.run([sys.executable, "-m", "pytest", "-q", "-p", "no:cacheprovider"], cwd=folder,
                                 capture_output=True, text=True, timeout=120, check=False)
-        assert result.returncode == 0, result.stdout + result.stderr
-        assert "passed" in result.stdout
+        expect(result.returncode).to_equal(0)  # result.stdout + result.stderr
+        expect(result.stdout).to_contain("passed")
 
     def it_wont_write_into_a_folder_with_files(tmp_path):
         (tmp_path / "combat").mkdir()
@@ -64,21 +64,21 @@ def describe_vuk_it():
             create_machine(tmp_path / "My Game")
 
     def it_is_the_vuk_it_command(tmp_path, capsys):
-        assert main(["-C", str(tmp_path), "it", "combat"]) == 0
+        expect(main(["-C", str(tmp_path), "it", "combat"])).to_equal(0)
         out = capsys.readouterr().out
-        assert "create  config/machine.yaml" in out
-        assert "uv run vuk me" in out
-        assert (tmp_path / "combat" / "tests" / "test_combat.py").is_file()
+        expect(out).to_contain("create  config/machine.yaml")
+        expect(out).to_contain("uv run vuk me")
+        expect((tmp_path / "combat" / "tests" / "test_combat.py").is_file()).to_be_true()
 
     def it_asks_for_a_name_when_none_is_given(tmp_path, capsys, monkeypatch):
         answers = iter(["", "grand-prix"])  # an empty answer asks again
         monkeypatch.setattr("builtins.input", lambda prompt: next(answers))
-        assert main(["-C", str(tmp_path), "it"]) == 0
-        assert (tmp_path / "grand-prix" / "config" / "machine.yaml").is_file()
+        expect(main(["-C", str(tmp_path), "it"])).to_equal(0)
+        expect((tmp_path / "grand-prix" / "config" / "machine.yaml").is_file()).to_be_true()
 
     def it_stops_if_no_name_ever_comes(tmp_path, capsys, monkeypatch):
         def no_input(prompt):
             raise EOFError
         monkeypatch.setattr("builtins.input", no_input)
-        assert main(["-C", str(tmp_path), "it"]) == 1
-        assert "no name given" in capsys.readouterr().err
+        expect(main(["-C", str(tmp_path), "it"])).to_equal(1)
+        expect(capsys.readouterr().err).to_contain("no name given")

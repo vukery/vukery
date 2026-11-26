@@ -5,7 +5,7 @@ import pytest
 from tests.helpers import basic_machine
 from vukery.core.errors import ConfigError
 from vukery.core.machine import Machine
-from vukery.testing import GameRig
+from vukery.testing import GameRig, expect
 
 
 def _fast(config):
@@ -71,8 +71,8 @@ def describe_the_machine():
         def it_describes_a_mode(tmp_path):
             rig = GameRig(basic_machine(tmp_path))
             try:
-                assert repr(rig.mode("base")) == "<Mode base (stopped, priority 100)>"
+                expect(repr(rig.mode("base"))).to_equal("<Mode base (stopped, priority 100)>")
                 rig.start_game()
-                assert repr(rig.mode("base")) == "<Mode base (running, priority 100)>"
+                expect(repr(rig.mode("base"))).to_equal("<Mode base (running, priority 100)>")
             finally:
                 rig.stop()

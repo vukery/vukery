@@ -4,13 +4,19 @@ Channel mapping follows MPF's ``Light`` device so migrated configs map to the
 same hardware channels:
 https://github.com/missionpinball/mpf/blob/9ef886f4f263db44704f09a87bfd11229036ab5c/mpf/devices/light.py
 
-Not here yet: the priority stack (shows and modes restoring the color
-underneath), color correction and gamma. Those come with shows.
+Each light keeps a **stack** of colors, as in MPF: every ``color()`` call has
+a priority and a key. The highest priority shows (the latest, on a tie).
+Setting a key that's there replaces it; removing a key reveals what's below,
+which is how a show gives the light back when it stops. A plain
+``light.color("ff0000")`` is priority 0 with no key.
+
+Not here yet: color correction and gamma.
 """
 
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
-from typing import Any
+from itertools import count
+from typing import Any, cast
 
 from vukery.core.errors import ConfigError
 
@@ -56,9 +62,19 @@ class LightConfig:
         unknown = sorted(set(data) - known)
         if unknown:
             raise ConfigError(f"lights: {name}: unknown setting(s): {', '.join(unknown)}")
-        values = {key: (str(value) if key in ("number", "start_channel") else value)
-                  for key, value in data.items()}
+        values: dict[str, Any] = {key: (str(value) if key in ("number", "start_channel") else value)
+                                  for key, value in data.items()}
         return cls(name=name, **values)
+
+
+@dataclass(frozen=True)
+class StackEntry:
+    """One color on a light's stack (MPF: LightStackEntry)."""
+
+    priority: int
+    key: str | None
+    color: Color
+    order: int  # breaks ties: the latest wins
 
 
 class Light:
@@ -73,6 +89,8 @@ class Light:
         self.hw_drivers: dict[str, list[Any]] = {}
         # (start color, start time, target color, target time); target time < 0 means "no fade"
         self._fade: tuple[Color, float, Color, float] = ((0, 0, 0), 0.0, (0, 0, 0), -1.0)
+        self.stack: list[StackEntry] = []   # highest priority first; the first one shows
+        self._order = count()
         self._load_channels(lights)
 
     # --- channel mapping (MPF's _load_hw_drivers / _load_hw_driver_sequentially)
@@ -91,7 +109,8 @@ class Light:
                 if self.config.number:
                     raise ConfigError(f"Light {self.name} can't have both number and channels")
                 for color, entries in channels.items():
-                    for entry in entries if isinstance(entries, list) else [entries]:
+                    listed: list[Any] = cast(list[Any], entries) if isinstance(entries, list) else [entries]
+                    for entry in listed:
                         self._add(color, str(entry["number"]))
             case LightConfig(number=str() as number):
                 channel_list = [c["number"] for c in
@@ -143,16 +162,35 @@ class Light:
 
     # --- color
 
-    def on(self, fade_ms: int | None = None) -> None:
-        self.color(self.config.default_on_color, fade_ms)
+    def on(self, fade_ms: int | None = None, priority: int = 0, key: str | None = None) -> None:
+        self.color(self.config.default_on_color, fade_ms, priority, key)
 
-    def off(self, fade_ms: int | None = None) -> None:
-        self.color((0, 0, 0), fade_ms)
+    def off(self, fade_ms: int | None = None, priority: int = 0, key: str | None = None) -> None:
+        self.color((0, 0, 0), fade_ms, priority, key)
 
-    def color(self, color: Any, fade_ms: int | None = None) -> None:
+    def color(self, color: Any, fade_ms: int | None = None, priority: int = 0, key: str | None = None) -> None:
+        """Put a color on the stack. It shows if nothing higher is there."""
         target = parse_color(color)
         fade_ms = self.config.fade_ms or 0 if fade_ms is None else fade_ms
         now = self.now()
+        entry = StackEntry(priority, key, target, next(self._order))
+        self.stack = [e for e in self.stack if e.key != key]
+        self.stack.append(entry)
+        self.stack.sort(key=lambda e: (e.priority, e.order), reverse=True)
+        if self.stack[0] is entry:
+            self._fade_to(target, now, fade_ms)
+
+    def remove(self, key: str | None, fade_ms: int | None = None) -> None:
+        """Take ``key``'s color off the stack, showing what's under it (MPF: remove_from_stack_by_key)."""
+        if not any(e.key == key for e in self.stack):
+            return
+        was_top = self.stack[0].key == key
+        self.stack = [e for e in self.stack if e.key != key]
+        if was_top:
+            fade_ms = self.config.fade_ms or 0 if fade_ms is None else fade_ms
+            self._fade_to(self.stack[0].color if self.stack else (0, 0, 0), self.now(), fade_ms)
+
+    def _fade_to(self, target: Color, now: float, fade_ms: int) -> None:
         start = self.current_color(now)
         target_time = now + fade_ms / 1000 if fade_ms > 0 else -1.0
         self._fade = (start, now, target, target_time)

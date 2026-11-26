@@ -6,7 +6,6 @@ with one verb per concept and options instead of combined command names.
 
 import argparse
 import platform
-import shutil
 import subprocess
 import sys
 from collections.abc import Sequence
@@ -53,27 +52,62 @@ def _parser() -> argparse.ArgumentParser:
                                "lights: walk every LED; coil: pulse one coil (asks first)")
     hardware.add_argument("name", nargs="?", help="the coil to pulse (for: coil)")
 
-    commands.add_parser("doctor", help="check the setup: versions, FFmpeg, serial ports (MPF: mpf diagnosis)")
+    commands.add_parser("health", help="check the setup: versions, where vukery is from, pyglet and FFmpeg "
+                                       "(MPF: mpf diagnosis)")
     commands.add_parser("wire", help="FAST wiring instructions for the config (MPF: mpf wire)")
 
     you = commands.add_parser("you", aliases=["test"],
                               help="run the specs, in the test environment, with coverage (MPF: mpf test)")
     you.add_argument("pytest_args", nargs=argparse.REMAINDER, help="passed to pytest, e.g. -k scoring")
 
-    generate = commands.add_parser("generate", help="create a mode, show or slide in a game (MPF: mpf create_config)")
-    generate.add_argument("kind", choices=("mode", "show", "slide"))
+    generate = commands.add_parser("generate", help="create a mode, show or scene in a game (MPF: mpf create_config)")
+    generate.add_argument("kind", choices=("mode", "show", "scene"))
     generate.add_argument("name")
 
     commands.add_parser("stubs", help="generate typed stubs from the machine config")
     return parser
 
 
-def _doctor() -> int:
-    print(f"vukery {__version__}")
+def installed_from() -> str:
+    """Where this vukery came from: git (and the commit), a folder (editable or not), or a package index."""
+    import json
+    from importlib.metadata import PackageNotFoundError, distribution
+
+    try:
+        direct = distribution("vukery").read_text("direct_url.json")
+    except PackageNotFoundError:
+        return "a source folder, not installed"
+    if not direct:
+        return "a package index"
+    info = json.loads(direct)
+    url = str(info.get("url", "")).removeprefix("file://")
+    match info:
+        case {"vcs_info": {"commit_id": str() as commit}}:
+            return f"git {url} at {commit[:7]}"
+        case {"dir_info": {"editable": True}}:
+            return f"{url} (editable: it runs that folder's code)"
+        case _:
+            return url
+
+
+def _health() -> int:
+    print(f"vukery {__version__}, from {installed_from()}")
     print(f"Python {platform.python_version()} ({sys.executable})")
     print(f"Platform {platform.platform()}")
-    ffmpeg = shutil.which("ffmpeg")
-    print(f"FFmpeg: {ffmpeg or 'not found (needed by the media controller)'}")
+    try:
+        import pyglet
+    except ImportError:
+        print("pyglet: not installed. Displays and vuk me need it: install vukery[mc]")
+        return 0
+    print(f"pyglet {pyglet.version}")
+    pyglet.options["shadow_window"] = False  # no window: this may run where there's no screen
+    from pyglet.media.codecs import have_ffmpeg
+
+    if have_ffmpeg():
+        print("FFmpeg libraries: found (pyglet plays video and sound with them)")
+    else:
+        print("FFmpeg libraries: not found. Text scenes work; video and sound will need them "
+              "(macOS: brew install ffmpeg; Debian: apt install ffmpeg)")
     return 0
 
 
@@ -263,8 +297,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         case None:
             parser.print_help()
             return 0
-        case "doctor":
-            return _doctor()
+        case "health":
+            return _health()
         case "it":
             return _create(args)
         case "you" | "test":  # vuk test is an alias

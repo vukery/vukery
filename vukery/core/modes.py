@@ -31,7 +31,7 @@ from vukery.core.clock import Timer
 from vukery.core.events import BLOCK, Block, Handler
 from vukery.core.log import Logs
 from vukery.core.scoring import Entry, entries, facility, resolve
-from vukery.media.slides import Slide
+from vukery.media.scenes import SceneFunction, scene_name
 
 if TYPE_CHECKING:
     from vukery.core.machine import Machine
@@ -100,7 +100,7 @@ class Mode(Logs):
     stop_on: ClassVar[str | tuple[str, ...]] = ()
     game_mode: ClassVar[bool] = True  # stops when the game ends; can only run during a game
     stop_on_ball_end: ClassVar[bool] = True
-    slides: ClassVar[dict[str, Slide]] = {}  # slides this mode can show, by name
+    scenes: ClassVar[tuple[SceneFunction, ...]] = ()  # the @scene functions this mode can show
     scoring: ClassVar[dict[str, Entry]] = {}  # what this mode scores (see vukery.core.scoring)
 
     def __init_subclass__(cls, **kwargs: Any) -> None:
@@ -169,18 +169,41 @@ class Mode(Logs):
         if timer := self._delays.pop(name, None):
             timer.cancel()
 
-    def show_slide(self, name: str, display: str | None = None, priority: int = 0) -> None:
-        """Show one of the game's slides (MPF: ``slide_player``).
+    def show_scene(self, scene: Any, display: str | None = None, priority: int = 0) -> None:
+        """Show one of the game's scenes (MPF: ``slide_player``): its function, or its name.
 
         ``display``: which display (MPF: ``target``); the first one by default.
-        ``priority``: added to the mode's priority. The slide goes away when the mode stops.
+        ``priority``: added to the mode's priority. The scene goes away when the mode stops.
         """
         if self.machine.media is not None:
-            self.machine.media.show(self, name, display, priority)
+            self.machine.media.show(self, scene_name(scene), display, priority)
 
-    def remove_slide(self, name: str) -> None:
+    def play_show(self, name: str, *, priority: int = 0, speed: float = 1.0, loops: int = -1, start_step: int = 1,
+                  show_tokens: dict[str, Any] | None = None, key: str | None = None,
+                  events_when_played: tuple[str, ...] = (), events_when_stopped: tuple[str, ...] = (),
+                  events_when_looped: tuple[str, ...] = (), events_when_completed: tuple[str, ...] = ()) -> Any:
+        """Play a show (MPF: show_player). ``name`` is one of this mode's (``bumper_flash``) or
+        another mode's (``flash_score.bumper_flash``). Its priority is added to the mode's; the
+        same ``key`` (the show's name by default) replaces what's playing under it. It stops
+        when this mode stops. Returns the running show (stop, pause, resume, advance)."""
+        return self.machine.shows.play(name, self, priority=priority, speed=speed, loops=loops,
+                                       start_step=start_step, show_tokens=show_tokens, key=key,
+                                       events_when_played=events_when_played,
+                                       events_when_stopped=events_when_stopped,
+                                       events_when_looped=events_when_looped,
+                                       events_when_completed=events_when_completed)
+
+    def stop_show(self, key: str | None = None) -> None:
+        """Stop one of this mode's shows (by key, which is its name unless you gave one), or all."""
+        self.machine.shows.stop(self.name, None if key is None else self._show_key(key))
+
+    def _show_key(self, key: str) -> str:
+        own = f"{self.name}.{key}"
+        return own if own in self.machine.shows.shows else key
+
+    def remove_scene(self, scene: Any) -> None:
         if self.machine.media is not None:
-            self.machine.media.remove(self, name)
+            self.machine.media.remove(self, scene_name(scene))
 
     # --- hooks for subclasses
 
@@ -224,6 +247,7 @@ class Mode(Logs):
         self._timed = []
         for name in list(self._delays):
             self.cancel_delay(name)
+        self.machine.shows.stop(self.name)  # a mode's shows stop with it, giving their lights back
         self.events.post_queue(f"mode_{self.name}_stopping", callback=lambda: self._stopped(kwargs))
 
     def _stopped(self, kwargs: dict[str, Any]) -> None:

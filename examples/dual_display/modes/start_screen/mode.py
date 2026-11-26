@@ -2,7 +2,7 @@
 
 from vukery import Mode
 
-from .slides import SLIDES
+from .scenes import press_start, title
 
 
 class StartScreen(Mode):
@@ -11,10 +11,10 @@ class StartScreen(Mode):
     stop_on = "game_start"
     game_mode = False         # runs outside games
     stop_on_ball_end = False
-    slides = SLIDES
+    scenes = (title, press_start)
 
     def mode_start(self, **_):
         # display= picks the screen (MPF: slide_player target:). Each display keeps
-        # its own stack of slides, so these don't compete.
-        self.show_slide("title", display="main")
-        self.show_slide("press_start", display="apron")
+        # its own stack of scenes, so these don't compete.
+        self.show_scene(title, display="main")
+        self.show_scene(press_start, display="apron")

@@ -1,4 +1,4 @@
-"""examples/dual_display: two displays, each with its own slides."""
+"""examples/dual_display: two displays, each with its own scenes."""
 
 from pathlib import Path
 
@@ -12,7 +12,7 @@ GAME = Path(__file__).parents[1]
 @pytest.fixture
 def game():
     # The test rig includes a media controller in the same process, so specs can
-    # check what's on screen (game.slide(), game.screen()) without opening a window.
+    # check what's on screen (game.scene(), game.screen()) without opening a window.
     rig = GameRig(GAME)
     yield rig
     rig.stop()
@@ -26,23 +26,23 @@ def describe_dual_display():
 
     def describe_between_games():
         def it_shows_the_title_on_main(game):
-            expect(game.slide("main")).to_equal("title")
+            expect(game.scene("main")).to_equal("title")
             expect(game.screen("main")).to_equal(["vukery"])
 
         def it_shows_press_start_on_the_apron(game):
-            expect(game.slide("apron")).to_equal("press_start")  # pass a display name for the others
+            expect(game.scene("apron")).to_equal("press_start")  # pass a display name for the others
             expect(game.screen("apron")).to_equal(["PRESS START"])
 
     def describe_during_a_game():
         def it_shows_the_score_on_main(game):
             game.start_game()
             game.switch("s_target")
-            expect(game.slide("main")).to_equal("score")
+            expect(game.scene("main")).to_equal("score")
             expect(game.screen("main")).to_equal(["1,000"])
 
         def it_shows_player_and_ball_on_the_apron(game):
             game.start_game()
-            expect(game.slide("apron")).to_equal("ball_info")
+            expect(game.scene("apron")).to_equal("ball_info")
             expect(game.screen("apron")).to_equal(["PLAYER 1", "BALL 1"])
 
         def it_updates_each_display_on_its_own(game):
@@ -58,5 +58,5 @@ def describe_dual_display():
             game.drain()
             game.drain()
             game.drain()
-            expect(game.slide("main")).to_equal("title")
-            expect(game.slide("apron")).to_equal("press_start")
+            expect(game.scene("main")).to_equal("title")
+            expect(game.scene("apron")).to_equal("press_start")

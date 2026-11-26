@@ -28,12 +28,15 @@ from vukery.core.errors import ConfigError
 from vukery.core.events import EventManager
 from vukery.core.log import Logs
 from vukery.core.modes import Mode, ModeController
+from vukery.core.shows import Shows
 from vukery.core.switches import SwitchConfig, SwitchController
 from vukery.devices.ball_device import BallDeviceConfig, Trough
 from vukery.devices.coil import Coil, CoilConfig
 from vukery.devices.light import Light, LightConfig
+from vukery.devices.light_group import LightGroup
 from vukery.devices.rules import AutofireCoil, Flipper
 from vukery.media import dashboard, protocol
+from vukery.media.scenes import build, scene_name
 from vukery.media.server import DisplayConfig, MediaServer
 from vukery.modes.attract import Attract
 from vukery.modes.game import Game
@@ -61,9 +64,11 @@ class Machine(Logs):
         self.events = EventManager(self.loop)
         self.switches = SwitchController(self.events, self.clock)
         self.modes = ModeController(self)
+        self.shows = Shows(self)
         self.game: Game | None = None
         self.coils: dict[str, Coil] = {}
         self.lights: dict[str, Light] = {}
+        self.light_groups: dict[str, LightGroup] = {}
         self.ball_devices: dict[str, Trough] = {}
         self.flippers: dict[str, Flipper] = {}
         self.autofire_coils: dict[str, AutofireCoil] = {}
@@ -128,10 +133,11 @@ class Machine(Logs):
         if self.config.platform == "development":
             self._fill_troughs()
         self._load_modes()
+        self.shows.load(self.config.game_dir, list(self.config.modes))
         if self.media is not None:
             for mode in self.modes.modes.values():
-                for name, slide in type(mode).slides.items():
-                    self.media.define(name, slide, mode.name)
+                for function in type(mode).scenes:
+                    self.media.define(scene_name(function), build(function), mode.name)
             if self.environment != "test":
                 await self.media.serve()
         self.events.post("init_done")
@@ -146,6 +152,8 @@ class Machine(Logs):
                                     self.platform.features["max_pulse"])
         for name, entry in config.section("lights").items():
             self.lights[name] = Light(LightConfig.from_yaml(name, entry or {}), self.platform, self.lights, self.now)
+        for name, members in config.section("light_groups").items():
+            self.light_groups[name] = LightGroup.from_yaml(name, members, self.lights)
         for name, entry in config.section("ball_devices").items():
             device = BallDeviceConfig.from_yaml(name, entry or {})
             if "trough" not in device.tags:

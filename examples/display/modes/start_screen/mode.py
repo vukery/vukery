@@ -2,7 +2,7 @@
 
 from vukery import Mode
 
-from .slides import SLIDES
+from .scenes import start_screen
 
 
 class StartScreen(Mode):
@@ -11,7 +11,7 @@ class StartScreen(Mode):
     stop_on = "game_start"                        # gone as soon as a game starts
     game_mode = False         # runs outside games (a game mode only runs during one)
     stop_on_ball_end = False
-    slides = SLIDES           # the slides this mode can show, by name (slides.py)
+    scenes = (start_screen,)  # the scenes this mode can show (scenes.py)
 
     def mode_start(self, **_):
-        self.show_slide("start_screen")  # removed automatically when the mode stops
+        self.show_scene(start_screen)  # removed automatically when the mode stops
