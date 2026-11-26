@@ -68,7 +68,7 @@ autofire_coils:                 # slingshots and pop bumpers: the switch fires t
 game:
   balls_per_game: 3
 
-modes:                          # the game's own modes, from modes/<name>/<name>.py
+modes:                          # the game's own modes, from modes/<name>/mode.py
   - start_screen                # between games: a title on main, "PRESS START" on the apron
   - base                        # scoring; the score on main, player and ball on the apron
 

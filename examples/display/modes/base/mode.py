@@ -1,27 +1,21 @@
-"""The base mode: scores the playfield and shows the score."""
+"""The base mode: scores the playfield and shows the score.
+
+A mode is a folder: this file holds the class, and the files next to it hold
+its parts (scoring.py, slides.py). A small mode can also be one file, as in
+examples/basic.
+"""
 
 from vukery import Mode
-from vukery.media.slides import Slide, Text
+
+from .scoring import SCORING  # files next to this one, in the same mode folder
+from .slides import SLIDES
 
 
 class Base(Mode):
     priority = 100
     start_on = "ball_started"
-
-    slides = {
-        "score": Slide(
-            # {player.score:,} is filled in live by the media controller, with Python
-            # formatting: 12340 shows as 12,340. Any player variable works.
-            Text("{player.score:,}", y=0.55, size=0.25),
-            Text("PLAYER {player.number}   BALL {player.ball}", y=0.15, size=0.07, color="aaaaaa"),
-        ),
-    }
-
-    scoring = {                 # MPF: variable_player
-        "s_target": 1000,
-        "s_left_sling": 10,
-        "s_right_sling": 10,
-    }
+    scoring = SCORING           # MPF: variable_player
+    slides = SLIDES
 
     def mode_start(self, **_):
         # A slide's priority is the mode's (100 here), so it covers the start screen (10).

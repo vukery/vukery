@@ -71,6 +71,6 @@ autofire_coils:                 # slingshots and pop bumpers: the switch fires t
 game:
   balls_per_game: 3
 
-modes:                          # the game's own modes, from modes/<name>/<name>.py
+modes:                          # the game's own modes, from modes/<name>/mode.py
   - base                        # (attract and game are built in and always loaded)
   - frenzy
