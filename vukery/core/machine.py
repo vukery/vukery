@@ -30,7 +30,7 @@ from vukery.core.log import Logs
 from vukery.core.modes import Mode, ModeController
 from vukery.core.shows import Shows
 from vukery.core.switches import SwitchConfig, SwitchController
-from vukery.devices.ball_device import BallDeviceConfig, Trough
+from vukery.devices.ball_device import BallDevice, BallDeviceConfig
 from vukery.devices.coil import Coil, CoilConfig
 from vukery.devices.light import Light, LightConfig
 from vukery.devices.light_group import LightGroup
@@ -69,7 +69,7 @@ class Machine(Logs):
         self.coils: dict[str, Coil] = {}
         self.lights: dict[str, Light] = {}
         self.light_groups: dict[str, LightGroup] = {}
-        self.ball_devices: dict[str, Trough] = {}
+        self.ball_devices: dict[str, BallDevice] = {}
         self.flippers: dict[str, Flipper] = {}
         self.autofire_coils: dict[str, AutofireCoil] = {}
         self._calls: dict[str, Any] = {}
@@ -156,9 +156,15 @@ class Machine(Logs):
             self.light_groups[name] = LightGroup.from_yaml(name, members, self.lights)
         for name, entry in config.section("ball_devices").items():
             device = BallDeviceConfig.from_yaml(name, entry or {})
-            if "trough" not in device.tags:
-                raise ConfigError(f"ball_devices: {name}: only troughs (tags: trough) are supported so far")
-            self.ball_devices[name] = Trough(device, self)
+            if "trough" not in device.tags and not device.mechanical_eject:
+                raise ConfigError(f"ball_devices: {name}: only troughs (tags: trough) and plunger lanes "
+                                  "(mechanical_eject: true) are supported so far")
+            self.ball_devices[name] = BallDevice(device, self)
+        for device in self.ball_devices.values():
+            for target in device.config.eject_targets:
+                if target != "playfield" and target not in self.ball_devices:
+                    raise ConfigError(f"ball_devices: {device.name}: eject_targets: no ball device named "
+                                      f"{target!r} (or use playfield)")
         for name, entry in config.section("flippers").items():
             self.flippers[name] = Flipper.from_yaml(name, entry or {}, self)
         for name, entry in config.section("autofire_coils").items():
@@ -166,8 +172,10 @@ class Machine(Logs):
         self.events.add_handler("request_to_start_game", self._balls_home_check, priority=100)
 
     def _fill_troughs(self) -> None:
-        """development: every ball starts at home, like MPF's smart_virtual platform."""
+        """development: every ball starts in the trough, like MPF's smart_virtual platform."""
         for device in self.ball_devices.values():
+            if "trough" not in device.config.tags:
+                continue
             for name in device.config.ball_switches:
                 if not self.switches[name].state:
                     self.set_switch(name, 1)
@@ -198,7 +206,7 @@ class Machine(Logs):
                 points = mode.adjust_score(points, source)
         return round(points)
 
-    def trough(self) -> Trough | None:
+    def trough(self) -> BallDevice | None:
         for device in self.ball_devices.values():
             if "trough" in device.config.tags:
                 return device

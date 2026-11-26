@@ -69,6 +69,8 @@ class GameRig:
                     self.machine.media.attach(self.dashboard.apply, dashboard=True)
             if fill_troughs:
                 for device in self.machine.ball_devices.values():
+                    if "trough" not in device.config.tags:
+                        continue   # balls start in the trough, as in the engine
                     for name in device.config.ball_switches:
                         self.machine.set_switch(name, 1)
             self.advance()
@@ -122,10 +124,16 @@ class GameRig:
         self.advance(1)
 
     def drain(self, balls: int = 1) -> None:
-        """Put balls back into the trough, as if they drained."""
+        """Put balls back into the trough, as if they drained. A ball still waiting in a
+        plunger lane (``mechanical_eject``) is shot first: it can't drain from there."""
         trough = self.machine.trough()
         if trough is None:
             raise ConfigError("There's no trough to drain into")
+        waiting = [s for d in self.machine.ball_devices.values() if d.config.mechanical_eject
+                   for s in d.config.ball_switches if self.machine.switches[s].state]
+        for name in waiting[:balls]:
+            self.machine.set_switch(name, 0)
+            self.advance()
         empty = [s for s in trough.config.ball_switches if not self.machine.switches[s].state]
         for name in empty[:balls]:
             self.machine.set_switch(name, 1)

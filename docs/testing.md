@@ -59,8 +59,8 @@ happens until the test does something.
 
 | Option | Default | |
 |---|---|---|
-| `fill_troughs` | `True` | Every trough switch starts active (all balls home) |
-| `simulate_balls` | `True` | An ejected ball leaves the trough by itself |
+| `fill_troughs` | `True` | Every trough switch starts active (all balls home); other ball devices start empty |
+| `simulate_balls` | `True` | An ejected ball leaves the trough by itself, and lands in its eject target (a plunger lane, say) |
 
 ### Actions
 
@@ -73,7 +73,7 @@ happens until the test does something.
 | `game.switch("s_spinner", times=5, every=0.05)` | Repeated taps |
 | `game.advance(3)` | Let 3 seconds pass |
 | `game.start_game(players=2)` | Press start (a switch tagged `start`) once per player |
-| `game.drain()` | Return a ball to the trough |
+| `game.drain()` | Return a ball to the trough (a ball waiting in a plunger lane is shot first) |
 | `game.post("event_name", **args)` | Post an event |
 
 There's one method per action. "Hold a switch, then wait" is two calls:

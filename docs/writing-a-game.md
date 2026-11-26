@@ -80,9 +80,28 @@ starts with a zero (`number: "010"`), which YAML would otherwise read as an
 octal number.
 
 **Supported sections so far:** `switches`, `coils`, `lights`,
-`ball_devices` (troughs), `flippers` (single-wound, no EOS),
+`light_groups`, `ball_devices` (troughs and plunger lanes, see below),
+`flippers` (single-wound, no EOS),
 `autofire_coils`, `game`, `modes`, `player_vars`, `displays`, `media`,
 `hardware`, `fast`, `logging`.
+
+**Ball devices:** a trough (`tags: trough`) and a mechanical plunger lane
+(`mechanical_eject: true`), with MPF's settings `ball_switches`,
+`eject_coil`, `eject_targets` and `tags`. A device tagged `drain` reports
+drains. On the simulated platforms, as on MPF's smart_virtual platform, balls
+start in the trough, and an eject moves the ball into its eject target:
+
+```yaml
+ball_devices:
+  bd_trough:
+    ball_switches: s_trough1, s_trough2
+    eject_coil: c_trough_eject
+    eject_targets: bd_shooter_lane     # where an eject sends the ball (default: playfield)
+    tags: trough, home, drain
+  bd_shooter_lane:
+    ball_switches: s_shooter_lane
+    mechanical_eject: true             # the player plunges it: in vuk me, click the switch
+```
 
 **Game logic sections aren't allowed.** vukery stops with an error that
 points you to modes if your config has `variable_player`, `event_player`,

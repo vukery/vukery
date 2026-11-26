@@ -1,9 +1,12 @@
-"""Ball devices (MPF: ``ball_devices:``), starting with the simplest one: a trough.
+"""Ball devices (MPF: ``ball_devices:``): troughs and mechanical plunger lanes so far.
 
-A first, deliberately simple version: it counts balls by its switches,
-ejects with its coil, and reports drains. MPF's full ball device logic
-(eject confirmation and retries, jams, lost balls, ball search) is ported
-later.
+A first, deliberately simple version: a device counts balls by its switches,
+ejects with its coil, and a device tagged ``drain`` reports drains. On the
+simulated platforms an eject moves the ball, as MPF's smart_virtual platform
+does: it leaves the device's switch, then closes the first empty switch of its
+``eject_targets`` device (a ball ejected to the playfield is just gone).
+MPF's full ball device logic (eject confirmation and retries, jams, lost
+balls, ball search) is ported later.
 """
 
 from dataclasses import dataclass
@@ -27,10 +30,12 @@ class BallDeviceConfig:
     ball_switches: tuple[str, ...]
     eject_coil: str | None = None
     tags: tuple[str, ...] = ()
+    eject_targets: tuple[str, ...] = ("playfield",)
+    mechanical_eject: bool = False   # a plunger the player pulls: the ball leaves when they shoot it
 
     @classmethod
     def from_yaml(cls, name: str, data: dict[str, Any]) -> BallDeviceConfig:
-        supported = {"ball_switches", "eject_coil", "tags"}
+        supported = {"ball_switches", "eject_coil", "tags", "eject_targets", "mechanical_eject"}
         unsupported = sorted(set(data) - supported)
         if unsupported:
             raise ConfigError(f"ball_devices: {name}: not supported yet: {', '.join(unsupported)}")
@@ -38,11 +43,14 @@ class BallDeviceConfig:
         switches = names(data.get("ball_switches"), f"ball_devices: {name}: ball_switches")
         if not switches:
             raise ConfigError(f"ball_devices: {name}: needs ball_switches")
-        return cls(name=name, ball_switches=switches, eject_coil=data.get("eject_coil"), tags=names(data.get("tags"), f"ball_devices: {name}: tags"))
+        targets = names(data.get("eject_targets"), f"ball_devices: {name}: eject_targets") or ("playfield",)
+        return cls(name=name, ball_switches=switches, eject_coil=data.get("eject_coil"),
+                   tags=names(data.get("tags"), f"ball_devices: {name}: tags"), eject_targets=targets,
+                   mechanical_eject=bool(data.get("mechanical_eject", False)))
 
 
-class Trough(Logs):
-    """A trough: balls wait here between balls and games."""
+class BallDevice(Logs):
+    """A trough (balls wait here between balls and games) or a mechanical plunger lane."""
 
     def __init__(self, config: BallDeviceConfig, machine: Machine):
         self.config = config
@@ -78,12 +86,24 @@ class Trough(Logs):
 
     def _ball_entered(self, **_: Any) -> None:
         game = self.machine.game
-        if game and game.balls_in_play > 0:
+        if "drain" in self.config.tags and game and game.balls_in_play > 0:
             self.machine.events.post_relay("ball_drain", balls=1, device=self.name)
 
     def _simulate_eject(self, _driver: Any) -> None:
-        """development: the ball rolls out of the eject position (the first switch with a ball)."""
+        """Simulated: the ball rolls out of the eject position (the first switch with a ball),
+        then into its eject target, if that's a ball device."""
         for switch in self.config.ball_switches:
             if self.machine.switches[switch].state:
                 self.machine.clock.call_later(SIMULATED_EJECT_SECONDS, self.machine.set_switch, switch, 0)
+                target = self.machine.ball_devices.get(self.config.eject_targets[0])
+                if target is not None:
+                    self.machine.clock.call_later(2 * SIMULATED_EJECT_SECONDS, target.receive_simulated_ball)
                 return
+
+    def receive_simulated_ball(self) -> None:
+        """Simulated: a ball arrives, on the first empty ball switch (none if it's full)."""
+        for switch in self.config.ball_switches:
+            if not self.machine.switches[switch].state:
+                self.machine.set_switch(switch, 1)
+                return
+        self.warning_log("A simulated ball arrived, but the device is full")
