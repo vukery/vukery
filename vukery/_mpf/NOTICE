@@ -87,3 +87,7 @@ vukery/platforms/fast/fast_driver.py
 vukery/platforms/fast/fast_led.py
     from: mpf/platforms/fast/fast_led.py @ 9ef886f4f263db44704f09a87bfd11229036ab5c (MPF 0.57.6)
     permalink: https://github.com/missionpinball/mpf/blob/9ef886f4f263db44704f09a87bfd11229036ab5c/mpf/platforms/fast/fast_led.py
+
+vukery/platforms/fast/fast_io_board.py
+    from: mpf/platforms/fast/fast_io_board.py @ 9ef886f4f263db44704f09a87bfd11229036ab5c (MPF 0.57.6)
+    permalink: https://github.com/missionpinball/mpf/blob/9ef886f4f263db44704f09a87bfd11229036ab5c/mpf/platforms/fast/fast_io_board.py
