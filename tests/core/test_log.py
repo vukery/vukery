@@ -81,12 +81,11 @@ def describe_logging():
 
         def it_applies_vuk_log(log_file):
             base = config("level: warning")
-            setup_logging(base.with_vuk_log("events=debug"), "development", log_file.dir, console=False)
+            setup_logging(base.with_vuk_log("debug"), "development", log_file.dir, console=False)
             get_logger("events").debug("event detail")
-            get_logger("game").info("game info")
+            get_logger("game").debug("game detail")
             text = log_file()
-            assert "event detail" in text
-            assert "game info" not in text
+            assert "event detail" in text and "game detail" in text
 
         def it_honors_mpfs_debug_true(log_file):
             setup_logging(config("level: info"), "development", log_file.dir, console=False)
@@ -103,23 +102,22 @@ def describe_logging():
             assert cfg.console == logging.WARNING and cfg.file == logging.DEBUG
 
     def describe_vuk_log():
-        def it_sets_the_default_level_with_a_bare_level():
-            cfg = config("level: info\nconsole: info").with_vuk_log("debug")
-            assert cfg.level == logging.DEBUG and cfg.console == logging.DEBUG
+        def it_overrides_every_setting_with_one_level():
+            cfg = config("level: warning\nconsole: error\nfile: info\ncomponents: {fast: off, events: debug}")
+            cfg = cfg.with_vuk_log("debug")
+            assert (cfg.level, cfg.console, cfg.file) == (logging.DEBUG,) * 3
+            assert cfg.components == {}
 
-        def it_sets_components_and_lets_their_detail_through():
-            cfg = config("console: warning\nfile: info").with_vuk_log("info, fast=debug, fast.rgb=off")
-            assert cfg.level == logging.INFO
-            assert cfg.components["fast"] == logging.DEBUG
-            assert cfg.console == logging.DEBUG and cfg.file == logging.DEBUG
+        def it_accepts_only_four_levels():
+            for name in ("debug", "INFO", "warning", "error"):
+                config().with_vuk_log(name)
+            for bad in ("fatal", "off", "fast=debug"):
+                with pytest.raises(ConfigError, match="VUK_LOG must be one of"):
+                    config().with_vuk_log(bad)
 
         def it_ignores_an_empty_value():
             cfg = config()
             assert cfg.with_vuk_log("") is cfg and cfg.with_vuk_log(None) is cfg
-
-        def it_rejects_garbage():
-            with pytest.raises(ConfigError, match="VUK_LOG"):
-                config().with_vuk_log("fast=debug=yes")
 
     def describe_config_errors():
         def it_rejects_unknown_levels():

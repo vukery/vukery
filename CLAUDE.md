@@ -46,8 +46,9 @@ think one is wrong, say so instead of working around it.
   engine never imports any media library.
 - **The CLI is `vuk`.** Environment variables, not flags, set the
   environment and logging: `VUK_ENV` (default `development`) and `VUK_LOG`
-  (e.g. `VUK_LOG=info,fast=debug,fast.rgb=off`). Components log under dotted
-  names through `vukery.core.log`, never a private debug flag.
+  (one level for everything: `debug`, `info`, `warning` or `error`).
+  Per-component levels go in the `logging:` config. Components log under
+  dotted names through `vukery.core.log`, never a private debug flag.
 - **Environments are enforced in code:**
   - `test` never opens serial ports or touches hardware;
   - `development` needs `--hardware` to touch hardware;

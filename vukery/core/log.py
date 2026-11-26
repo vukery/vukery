@@ -12,13 +12,14 @@
   MPF's per-component ``debug: true`` keys are accepted and mean the same as setting
   that component to ``debug`` here.
 
-Set levels on the fly with the ``VUK_LOG`` environment variable, like Rust's
-``RUST_LOG``: an optional default level, then ``component=level`` pairs::
+``VUK_LOG`` sets one level for everything on the fly, overriding the whole
+``logging:`` config (like Rails' log level)::
 
     VUK_LOG=debug vuk run
-    VUK_LOG=info,fast.rgb=off,events=debug vuk run
 
-It's applied on top of the ``logging:`` config section::
+Levels: debug, info, warning, error. Per-component levels only come from the
+``logging:`` config section::
+
 
     logging:
       level: info        # default for everything
@@ -43,6 +44,8 @@ from vukery.core.errors import ConfigError
 ROOT = "vukery"
 FORMAT = "%(asctime)s : %(levelname)s : %(name)s : %(message)s"
 OFF = logging.CRITICAL + 10  # above everything vukery logs
+
+VUK_LOG_LEVELS = ("debug", "info", "warning", "error")
 
 LEVELS = {
     "off": OFF,
@@ -98,29 +101,19 @@ class LoggingConfig:
         )
 
     def with_vuk_log(self, value: str | None) -> LoggingConfig:
-        """Apply a ``VUK_LOG`` value, e.g. ``"info,fast=debug,fast.rgb=off"``.
+        """Apply a ``VUK_LOG`` level: it overrides every setting, components included.
 
-        A bare level sets the default level and lets the console and file show it.
+        Per-component levels only come from the ``logging:`` config.
         """
         if not value or not value.strip():
             return self
-        level, console, file = self.level, self.console, self.file
-        components = dict(self.components)
-        for part in (p.strip() for p in value.split(",")):
-            match part.split("="):
-                case [""]:
-                    continue
-                case [bare]:
-                    level = parse_level(bare.strip(), "VUK_LOG")
-                    console, file = min(console, level), min(file, level)
-                case [name, lvl] if name.strip():
-                    components[name.strip()] = parse_level(lvl.strip(), f"VUK_LOG {name.strip()}")
-                case _:
-                    raise ConfigError(f"VUK_LOG: can't read {part!r}. Use e.g. VUK_LOG=info,fast=debug")
-        if components:
-            lowest = min(components.values())
-            console, file = min(console, lowest), min(file, lowest)
-        return LoggingConfig(level, console, file, components, self.max_file_mb, self.backups)
+        match value.strip().lower():
+            case "debug" | "info" | "warning" | "error" as name:
+                level = LEVELS[name]
+            case _:
+                raise ConfigError(f"VUK_LOG must be one of {', '.join(VUK_LOG_LEVELS)}, got {value!r}. "
+                                  "Per-component levels go in the logging: config.")
+        return LoggingConfig(level, level, level, {}, self.max_file_mb, self.backups)
 
 
 def get_logger(name: str) -> logging.Logger:

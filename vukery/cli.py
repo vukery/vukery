@@ -21,8 +21,8 @@ def _parser() -> argparse.ArgumentParser:
         prog="vuk",
         description="vukery: a very opinionated pinball framework based on the Mission Pinball Framework.",
         epilog="Environment variables: VUK_ENV picks the environment (development, test or production; "
-               "default development; vuk test always uses test). VUK_LOG sets log levels, e.g. "
-               "VUK_LOG=info,fast=debug,fast.rgb=off.",
+               "default development; vuk test always uses test). VUK_LOG sets one log level for "
+               "everything (debug, info, warning or error); per-component levels go in the logging: config.",
     )
     parser.add_argument("--version", action="version", version=f"vukery {__version__}")
     parser.add_argument("-C", dest="game_dir", metavar="DIR", default=".",
