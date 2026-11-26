@@ -28,6 +28,7 @@ from vukery.core.errors import ConfigError
 from vukery.core.events import EventManager
 from vukery.core.log import Logs
 from vukery.core.modes import Mode, ModeController
+from vukery.core.shows import Shows
 from vukery.core.switches import SwitchConfig, SwitchController
 from vukery.devices.ball_device import BallDeviceConfig, Trough
 from vukery.devices.coil import Coil, CoilConfig
@@ -62,6 +63,7 @@ class Machine(Logs):
         self.events = EventManager(self.loop)
         self.switches = SwitchController(self.events, self.clock)
         self.modes = ModeController(self)
+        self.shows = Shows(self)
         self.game: Game | None = None
         self.coils: dict[str, Coil] = {}
         self.lights: dict[str, Light] = {}
@@ -130,6 +132,7 @@ class Machine(Logs):
         if self.config.platform == "development":
             self._fill_troughs()
         self._load_modes()
+        self.shows.load(self.config.game_dir, list(self.config.modes))
         if self.media is not None:
             for mode in self.modes.modes.values():
                 for name, slide in type(mode).slides.items():
