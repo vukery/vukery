@@ -1,0 +1,35 @@
+# Runs every spec with coverage. On main, it also redraws the README's
+# coverage badge and keeps it on the `badges` branch (one commit, replaced
+# each time), so no outside service is needed.
+name: Specs
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: write   # to update the badges branch
+
+jobs:
+  specs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - name: Install (uv installs Python 3.15 too)
+        run: uv sync
+      - name: Specs, with coverage
+        run: uv run pytest --cov --cov-report=term --cov-report=json:coverage.json
+      - name: Draw the coverage badge
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: python3 scripts/coverage_badge.py coverage.json "$RUNNER_TEMP/coverage.svg"
+      - name: Put it on the badges branch
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          cd "$RUNNER_TEMP"
+          git init -q badges && cd badges
+          cp ../coverage.svg .
+          git add coverage.svg
+          git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
+            commit -qm "coverage badge for ${GITHUB_SHA::7}"
+          git push -qf "https://x-access-token:${{ github.token }}@github.com/${GITHUB_REPOSITORY}.git" HEAD:badges

@@ -1,6 +1,6 @@
 [project]
 name = "vukery"
-version = "0.0.15"
+version = "0.0.16"
 description = "A very opinionated pinball framework based on the Mission Pinball Framework, built to be simple, lean and LLM-friendly."
 readme = "README.md"
 license = "MIT"
@@ -20,7 +20,15 @@ mc = ["pyglet>=2.1.19"]  # also needs FFmpeg installed on the system
 
 [dependency-groups]
 # pyglet is in dev too, so the examples' media controller works after a plain `uv sync`
-dev = ["pytest", "pytest-describe", "pytest-spec", "ruff", "pyright", "pyglet>=2.1.19"]
+dev = [
+    "pytest",
+    "pytest-describe",
+    "pytest-spec",
+    "ruff",
+    "pyright",
+    "pyglet>=2.1.19",
+    "pytest-cov>=7.1.0",
+]
 # Build the docs site locally: uv run mkdocs build --strict
 docs = [
     "mkdocs>=1.6.1",
@@ -54,6 +62,15 @@ extend-exclude = ["tests/mpf_ported"]
 include = ["vukery"]
 typeCheckingMode = "strict"
 pythonVersion = "3.15"
+
+[tool.coverage.run]
+# uv run pytest --cov: how much of vukery the specs run (CI draws the README badge from it)
+source = ["vukery"]
+branch = true
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = true
 
 [tool.pytest.ini_options]
 testpaths = ["tests", "examples"]
