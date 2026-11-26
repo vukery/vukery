@@ -537,6 +537,9 @@ wheels = [
 name = "vukery"
 version = "0.0.1"
 source = { editable = "." }
+dependencies = [
+    { name = "pyyaml" },
+]
 
 [package.optional-dependencies]
 mc = [
@@ -557,7 +560,10 @@ docs = [
 ]
 
 [package.metadata]
-requires-dist = [{ name = "pyglet", marker = "extra == 'mc'", specifier = ">=2.1.19" }]
+requires-dist = [
+    { name = "pyglet", marker = "extra == 'mc'", specifier = ">=2.1.19" },
+    { name = "pyyaml", specifier = ">=6.0.4" },
+]
 provides-extras = ["mc"]
 
 [package.metadata.requires-dev]
