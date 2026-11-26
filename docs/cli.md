@@ -8,6 +8,7 @@ vuk it my_machine  # create a machine, ready to play and test
 cd my_machine
 vuk me             # play the game on your computer, with the dashboard
 vuk us             # run the game the way a machine does: displays full screen
+vuk you            # run the machine's specs
 vuk doctor         # check your setup
 vuk --help
 ```
@@ -45,7 +46,7 @@ VUK_LOG=debug vuk us
 
 - **development** (the default) uses simulated hardware unless you pass
   `--hardware`.
-- **test** is what `vuk test` always uses. It never touches hardware.
+- **test** is what `vuk you` always uses. It never touches hardware.
 - **production** runs the real machine.
 
 ## Commands
@@ -55,6 +56,7 @@ VUK_LOG=debug vuk us
 | `vuk doctor` | **works** | Shows versions and checks for FFmpeg | `mpf diagnosis` |
 | `vuk it NAME` | **works** | Creates a machine folder, ready to play and test | `mpf create_config` |
 | `vuk me` | **works** on the simulated platforms | Runs the game with the full-screen [dashboard](dashboard.md) | `mpf both` plus `mpf monitor` |
+| `vuk you` (or `vuk test`) | **works** | Runs the machine's specs with pytest, always in the test environment. Extra arguments go to pytest (`vuk you -k scoring`). | `mpf test` |
 | `vuk us` | **works** in development | Runs the game and a full-screen media controller per display. On the development platform you can also type a switch name in the terminal to tap it. | `mpf`, `mpf game`, `mpf both` |
 | `vuk mc` | **works** | Runs a media controller only (`--display NAME`, `--windowed`) | `mpf mc` |
 | `vuk top` | planned | Terminal dashboard of a running game; works over SSH | `mpf -t` |
@@ -63,7 +65,6 @@ VUK_LOG=debug vuk us
 | `vuk hardware switches` | planned | Shows switch changes live | |
 | `vuk hardware lights` | planned | Walks every LED | |
 | `vuk hardware coil NAME` | planned | Pulses one coil, after asking | |
-| `vuk test` | planned | Runs the game's specs | `mpf test` |
 | `vuk generate mode\|show\|slide NAME` | planned | Adds a mode, show or slide | `mpf create_config` |
 | `vuk wire` | planned | FAST wiring instructions from your config | `mpf wire` |
 | `vuk stubs` | planned | Typed stubs from your machine config | |

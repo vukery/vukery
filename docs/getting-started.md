@@ -30,7 +30,7 @@ vuk it my_machine
 cd my_machine
 uv sync            # installs vukery (pinned in pyproject.toml) and the test tools
 uv run vuk me      # play it with the dashboard; Esc stops it
-uv run pytest      # run its specs
+uv run vuk you     # run its specs
 ```
 
 `vuk it` creates a complete, playable machine folder, much like `rails new`:
@@ -62,7 +62,7 @@ version the machine pins:
 ```console
 uv run vuk me                       # play it on your computer
 VUK_ENV=production uv run vuk us    # run it on the machine
-uv run pytest
+uv run vuk you                      # its specs
 ```
 
 If you use pyenv, plain `python` in the folder will complain that version
