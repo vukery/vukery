@@ -14,6 +14,10 @@ def describe_vuk():
         with pytest.raises(SystemExit):
             main(["--env", "production", "run"])
 
+    def it_has_no_log_flag():  # log levels come from VUK_LOG
+        with pytest.raises(SystemExit):
+            main(["--log", "fast=debug", "run"])
+
     def it_runs_doctor(capsys):
         assert main(["doctor"]) == 0
         assert "Python" in capsys.readouterr().out
