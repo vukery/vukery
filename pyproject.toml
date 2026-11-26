@@ -1,12 +1,14 @@
 [project]
 name = "vukery"
-version = "0.0.1"
+version = "0.0.2"
 description = "A very opinionated pinball framework based on the Mission Pinball Framework, built to be simple, lean and LLM-friendly."
 readme = "README.md"
 license = "MIT"
 license-files = ["LICENSE", "vukery/_mpf/NOTICE"]
 requires-python = ">=3.15"
-dependencies = []
+dependencies = [
+    "pyyaml>=6.0.4",
+]
 
 [project.urls]
 Homepage = "https://vukery.com"
@@ -18,13 +20,14 @@ mc = ["pyglet>=2.1.19"]  # also needs FFmpeg installed on the system
 
 [dependency-groups]
 dev = ["pytest", "pytest-describe", "pytest-spec", "ruff", "pyright"]
+# Build the docs site locally: uv run --group docs mkdocs build --strict
 docs = [
     "mkdocs>=1.6.1",
     "mkdocs-material>=9.8.2",
 ]
 
 [project.scripts]
-vukery = "vukery.cli:main"
+vuk = "vukery.cli:main"
 
 [tool.uv]
 # Use uv's own Python builds, so every machine runs the same interpreter.
@@ -48,3 +51,5 @@ testpaths = ["tests"]
 # RSpec-style specs: describe_*/it_* functions (pytest-describe), tree output (pytest-spec)
 addopts = "--spec"
 describe_prefixes = ["describe_", "context_"]
+# Warnings (unclosed ports, event loops, sockets...) fail the run instead of scrolling past
+filterwarnings = ["error"]
