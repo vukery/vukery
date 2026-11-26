@@ -14,7 +14,8 @@ Startup, in order:
 """
 
 import asyncio
-import importlib.util
+import hashlib
+import importlib
 import sys
 from collections.abc import Callable
 from pathlib import Path
@@ -161,8 +162,9 @@ class Machine(Logs):
     def _load_modes(self) -> None:
         for mode_class in BUILT_IN_MODES:
             self.modes.add(mode_class(self))
+        package = modes_package(self.config.game_dir)
         for name in self.config.modes:
-            self.modes.add(load_mode(self.config.game_dir, name)(self))
+            self.modes.add(load_mode(self.config.game_dir, name, package)(self))
 
     def stop(self, reason: str = "") -> None:
         if self.is_shutting_down:
@@ -242,13 +244,36 @@ class Machine(Logs):
         return list_serial_ports()
 
 
-def load_mode(game_dir: Path, name: str) -> type[Mode]:
-    """Find the ``Mode`` subclass for ``name`` in ``modes/<name>/<name>.py`` or ``modes/<name>.py``."""
-    candidates = [game_dir / "modes" / name / f"{name}.py", game_dir / "modes" / f"{name}.py"]
-    path = next((p for p in candidates if p.is_file()), None)
-    if path is None:
-        raise ConfigError(f"modes: {name}: no file at {candidates[0]} or {candidates[1]}")
-    module = _import(path, f"vukery_game_modes.{name}")
+def modes_package(game_dir: Path) -> str:
+    """Make the machine's ``modes/`` folder a Python package, and return its name.
+
+    That lets a mode split itself into files and import them
+    (``from .scoring import SCORING`` in ``modes/base/mode.py``). Splitting is
+    optional: a mode can live in one file. Every machine gets its own package
+    name, and its modules are loaded fresh each time the machine starts.
+    """
+    package = "vukery_modes_" + hashlib.sha1(str(game_dir.resolve()).encode()).hexdigest()[:12]
+    for loaded in [m for m in sys.modules if m == package or m.startswith(package + ".")]:
+        del sys.modules[loaded]
+    module = ModuleType(package)
+    module.__path__ = [str(game_dir / "modes")]
+    module.__package__ = package
+    sys.modules[package] = module
+    importlib.invalidate_caches()
+    return package
+
+
+def load_mode(game_dir: Path, name: str, package: str | None = None) -> type[Mode]:
+    """Find the ``Mode`` subclass for ``name`` in ``modes/<name>/mode.py``."""
+    package = package or modes_package(game_dir)
+    path = game_dir / "modes" / name / "mode.py"
+    if not path.is_file():
+        for old in (game_dir / "modes" / name / f"{name}.py", game_dir / "modes" / f"{name}.py"):
+            if old.is_file():
+                raise ConfigError(f"modes: {name}: a mode's main file is mode.py: rename {old} to {path}")
+        raise ConfigError(f"modes: {name}: no {path}")
+    module_name = f"{package}.{name}.mode"
+    module = importlib.import_module(module_name)
     found = [obj for obj in vars(module).values()
              if isinstance(obj, type) and issubclass(obj, Mode) and obj.__module__ == module.__name__]
     match [cls for cls in found if cls.name == name], found:
@@ -259,13 +284,3 @@ def load_mode(game_dir: Path, name: str) -> type[Mode]:
                               f"{mode_class.name!r}. Rename the class or set name = {name!r}.")
         case _:
             raise ConfigError(f"modes: {name}: expected one Mode subclass named for the mode in {path}")
-
-
-def _import(path: Path, module_name: str) -> ModuleType:
-    spec = importlib.util.spec_from_file_location(module_name, path)
-    if spec is None or spec.loader is None:
-        raise ConfigError(f"Can't import {path}")
-    module = importlib.util.module_from_spec(spec)
-    sys.modules[module_name] = module
-    spec.loader.exec_module(module)
-    return module
