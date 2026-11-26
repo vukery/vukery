@@ -21,7 +21,7 @@ vuk --help
 `vuk me` and `vuk us` run the game whose `config/` folder is in the current
 folder (or in the folder given with `-C DIR`):
 
-- **`vuk me`** is for working on a game. The game runs with a full-screen
+- **`vuk me`** is for working on a game. The game runs with a
   [dashboard](dashboard.md) showing every switch, light, coil and mode, the
   displays, and a virtual playfield you click to play.
 - **`vuk us`** is how a machine runs, usually with `VUK_ENV=production`: the
@@ -55,7 +55,7 @@ VUK_LOG=debug vuk us
 |---|---|---|---|
 | `vuk doctor` | **works** | Shows versions and checks for FFmpeg | `mpf diagnosis` |
 | `vuk it NAME` | **works** | Creates a machine folder, ready to play and test | `mpf create_config` |
-| `vuk me` | **works** on the simulated platforms | Runs the game with the full-screen [dashboard](dashboard.md) | `mpf both` plus `mpf monitor` |
+| `vuk me` | **works** on the simulated platforms | Runs the game with the [dashboard](dashboard.md), in a window | `mpf both` plus `mpf monitor` |
 | `vuk you` (or `vuk test`) | **works** | Runs the machine's specs with pytest, always in the test environment. Extra arguments go to pytest (`vuk you -k scoring`). | `mpf test` |
 | `vuk us` | **works** in development | Runs the game and a full-screen media controller per display. On the development platform you can also type a switch name in the terminal to tap it. | `mpf`, `mpf game`, `mpf both` |
 | `vuk top` | planned | Terminal dashboard of a running game; works over SSH | `mpf -t` |
@@ -74,7 +74,7 @@ A command that isn't built yet says so and exits with code 2.
 
 The config decides whether media controllers start: `vuk us` starts one per
 display in `displays:`, none without it. `vuk me` starts none, because the
-dashboard draws the displays itself. Sound will work the same way, from the
+dashboard shows the displays in its own panes. Sound will work the same way, from the
 config. (MPF chose with `mpf game` versus `mpf both`, and `--no-sound`.)
 
 | Option | Status | What it does | MPF flag |

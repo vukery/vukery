@@ -1,16 +1,18 @@
-# vuk me's dashboard. vuk me rewrites this file when you drag the edge of a pane,
-# unless arrangement_lock is true. Hand edits are fine, too.
+# vuk me's dashboard. vuk me rewrites this file when you resize a pane or drag
+# a switch or light into place, unless arrangement_lock is true. Hand edits are
+# fine, too.
 
 dashboard:
-  arrangement_lock: false  # true: the panes can't be resized from vuk me
+  arrangement_lock: false  # true: vuk me can't change the layout
   panes:  # each pane's width and height, as a % of the window
-    switches:  {width: 21.9, height: 50.0}
-    lights:    {width: 21.9, height: 50.0}
-    coils:     {width: 21.9, height: 50.0}
-    devices:   {width: 21.9, height: 50.0}
-    backbox:   {width: 28.1, height: 50.0}
-    game:      {width: 28.1, height: 50.0}
-    playfield: {width: 28.1, height: 100.0}
-  playfield:  # where switches and lights sit on the virtual playfield: [x, y], each 0 to 1
+    list:      {width: 40.0, height: 100.0}
+    backbox:   {width: 35.0, height: 100.0}
+    playfield: {width: 25.0, height: 100.0}
+  playfield:  # switches and lights placed in the playfield: [x, y], each 0 to 1
     s_target: [0.5, 0.62]
+    s_left_sling: [0.22, 0.3]
+    s_right_sling: [0.78, 0.3]
+    s_trough1: [0.42, 0.05]
+    s_trough2: [0.5, 0.05]
+    s_trough3: [0.58, 0.05]
     l_frenzy: [0.5, 0.54]

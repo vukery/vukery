@@ -76,7 +76,7 @@ two players taking turns.
 
 ```console
 cd examples/display
-uv run vuk me          # the display shows in the dashboard's backbox
+uv run vuk me          # the display gets its own pane on the dashboard
 uv run vuk you
 ```
 
@@ -93,7 +93,7 @@ uv run vuk you
 
 `examples/basic` with two displays: an 800×480 main screen and a 480×272
 apron screen. `vuk us` opens two full-screen windows, one media controller
-process each; `vuk me` shows both in its backbox.
+process each; `vuk me` shows each in its own pane.
 
 | Display | Between games | During a game |
 |---|---|---|

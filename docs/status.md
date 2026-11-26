@@ -21,7 +21,7 @@ rest of the docs never describe something as if it already works.
 | FAST Neuron and EXP boards | Planned, after COMBAT. | |
 | Ball save, tilt, high score, match, other built-in modes | Planned. | |
 | Shows, sounds, images, video | Planned. | |
-| `vuk me` dashboard | Built: switches, lights, coils, devices, the displays, game and modes, a clickable virtual playfield, resizable panes saved to `config/dashboard.yaml` (`arrangement_lock`), wood backbox and playfield backgrounds. Never fires coils. Your own artwork, and dragging playfield items, come later. | [The dashboard](dashboard.md) |
+| `vuk me` dashboard | Built: a scrolling list of the game, switches, lights, coils and devices; the backbox, a pane per display, and the playfield; clicking switches; dragging switches and lights into the backbox or onto the playfield; resizable panes; all saved to `config/dashboard.yaml` (`arrangement_lock`). Never fires coils. Your own artwork comes later. | [The dashboard](dashboard.md) |
 
 ## What vukery is tested against
 
