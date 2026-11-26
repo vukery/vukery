@@ -30,6 +30,7 @@ from typing import TYPE_CHECKING, Any, ClassVar
 from vukery.core.clock import Timer
 from vukery.core.events import BLOCK, Block, Handler
 from vukery.core.log import Logs
+from vukery.core.scoring import Entry, entries, facility, resolve
 from vukery.media.slides import Slide
 
 if TYPE_CHECKING:
@@ -100,6 +101,7 @@ class Mode(Logs):
     game_mode: ClassVar[bool] = True  # stops when the game ends; can only run during a game
     stop_on_ball_end: ClassVar[bool] = True
     slides: ClassVar[dict[str, Slide]] = {}  # slides this mode can show, by name
+    scoring: ClassVar[dict[str, Entry]] = {}  # what this mode scores (see vukery.core.scoring)
 
     def __init_subclass__(cls, **kwargs: Any) -> None:
         super().__init_subclass__(**kwargs)
@@ -132,10 +134,20 @@ class Mode(Logs):
         game = self.machine.game
         return game.player if game else None
 
-    def score(self, points: int) -> None:
-        """Add points to the current player's score (MPF: ``variable_player: score:``)."""
+    def score(self, points: int, source: str | None = None) -> None:
+        """Add points to the current player's score, after every running mode's ``adjust_score``.
+
+        ``source``: what scored (a switch or event name), for adjusters that care.
+        """
         if self.player is not None:
-            self.player.score += points
+            self.player.score += self.machine.adjust_score(points, source)
+
+    def adjust_score(self, points: float, source: str | None) -> float:
+        """Override to change every score while this mode runs (multipliers, suppression…).
+
+        Called for each score, on each running mode, highest priority first.
+        """
+        return points
 
     def post(self, event: str, **kwargs: Any) -> None:
         self.machine.events.post(event, **kwargs)
@@ -227,7 +239,34 @@ class Mode(Logs):
 
         self.events.post(f"mode_{self.name}_stopped", callback=finish)
 
+    def _add_scoring(self) -> None:
+        for key, value in type(self).scoring.items():
+            if key in self.machine.switches.switches:
+                event = f"{key}_active"
+            else:
+                if key.startswith("s_"):
+                    self.warning_log("scoring: %r isn't a switch, so it's treated as an event name", key)
+                event = key
+            for variable, amount, block in entries(value):
+                handler = self._scoring_handler(key, variable, amount, block)
+                self._switch_handlers.append(self.events.add_handler(
+                    event, handler, priority=self.priority, facility=facility(variable)))
+
+    def _scoring_handler(self, source: str, variable: str, amount: Any, block: Any) -> Callable[..., Any]:
+        def handle(**_: Any) -> Block | None:
+            player = self.player
+            if player is None:
+                return None
+            points = resolve(amount, self)
+            if variable == "score":
+                self.score(points, source)
+            else:
+                setattr(player, variable, player.get(variable, 0) + points)
+            return Block(facility(variable)) if resolve(block, self) else None
+        return handle
+
     def _add_hooks(self) -> None:
+        self._add_scoring()
         for attribute in dir(type(self)):
             method: Callable[..., Any] | None = getattr(self, attribute, None)
             if method is None or not callable(method):
@@ -238,14 +277,14 @@ class Mode(Logs):
                 match hook:
                     case _Hook(kind="event", name=event):
                         self._event_handlers.append(
-                            self.events.add_handler(event, method, priority=priority, blockable=True))
+                            self.events.add_handler(event, method, priority=priority, facility="handlers"))
                     case _Hook(kind="switch", name=switch, hold=hold, state=state) if hold > 0:
                         self._timed.append(self.machine.switches.add_timed_handler(switch, method, hold, state))
                     case _Hook(kind="switch", name=switch, state=state):
                         self.machine.switches[switch]  # fail early on a typo
                         suffix = "active" if state else "inactive"
                         self._switch_handlers.append(self.events.add_handler(
-                            f"{switch}_{suffix}", method, priority=priority, blockable=True))
+                            f"{switch}_{suffix}", method, priority=priority, facility="handlers"))
                     case _:
                         pass
 
