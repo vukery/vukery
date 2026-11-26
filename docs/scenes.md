@@ -1,8 +1,8 @@
 # Displays and scenes
 
 !!! note "0.0.x"
-    Scenes with text and nested scenes, entrances and exits, on one or more
-    displays, drawn by the pyglet media controller. Images, sprite sheets,
+    Scenes with text and nested scenes, entrances and exits, moves and
+    blinks, on one or more displays, drawn by the pyglet media controller. Images, sprite sheets,
     video and sound come later. The complete examples are
     [`examples/display` and `examples/dual_display`](examples.md).
 
@@ -148,6 +148,45 @@ Sides are `left`, `right`, `top` and `bottom`. Entrances ease out, and exits
 ease in. While actors exit, they're drawn over the scene that replaced them;
 actors without an exit just disappear.
 
+### Animations: moves and blinks
+
+Any actor (a text, or a placed scene with everything in it) can move and
+blink. Both start once it has made its entrance, and both keep going while it
+exits.
+
+**`.moves(x=, y=, seconds=1.0, repeat=False, back=False)`** moves it from
+where it's placed to `x`, `y` (fractions of its scene; leave one out to keep
+it). Moves are linear: the same speed all the way.
+
+```python
+# A scroll: from off the right edge to off the left edge, every 4 seconds
+Text("SHOOT THE GUN", x=1.5, y=0.5, size=0.2).moves(x=-0.5, seconds=4, repeat=True)
+
+# A bob: up a little and back down, forever
+Text("vukery", y=0.45).moves(y=0.55, seconds=2, repeat=True, back=True)
+```
+
+| `repeat` | `back` | |
+|---|---|---|
+| `False` | `False` | moves once and stays there |
+| `False` | `True` | goes there and comes back once |
+| `True` | `False` | moves, jumps back to the start, moves again |
+| `True` | `True` | goes there and back, forever |
+
+**`.blinks(every=0.5, times=None, fade=False)`** shows it for `every` seconds,
+then hides it for `every` seconds. With `times`, it blinks that many times
+and then stays on; without it, it blinks forever. With `fade=True`, it fades
+out and back in instead.
+
+```python
+Text("PRESS START", y=0.3).blinks(every=0.5)
+Text("{player.score:,}", y=0.6, size=0.3).blinks(every=0.25, fade=True)   # MPF: pulsate_fast
+Text("JACKPOT").blinks(every=0.1, times=5)
+```
+
+A blinking scene blinks everything in it. `game.screen()` in specs lists only
+what you'd see at that moment, so a text that's blinked off isn't in it.
+
 ### Live values
 
 Text can include the current player's variables, with Python formatting:
@@ -203,5 +242,7 @@ The message formats are in `vukery/media/protocol.py`.
 | `slide_player` `target:` | `display=` |
 | `widget_player` | a scene placed inside the scene that's showing |
 | widget `animations:` (`move_in`, `move_out`) | `.enters(side)`, `.exits(side)` |
+| `animations:` on `x` or `y` (scrolls), with `repeat: true` | `.moves(x=..., seconds=..., repeat=True)` |
+| `animations:` on `opacity` (pulsate, flash) | `.blinks(every=..., fade=True)`, or without `fade` for on and off |
 | `(player\|score)` placeholders | `{player.score}` |
 | MPF-MC (Kivy) or GMC (Godot) | the pyglet media controller, over vukery's own protocol (no BCP) |

@@ -117,6 +117,107 @@ def describe_scenes():
         expect(_texts(state)).to_equal([("HERE", 0.5, 0.5)])
 
 
+def _at(state, clock, seconds):
+    clock.time = seconds
+    return _texts(state)
+
+
+def _showing(actor):
+    """A media controller that has just shown a scene with ``actor`` in it."""
+    clock = Clock()
+    state = MediaState(now=clock)
+    state.apply(welcome(Scene()))
+    state.scenes["animated"] = Scene(actor).to_data()
+    state.apply({"type": "show", "display": "main", "scene": "animated"})
+    return state, clock
+
+
+def describe_animations():
+    def describe_moves():
+        def it_moves_from_where_its_placed_to_a_point_and_stays():
+            state, clock = _showing(Text("A", x=0.0).moves(x=1.0, seconds=2))
+            expect(_at(state, clock, 0)).to_equal([("A", 0.0, 0.5)])
+            expect(_at(state, clock, 1)).to_equal([("A", 0.5, 0.5)])
+            expect(_at(state, clock, 3)).to_equal([("A", 1.0, 0.5)])
+
+        def it_repeats_by_jumping_back_to_the_start():  # MPF: repeat: true, as in a scroll
+            state, clock = _showing(Text("A", x=1.5).moves(x=-0.5, seconds=4, repeat=True))
+            expect(_at(state, clock, 5)).to_equal([("A", 1.0, 0.5)])
+
+        def it_goes_there_and_back():
+            state, clock = _showing(Text("A", x=0.0).moves(x=1.0, seconds=2, back=True))
+            expect(_at(state, clock, 3)).to_equal([("A", 0.5, 0.5)])   # on the way back
+            expect(_at(state, clock, 9)).to_equal([("A", 0.0, 0.5)])   # back where it started
+
+        def it_goes_there_and_back_forever():
+            state, clock = _showing(Text("A", y=0.0).moves(y=1.0, seconds=1, repeat=True, back=True))
+            expect(_at(state, clock, 2.25)).to_equal([("A", 0.5, 0.25)])
+            expect(_at(state, clock, 3.75)).to_equal([("A", 0.5, 0.25)])
+
+        def it_starts_once_the_actor_has_entered():
+            state, clock = _showing(Text("A", x=0.0).enters("left", seconds=1).moves(x=1.0, seconds=1))
+            expect(_at(state, clock, 1)).to_equal([("A", 0.0, 0.5)])
+            expect(_at(state, clock, 1.5)).to_equal([("A", 0.5, 0.5)])
+
+        def it_moves_a_whole_nested_scene():
+            group = Scene(Text("IN")).placed(x=0.0, width=0.5, height=0.5).moves(x=1.0, seconds=1)
+            state, clock = _showing(group)
+            expect(_at(state, clock, 0.5)).to_equal([("IN", 0.5, 0.5)])
+
+        def it_keeps_moving_while_it_exits():
+            state, clock = _showing(Text("A", x=0.0).moves(x=1.0, seconds=2).exits("top", seconds=2))
+            clock.time = 1
+            state.apply({"type": "show", "display": "main", "scene": "score"})
+            expect(_at(state, clock, 2)).to_equal([("A", 1.0, 0.75)])  # moved all the way, a quarter exited
+
+    def describe_blinks():
+        def it_is_on_then_off():
+            state, clock = _showing(Text("A").blinks(every=0.5))
+            expect(_at(state, clock, 0.25)).to_equal([("A", 0.5, 0.5)])
+            expect(_at(state, clock, 0.75)).to_equal([])
+            expect(_at(state, clock, 1.25)).to_equal([("A", 0.5, 0.5)])
+
+        def it_stays_on_after_blinking_so_many_times():
+            state, clock = _showing(Text("A").blinks(every=0.5, times=2))
+            expect(_at(state, clock, 1.75)).to_equal([])
+            expect(_at(state, clock, 2.25)).to_equal([("A", 0.5, 0.5)])
+            expect(_at(state, clock, 2.75)).to_equal([("A", 0.5, 0.5)])
+
+        def it_fades_out_and_in():  # MPF: pulsate, on opacity
+            state, clock = _showing(Text("A").blinks(every=0.25, fade=True))
+            clock.time = 0.125
+            expect(state.draws("main")[0].opacity).to_be_close_to(0.5)
+            clock.time = 0.375
+            expect(state.draws("main")[0].opacity).to_be_close_to(0.5)
+            expect(_at(state, clock, 0.25)).to_equal([])   # faded all the way out
+
+        def it_blinks_everything_in_a_nested_scene():
+            group = Scene(Text("B").blinks(every=1, fade=True), background="202060").placed(width=0.5, height=0.5)
+            state, clock = _showing(group.blinks(every=1, fade=True))
+            clock.time = 0.5
+            rect, text = state.draws("main")
+            expect(rect.opacity).to_be_close_to(0.5)
+            expect(text.opacity).to_be_close_to(0.25)        # its own fade, times its scene's
+            expect(_at(state, clock, 1.5)).to_equal([("B", 0.5, 0.5)])  # pyglet draws it at 0.5 * 0.5
+
+    def it_animates_a_scene_already_showing_when_it_connects():
+        clock = Clock()
+        state = MediaState(now=clock)
+        clock.time = 10
+        state.apply(welcome(Scene(Text("A", x=0.0).enters("left").moves(x=1.0, seconds=2))))
+        expect(_at(state, clock, 11)).to_equal([("A", 0.5, 0.5)])   # from when it connected, no entrance
+
+    @pytest.mark.parametrize(("make", "message"), [
+        (lambda: Text("A").moves(seconds=1), "needs an x or a y"),
+        (lambda: Text("A").moves(x=1, seconds=0), "A move takes some time"),
+        (lambda: Text("A").blinks(every=0), "A blink takes some time"),
+        (lambda: Text("A").blinks(times=0), "1 or more"),
+    ])
+    def it_explains_a_mistake(make, message):
+        with pytest.raises(ConfigError, match=message):
+            make()
+
+
 def describe_scene_functions():
     def it_names_a_scene_after_its_function():
         @scene

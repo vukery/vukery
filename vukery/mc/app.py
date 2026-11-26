@@ -23,6 +23,10 @@ def _rgb(color: str) -> tuple[int, int, int]:
     return int(color[0:2], 16), int(color[2:4], 16), int(color[4:6], 16)
 
 
+def _alpha(opacity: float) -> int:
+    return max(0, min(255, round(opacity * 255)))
+
+
 def draw_scene(state: MediaState, display: str, x: float, y: float, width: float, height: float) -> None:
     """Draw ``display``'s scene into a rect, in window units: nested scenes' backgrounds and
     every text, with entrances and exits where they are now.
@@ -41,12 +45,12 @@ def draw_scene(state: MediaState, display: str, x: float, y: float, width: float
         match item:
             case DrawRect():
                 pyglet.shapes.Rectangle(x + item.x * width, y + item.y * height, item.width * width,
-                                        item.height * height, color=_rgb(item.color)).draw()
+                                        item.height * height, color=(*_rgb(item.color), _alpha(item.opacity))).draw()
             case DrawText():
                 pyglet.text.Label(item.text, font_size=max(int(item.size * height * 0.75), 1),
                                   x=int(x + item.x * width), y=int(y + item.y * height),
                                   anchor_x=cast(Any, item.anchor), anchor_y="center",
-                                  color=(*_rgb(item.color), 255)).draw()
+                                  color=(*_rgb(item.color), _alpha(item.opacity))).draw()
 
 
 def draw(window: Any, state: MediaState, display: str) -> None:

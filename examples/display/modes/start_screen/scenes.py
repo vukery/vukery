@@ -7,5 +7,5 @@ from vukery.media.scenes import Scene, Text, scene
 def start_screen():
     return Scene(
         Text("vukery", y=0.6, size=0.2, color="ffcc00"),
-        Text("PRESS START", y=0.3, size=0.08),
+        Text("PRESS START", y=0.3, size=0.08).blinks(every=0.5),   # on half a second, off half a second
     )
