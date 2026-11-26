@@ -17,7 +17,8 @@ nav:
   - Getting started: getting-started.md
   - Writing a game: writing-a-game.md
   - Modes: modes.md
-  - Displays and slides: displays.md
+  - Shows: shows.md
+  - Displays and scenes: scenes.md
   - Testing a game: testing.md
   - Examples: examples.md
   - The dashboard (vuk me): dashboard.md

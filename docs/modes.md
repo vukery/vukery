@@ -32,31 +32,33 @@ A mode is a folder, and its main file is always `mode.py`.
 - **`mode.py` holds the class and everything that configures the mode:**
   its settings (priority, `start_on`…) and its scoring table.
 - **Bigger parts go in files next to it,** imported with a relative import:
-  - its slides in `slides.py`;
-  - helper code in a module of its own;
-  - its shows (planned).
+  - its scenes in `scenes.py`;
+  - its shows, as YAML files (see [Shows](shows.md));
+  - helper code in a module of its own.
 
 ```text
 modes/base/
   mode.py       the Mode class: settings, scoring table, rules
-  slides.py     SLIDES = {...}
+  scenes.py     @scene functions
+  lane_sweep.yaml  a show
 ```
 
 ```python
 # modes/base/mode.py
 from vukery import Mode
 
-from .slides import SLIDES   # a file next to this one
+from .scenes import score   # a file next to this one
 
 
 class Base(Mode):
     priority = 100
     start_on = "ball_started"
     scoring = {"s_target": 1000, "s_left_sling": 10}
-    slides = SLIDES
+    scenes = (score,)
 ```
 
-- **Any file name works;** `slides.py` is a convention.
+- **Any Python file name works;** `scenes.py` is a convention. Every
+  `.yaml` file in the folder is a show.
 - **A small mode can stay in one file,** as in `examples/basic`. Both ways
   load the same.
 - **Every folder in `modes/` is a mode**, so each needs a `mode.py`; vukery
@@ -75,7 +77,7 @@ Settings are class attributes:
 | `game_mode` | `True` | Only runs during a game, and stops when it ends | `game_mode` |
 | `stop_on_ball_end` | `True` | Stops at the end of each ball | `stop_on_ball_end` |
 | `scoring` | `{}` | What the mode scores (see [Scoring](#scoring)) | `variable_player` |
-| `slides` | `{}` | Slides the mode can show (see [Displays and slides](displays.md)) | `slides` / `slide_player` |
+| `scenes` | `()` | The `@scene` functions the mode can show (see [Displays and scenes](scenes.md)) | `slides` / `slide_player` |
 | `name` | from the class | `HoleScore` → `hole_score` | the mode's folder name |
 
 For code that runs the whole time the machine is on, set `game_mode = False`
@@ -90,8 +92,10 @@ and `start_on = "reset_complete"`.
   mode's handlers run highest priority first.
 - **Blocking:** a mode can stop lower-priority modes' scoring for the same
   hit (see [Blocking](#blocking)). It can never block a mode above it.
-- **Slides:** a slide's priority is its mode's priority plus the
-  `priority=` passed to `show_slide()`, and each display shows its highest.
+- **Scenes:** a scene's priority is its mode's priority plus the
+  `priority=` passed to `show_scene()`, and each display shows its highest.
+- **Shows:** a show's priority is its mode's priority plus the `priority=`
+  passed to `play_show()`, and each light shows its highest.
 
 **The built-in modes:** attract is `10` and game is `20`, as in MPF. Use
 `100` and up for your own game modes.
@@ -234,7 +238,8 @@ scoring entry in the same mode.
 | `self.post("event_name", **args)` | post an event |
 | `self.delay("name", seconds, callback)` | call later; cancelled if the mode stops first |
 | `self.cancel_delay("name")` | |
-| `self.show_slide(name, display=None, priority=0)` / `self.remove_slide(name)` | see [Displays and slides](displays.md) |
+| `self.show_scene(scene, display=None, priority=0)` / `self.remove_scene(scene)` | see [Displays and scenes](scenes.md) |
+| `self.play_show(name, ...)` / `self.stop_show(key=None)` | see [Shows](shows.md) |
 | `self.stop()` | stop the mode |
 | `self.machine` | everything else: `switches`, `coils`, `lights`, `events`, `game`, `modes` |
 | `mode_start()` / `mode_stop()` | override to run code as the mode starts or stops |
@@ -257,7 +262,7 @@ Starting and stopping post MPF's events, in this order:
 ```text
 start:  mode_<name>_will_start → mode_<name>_starting (queue) → (active) → mode_<name>_started → mode_start()
 stop:   mode_<name>_will_stop  (switch handlers and scoring end, delays cancelled)
-        → mode_<name>_stopping (queue) → mode_<name>_stopped → mode_stop() → (handlers and slides removed)
+        → mode_<name>_stopping (queue) → mode_<name>_stopped → mode_stop() → (handlers, scenes and shows removed)
 ```
 
 A mode stops on its `stop_on` events, at the end of each ball

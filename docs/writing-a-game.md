@@ -4,8 +4,8 @@
     The game engine runs on the simulated `development` and `test`
     platforms: switches, coils, lights, a simple trough, single-wound
     flippers, autofire coils, the attract and game modes, and your own
-    modes, and text slides on displays ([Displays and slides](displays.md)).
-    Ball saves, tilt, shows and sound come later. The complete examples are
+    modes, [shows](shows.md), and scenes on displays ([Displays and scenes](scenes.md)).
+    Ball saves, tilt and sound come later. The complete examples are
     [`examples/basic` and `examples/display`](examples.md).
 
 ## A game folder
@@ -83,7 +83,7 @@ points you to modes if your config has `variable_player`, `event_player`,
 ## Modes (Python)
 
 Game logic lives in modes: Python classes in `modes/<name>/mode.py`, with
-their bigger parts (slides, helper code) in files next to it. See
+their bigger parts (scenes, shows, helper code) in files next to it. See
 [Modes: A mode's files](modes.md#a-modes-files).
 
 ```python

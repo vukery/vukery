@@ -64,7 +64,7 @@ VUK_LOG=debug vuk us
 | `vuk hardware switches` | planned | Shows switch changes live | |
 | `vuk hardware lights` | planned | Walks every LED | |
 | `vuk hardware coil NAME` | planned | Pulses one coil, after asking | |
-| `vuk generate mode\|show\|slide NAME` | planned | Adds a mode, show or slide | `mpf create_config` |
+| `vuk generate mode\|show\|scene NAME` | planned | Adds a mode, show or scene | `mpf create_config` |
 | `vuk wire` | planned | FAST wiring instructions from your config | `mpf wire` |
 | `vuk stubs` | planned | Typed stubs from your machine config | |
 
