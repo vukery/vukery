@@ -30,6 +30,7 @@ from typing import TYPE_CHECKING, Any, ClassVar
 from vukery.core.clock import Timer
 from vukery.core.events import BLOCK, Block, Handler
 from vukery.core.log import Logs
+from vukery.media.slides import Slide
 
 if TYPE_CHECKING:
     from vukery.core.machine import Machine
@@ -98,6 +99,7 @@ class Mode(Logs):
     stop_on: ClassVar[str | tuple[str, ...]] = ()
     game_mode: ClassVar[bool] = True  # stops when the game ends; can only run during a game
     stop_on_ball_end: ClassVar[bool] = True
+    slides: ClassVar[dict[str, Slide]] = {}  # slides this mode can show, by name
 
     def __init_subclass__(cls, **kwargs: Any) -> None:
         super().__init_subclass__(**kwargs)
@@ -155,6 +157,19 @@ class Mode(Logs):
         if timer := self._delays.pop(name, None):
             timer.cancel()
 
+    def show_slide(self, name: str, display: str | None = None, priority: int = 0) -> None:
+        """Show one of the game's slides (MPF: ``slide_player``).
+
+        ``display``: which display (MPF: ``target``); the first one by default.
+        ``priority``: added to the mode's priority. The slide goes away when the mode stops.
+        """
+        if self.machine.media is not None:
+            self.machine.media.show(self, name, display, priority)
+
+    def remove_slide(self, name: str) -> None:
+        if self.machine.media is not None:
+            self.machine.media.remove(self, name)
+
     # --- hooks for subclasses
 
     def mode_start(self, **kwargs: Any) -> None:
@@ -202,6 +217,8 @@ class Mode(Logs):
     def _stopped(self, kwargs: dict[str, Any]) -> None:
         def finish() -> None:
             self.mode_stop(**kwargs)
+            if self.machine.media is not None:
+                self.machine.media.remove(self)
             self.events.remove_handlers(self._event_handlers)
             self._event_handlers = []
             self.active = False

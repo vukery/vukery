@@ -32,6 +32,8 @@ from vukery.devices.ball_device import BallDeviceConfig, Trough
 from vukery.devices.coil import Coil, CoilConfig
 from vukery.devices.light import Light, LightConfig
 from vukery.devices.rules import AutofireCoil, Flipper
+from vukery.media import protocol
+from vukery.media.server import DisplayConfig, MediaServer
 from vukery.modes.attract import Attract
 from vukery.modes.game import Game
 from vukery.platforms.interfaces import SerialPortInfo
@@ -65,6 +67,10 @@ class Machine(Logs):
         self.autofire_coils: dict[str, AutofireCoil] = {}
         self._calls: dict[str, Any] = {}
         self.platform = self._create_platform(hardware)
+        displays = {name: DisplayConfig.from_yaml(name, entry or {})
+                    for name, entry in config.section("displays").items()}
+        port = int(config.section("media").get("port", protocol.DEFAULT_PORT))
+        self.media: MediaServer | None = MediaServer(self, displays, port) if displays else None
 
     @classmethod
     def from_folder(cls, game_dir: Path, env: str | None = None, clock: Clock | None = None,
@@ -102,6 +108,12 @@ class Machine(Logs):
         if self.config.platform == "development":
             self._fill_troughs()
         self._load_modes()
+        if self.media is not None:
+            for mode in self.modes.modes.values():
+                for name, slide in type(mode).slides.items():
+                    self.media.define(name, slide, mode.name)
+            if self.environment != "test":
+                await self.media.serve()
         self.events.post("init_done")
         self.events.post("reset_complete")
 
@@ -144,6 +156,8 @@ class Machine(Logs):
         self.is_shutting_down = True
         self.stopped_reason = reason
         self.warning_log("Stopping: %s", reason or "requested")
+        if self.media is not None:
+            self.media.stop()
         self.platform.stop()
         self.events.stop()
 
