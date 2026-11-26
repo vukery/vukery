@@ -5,7 +5,7 @@ More will be added as vukery grows.
 
 | Example | Displays | Shows |
 |---|---|---|
-| `basic` | none | the game engine, modes, scoring, tests |
+| `basic` | none | the game engine, modes, scoring tables, priority and blocking, tests |
 | `display` | one | slides with live values |
 | `dual_display` | two | a media controller per display, slides per display |
 
@@ -17,11 +17,21 @@ The smallest complete vukery game, with no display or sound:
 - a start button;
 - two flippers and two slingshots;
 - one target;
-- a `base` mode that scores 1000 for the target and 10 for each slingshot.
+- a `base` mode that scores 1000 for the target and 10 for each slingshot,
+  and lights Frenzy on every third target;
+- a `frenzy` mode (higher priority, 10 seconds) that shows priority and
+  scoring blocks. Its target scores 5000 *instead of* Base's 1000, and its
+  slingshots score 100 *as well as* Base's 10.
 
-It has 14 specs covering attract, starting a game (and refusing to start
-unless every ball is home), scoring, draining, game over, and two players
-taking turns.
+Its 22 specs cover:
+- attract;
+- starting a game, and refusing to start unless every ball is home;
+- scoring, draining and game over;
+- Frenzy's blocking, timing and ending with the ball;
+- two players taking turns.
+
+The config, modes and specs are commented, as a starting point for your own
+game.
 
 ```console
 cd examples/basic
@@ -35,7 +45,8 @@ The files:
 |---|---|
 | `config/machine.yaml` | switches, coils, the trough, flippers, slingshots, `game:` and `modes:` |
 | `config/environments/development.yaml` | logging for development |
-| `modes/base/base.py` | the scoring |
+| `modes/base/base.py` | the scoring table, and lighting Frenzy |
+| `modes/frenzy/frenzy.py` | priority, `Score(block=True)`, a timed mode |
 | `tests/test_basic.py` | the specs |
 
 ## `examples/display`
