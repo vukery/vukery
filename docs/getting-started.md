@@ -20,8 +20,8 @@ cd vukery
 uv sync
 ```
 
-`uv sync` installs the right Python, creates `.venv/` and installs vukery
-and its development tools.
+`uv sync` installs the right Python, creates `.venv/` and installs vukery,
+its development tools and MkDocs.
 
 ## Check your setup
 
@@ -31,6 +31,22 @@ uv run vuk doctor
 
 `vuk doctor` prints the vukery, Python and platform versions, and whether
 FFmpeg was found.
+
+## Run commands through uv
+
+Run vukery's tools with `uv run`, so they use the project's Python and
+packages in `.venv/`:
+
+```console
+uv run vuk doctor
+uv run pytest
+uv run mkdocs build --strict    # the docs site, into site/
+```
+
+If you use pyenv, plain `mkdocs` or `python` in this folder will complain
+that version 3.15 isn't installed. pyenv reads the `.python-version` file
+that uv uses, but uv manages this Python, not pyenv. Use `uv run …`, or
+activate the environment first (`source .venv/bin/activate`).
 
 ## Run the tests
 

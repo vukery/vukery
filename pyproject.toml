@@ -20,7 +20,7 @@ mc = ["pyglet>=2.1.19"]  # also needs FFmpeg installed on the system
 
 [dependency-groups]
 dev = ["pytest", "pytest-describe", "pytest-spec", "ruff", "pyright"]
-# Build the docs site locally: uv run --group docs mkdocs build --strict
+# Build the docs site locally: uv run mkdocs build --strict
 docs = [
     "mkdocs>=1.6.1",
     "mkdocs-material>=9.8.2",
@@ -30,6 +30,8 @@ docs = [
 vuk = "vukery.cli:main"
 
 [tool.uv]
+# `uv sync` installs the dev tools and MkDocs, so `uv run pytest` and `uv run mkdocs build` just work
+default-groups = ["dev", "docs"]
 # Use uv's own Python builds, so every machine runs the same interpreter.
 python-preference = "managed"
 
