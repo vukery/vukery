@@ -59,6 +59,9 @@ class Base(Mode):
   `examples/basic`. Both ways load the same.
 - `examples/display`, `examples/dual_display` and every machine `vuk it`
   creates use split files.
+- **Every folder in `modes/` is a mode**, so each needs a `mode.py`; vukery
+  checks when the machine starts. The exceptions are `modes/vukery/`
+  (reserved for overrides) and folders inside a mode.
 
 ## Settings
 

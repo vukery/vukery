@@ -162,6 +162,7 @@ class Machine(Logs):
     def _load_modes(self) -> None:
         for mode_class in BUILT_IN_MODES:
             self.modes.add(mode_class(self))
+        check_mode_folders(self.config.game_dir)
         package = modes_package(self.config.game_dir)
         for name in self.config.modes:
             self.modes.add(load_mode(self.config.game_dir, name, package)(self))
@@ -242,6 +243,30 @@ class Machine(Logs):
     def list_serial_ports(self) -> list[SerialPortInfo]:
         from vukery.platforms.serial_port import list_serial_ports
         return list_serial_ports()
+
+
+NOT_MODES = {"vukery", "__pycache__"}  # modes/vukery/ is for overrides, not a mode
+
+
+def check_mode_folders(game_dir: Path) -> None:
+    """Every folder in ``modes/`` is a mode, so each needs a ``mode.py``.
+
+    ``modes/vukery/`` (overrides) and hidden or cache folders are skipped;
+    folders inside a mode aren't modes.
+    """
+    modes = game_dir / "modes"
+    if not modes.is_dir():
+        return
+    missing = sorted(folder.name for folder in modes.iterdir()
+                     if folder.is_dir() and folder.name not in NOT_MODES and not folder.name.startswith(".")
+                     and not (folder / "mode.py").is_file())
+    for name in missing:  # named the old way: say exactly what to rename
+        if (modes / name / f"{name}.py").is_file():
+            raise ConfigError(f"modes: {name}: a mode's main file is mode.py: rename "
+                              f"{modes / name / f'{name}.py'} to {modes / name / 'mode.py'}")
+    if missing:
+        raise ConfigError("every folder in modes/ is a mode, with its class in mode.py. No mode.py in: "
+                          + ", ".join(f"modes/{name}/" for name in missing))
 
 
 def modes_package(game_dir: Path) -> str:
