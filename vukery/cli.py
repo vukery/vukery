@@ -33,8 +33,6 @@ def _parser() -> argparse.ArgumentParser:
 
     run = commands.add_parser("it", help="run the game in this folder (MPF: mpf, mpf game, mpf both)")
     run.add_argument("--hardware", action="store_true", help="use real hardware in development")
-    run.add_argument("--no-mc", action="store_true", help="don't start the media controllers")
-    run.add_argument("--no-sound", action="store_true", help="run without audio")
     run.add_argument("--preload", action="store_true", help="load every asset at startup (MPF: -f)")
     run.add_argument("--log-dir", default="log", help="where log files go (default: log/)")
 
@@ -121,7 +119,7 @@ def _run(args: argparse.Namespace) -> int:
     try:
         loop.run_until_complete(machine.start())
         print(f"vukery is running {game_dir.name} ({config.environment}). Ctrl-C to stop.")
-        if machine.media is not None and not args.no_mc:
+        if machine.media is not None:  # the config decides: displays: means media controllers
             media_controllers = _start_media_controllers(game_dir, list(machine.media.displays))
         if config.platform == "development":
             if sys.stdin.isatty():

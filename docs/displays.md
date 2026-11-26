@@ -18,8 +18,14 @@ displays:
     height: 480
 ```
 
-`vuk it` starts one media controller window per display. To start them
-yourself, run `vuk it --no-mc` and then `vuk mc --display main`.
+**The config decides whether there's a media controller.** With a
+`displays:` section, `vuk it` starts one media controller window per
+display. Without one, none is loaded. There's no command-line switch for
+it. To run a game without its display in one environment, leave
+`displays:` out of the config that environment uses.
+
+`vuk mc --display main` runs a media controller on its own, for example to
+restart one.
 
 ## Slides (Python)
 

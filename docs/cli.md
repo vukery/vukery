@@ -59,12 +59,14 @@ A command that isn't built yet says so and exits with code 2.
 
 ### `vuk it` options
 
+The config decides whether media controllers start: one per display in
+`displays:`, none without it. Sound will work the same way, from the
+config. (MPF chose with `mpf game` versus `mpf both`, and `--no-sound`.)
+
 | Option | Status | What it does | MPF flag |
 |---|---|---|---|
 | `--log-dir DIR` | works | Where log files go (default `log/`) | `-l` |
 | `--hardware` | works | Allow real hardware in development | |
-| `--no-mc` | works | Don't start the media controllers | (`mpf game` instead of `mpf both`) |
-| `--no-sound` | planned | Run without audio | `--no-sound` |
 | `--preload` | planned | Load every asset at startup | `-f` |
 
 ### Global options
