@@ -11,6 +11,8 @@ GAME = Path(__file__).parents[1]
 
 @pytest.fixture
 def game():
+    # The test rig includes a media controller in the same process, so specs can
+    # check what's on screen (game.slide(), game.screen()) without opening a window.
     rig = GameRig(GAME)
     yield rig
     rig.stop()
@@ -19,6 +21,7 @@ def game():
 def describe_dual_display():
     def describe_media_controllers():
         def it_loads_one_per_display(game):  # displays: main and apron in the config
+            # vuk it starts one media controller per display in the config
             expect(game.machine.media_controllers()).to_equal(["main", "apron"])
 
     def describe_between_games():
@@ -27,7 +30,7 @@ def describe_dual_display():
             expect(game.screen("main")).to_equal(["vukery"])
 
         def it_shows_press_start_on_the_apron(game):
-            expect(game.slide("apron")).to_equal("press_start")
+            expect(game.slide("apron")).to_equal("press_start")  # pass a display name for the others
             expect(game.screen("apron")).to_equal(["PRESS START"])
 
     def describe_during_a_game():
