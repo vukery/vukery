@@ -3,13 +3,12 @@
 Each ``it_`` names the MPF test it comes from. Differences from MPF:
 - MPF's config also has a digital output and a motor on driver 0x01. vukery has
   neither device yet, so their two driver commands are left out.
-- Flipper and RGB LED scenarios come later (flippers need the device layer,
-  LEDs are the next stage).
+- Flipper scenarios come later (they need the flipper device).
 """
 
 import pytest
 
-from tests.mpf_ported.fast.mock_fast import MockFastNetNano
+from tests.mpf_ported.fast.mock_fast import MockFastNetNano, MockFastRgb
 from tests.platforms.fast.rig import FastRig, mpf_expected_commands
 from vukery.core.errors import CoilLimitError, ConfigError, HardwareError
 
@@ -25,7 +24,7 @@ def make_rig(id_response: str | None = None) -> FastRig:
     net = MockFastNetNano(None)
     if id_response:
         net.autorespond_commands["ID:"] = id_response
-    return FastRig("nano.yaml", boards={"com6": net}, expected={"com6": STARTUP})
+    return FastRig("nano.yaml", boards={"com6": net, "com5": MockFastRgb(None)}, expected={"com6": STARTUP})
 
 
 @pytest.fixture
@@ -49,6 +48,7 @@ def describe_fast_nano():
         def it_reports_boards_and_firmware(rig):  # MPF: test_coils (hardware scan)
             assert rig.platform.get_info_string() == (
                 'NET: FP-CPU-002-2 v01.05\n'
+                'RGB: FP-CPU-002-2 v01.00\n'
                 '\n'
                 'I/O Boards:\n'
                 'Board 0 - Model: FP-I/O-3208, Firmware: 01.05, Switches: 32, Drivers: 8\n'
@@ -184,3 +184,70 @@ def describe_fast_nano():
             rig.boards["com6"].queue.append("!B:00")
             rig.settle()
             assert rig.host.stopped == "FAST NET Nano rebooted"
+
+    def describe_leds():  # MPF: test_leds
+        def _leds(rig):
+            return rig.boards["com5"].leds
+
+        def it_maps_old_style_and_one_based_numbers(rig):
+            assert rig.lights["old_style_number"].hw_drivers["red"][0].number == "00-0"
+            assert rig.lights["test_max_1_based"].hw_drivers["red"][0].number == "FF-0"
+
+        def it_turns_leds_on_and_off(rig):
+            rig.lights["test_led"].on()
+            rig.settle(0.1)
+            assert _leds(rig)["97"] == "FFFFFF"
+            assert _leds(rig)["98"] == "000000"
+            rig.lights["test_led"].off()
+            rig.settle(0.1)
+            assert _leds(rig)["97"] == "000000"
+
+        def it_sets_colors_in_channel_order(rig):
+            rig.lights["test_led"].color("112233")
+            rig.lights["test_led2"].color("001122")
+            rig.lights["test_led2"].color((2, 23, 42))
+            rig.settle(0.1)
+            assert _leds(rig)["97"] == "112233"
+            assert _leds(rig)["98"] == "17022A"  # GRB, so not 02172A
+
+        def it_fades(rig):
+            light = rig.lights["test_led2"]
+            light.color((100, 100, 100), fade_ms=100)
+            rig.settle(0.03)
+            first = int(_leds(rig)["98"][0:2], 16)
+            rig.settle(0.03)
+            second = int(_leds(rig)["98"][0:2], 16)
+            rig.settle(0.2)
+            assert 0 < first < second < 100
+            assert _leds(rig)["98"] == "646464"
+
+        def describe_rgbw():
+            def it_assigns_channels_in_sequence(rig):
+                def numbers(name):
+                    drivers = rig.lights[name].hw_drivers
+                    return [drivers[color][0].number for color in ("red", "green", "blue", "white")]
+                assert numbers("test_rgbw1") == ["21-0", "21-1", "21-2", "22-0"]
+                assert numbers("test_rgbw2") == ["22-1", "22-2", "23-0", "23-1"]
+                assert numbers("test_rgbw3") == ["23-2", "24-0", "24-1", "24-2"]
+                assert numbers("test_rgbw4") == ["25-0", "25-1", "25-2", "26-0"]
+                assert numbers("test_rgbw5") == ["28-0", "28-2", "28-1", "29-2"]
+
+            def it_puts_shared_white_on_the_white_channel(rig):
+                rig.lights["test_rgbw1"].color("ffffff")
+                rig.settle(0.1)
+                assert _leds(rig)["21"] == "000000"
+                assert _leds(rig)["22"] == "FF0000"
+                rig.lights["test_rgbw2"].color("445566")
+                rig.settle(0.1)
+                assert _leds(rig)["22"] == "FF0011"
+                assert _leds(rig)["23"] == "224400"
+
+            def it_handles_explicit_channels(rig):
+                rig.lights["test_rgbw5"].color("ffffff")
+                rig.settle(0.1)
+                assert _leds(rig)["28"] == "000000"
+                assert _leds(rig)["29"] == "0000FF"
+                rig.lights["test_rgbw5"].color("223344")
+                rig.settle(0.1)
+                assert _leds(rig)["28"] == "002211"
+                assert _leds(rig)["29"] == "000022"

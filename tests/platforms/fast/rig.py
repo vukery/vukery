@@ -16,6 +16,7 @@ import yaml
 
 from tests.mpf_ported.fast import mock_fast
 from vukery.devices.coil import Coil, CoilConfig
+from vukery.devices.light import Light, LightConfig
 from vukery.platforms.fast.config import FastConfig
 from vukery.platforms.fast.fast import FastHardwarePlatform
 from vukery.platforms.interfaces import DriverSettings, PulseSettings, SwitchConfig, SwitchSettings
@@ -129,6 +130,9 @@ class FakeHost:
     def create_task(self, coro: Any) -> asyncio.Task[Any]:
         return self.loop.create_task(coro)
 
+    def now(self) -> float:
+        return self.loop.time()
+
 
 class FastRig:
     """Boots the FAST platform from an MPF test config against mock boards."""
@@ -142,9 +146,11 @@ class FastRig:
             boards[port].expected_commands = dict(commands)
         self.host = FakeHost(self.loop, boards)
         fast = dict(self.config["fast"])
-        fast.pop("rgb", None)  # stage 1: NET only
+        if "rgb" in fast and fast["rgb"]["port"] not in boards:
+            del fast["rgb"]  # no mock RGB board given: test NET only
         self.platform = FastHardwarePlatform(self.host, FastConfig.from_yaml(fast))
         self.coils: dict[str, Coil] = {}
+        self.lights: dict[str, Light] = {}
         self.switches: dict[str, Any] = {}
 
     def run(self, coro: Any) -> Any:
@@ -166,6 +172,10 @@ class FastRig:
         for name, entry in (self.config.get("coils") or {}).items():
             self.coils[name] = Coil(CoilConfig.from_yaml(name, entry), self.platform,
                                     self.platform.features["max_pulse"])
+        if "rgb" in self.platform.serial_connections:
+            for name, entry in (self.config.get("lights") or {}).items():
+                self.lights[name] = Light(LightConfig.from_yaml(name, entry), self.platform,
+                                          self.lights, self.host.now)
         self.run(self.platform.soft_reset())
         self.platform.start()
         self.settle()
