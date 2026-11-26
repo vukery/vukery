@@ -47,7 +47,7 @@ game.
 ```console
 cd examples/basic
 uv run vuk me          # click s_start, then s_target, s_left_sling…
-uv run pytest           # the specs
+uv run vuk you         # the specs
 ```
 
 The files:
@@ -76,7 +76,7 @@ two players taking turns.
 ```console
 cd examples/display
 uv run vuk me          # the display shows in the dashboard's backbox
-uv run pytest
+uv run vuk you
 ```
 
 | File | What's in it |
@@ -113,5 +113,5 @@ each display shows, from the title screen through a two-player game and back.
 ```console
 cd examples/dual_display
 uv run vuk me
-uv run pytest
+uv run vuk you
 ```

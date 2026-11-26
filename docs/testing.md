@@ -32,7 +32,10 @@ def describe_base_mode():
             expect(game.player.ball).to_equal(2)
 ```
 
-Run them with `uv run pytest`. They print as a tree:
+Run them with `uv run vuk you` from the machine folder (or plain
+`uv run pytest`). `vuk test` does the same. `vuk you` always uses the test environment and passes
+extra arguments to pytest, e.g. `uv run vuk you -k scoring`. They print as
+a tree:
 
 ```text
 Base mode:

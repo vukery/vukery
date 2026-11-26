@@ -6,6 +6,13 @@ vukery is in **0.0.x** while it works toward parity with MPF. Every push to
 
 Check your version with `vuk --version`.
 
+## 0.0.10 (2026-11-25)
+
+- **`vuk you` runs a machine's specs** with pytest, always in the test
+  environment. Extra arguments go to pytest (`vuk you -k scoring`).
+  `vuk test` is an alias.
+- New machines, the examples and the docs use `uv run vuk you`.
+
 ## 0.0.9 (2026-11-25)
 
 - **`vuk it NAME` creates a machine folder,** much like `rails new`. You get:
