@@ -49,7 +49,7 @@ typeCheckingMode = "strict"
 pythonVersion = "3.15"
 
 [tool.pytest.ini_options]
-testpaths = ["tests"]
+testpaths = ["tests", "examples"]
 # RSpec-style specs: describe_*/it_* functions (pytest-describe), tree output (pytest-spec)
 addopts = "--spec"
 describe_prefixes = ["describe_", "context_"]
