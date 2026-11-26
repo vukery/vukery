@@ -6,6 +6,17 @@ vukery is in **0.0.x** while it works toward parity with MPF. Every push to
 
 Check your version with `vuk --version`.
 
+## 0.0.14 (2026-11-25)
+
+- **The dashboard's list is in two columns,** with 1.5× larger text. The
+  list can be dragged to at most half the window.
+- **The playfield sizes itself:** as wide as its 1:2 shape needs, at most a
+  third of the window. The backbox and displays take the rest.
+  `dashboard.yaml` now stores the list's width and the middle panes'
+  heights (older files still load).
+- **New playfield art** with flippers and an apron; a flipper is drawn
+  raised over it while its coil is on.
+
 ## 0.0.13 (2026-11-25)
 
 - **A simpler `vuk me` dashboard:**

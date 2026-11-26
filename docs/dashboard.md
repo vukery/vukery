@@ -17,14 +17,16 @@ the game and its displays full screen, with no dashboard. See
 
 | Pane | What it shows |
 |---|---|
-| **List** (left, full height) | **Game**: whose turn it is, the ball, every player's score, and the running modes with their priorities. Then every **switch** (green while active), **light** (in its current color), **coil** (orange while held, or for a moment after a pulse) and **device** (balls in each trough; whether each flipper and autofire coil is enabled). Text stays one size: scroll with the wheel or the scrollbar. |
+| **List** (left, full height, up to half the window) | **Game**: whose turn it is, the ball and every player's score, beside the running modes with their priorities. Then every **switch** (green while active), **light** (in its current color), **coil** (orange while held, or for a moment after a pulse) and **device** (balls in each trough; whether each flipper and autofire coil is enabled). Each section is in two columns, in large text that stays one size: scroll with the wheel or the scrollbar. |
 | **Backbox** | A virtual backbox, with any switches and lights you've placed in it |
 | **One pane per display** | What each of the game's displays shows, drawn just as `vuk us` draws it, keeping the display's shape |
-| **Playfield** | A virtual playfield with the switches and lights you've placed on it, and the flippers, which flip up while their coil is on |
+| **Playfield** | A virtual playfield with the switches and lights you've placed on it. A flipper is drawn raised, in orange, while its coil is on. |
 
-The backbox and playfield are drawn on wood backgrounds that come with
-vukery, and keep their shape however their panes are sized: the backbox is
-square and the playfield is twice as tall as it's wide, as large as fits.
+The backbox and playfield are drawn on backgrounds that come with vukery,
+and keep their shape: the backbox is square and the playfield twice as tall
+as it's wide. The playfield pane is as wide as that shape needs at full
+height, but never more than a third of the window; the backbox and displays
+take whatever width is left.
 Point at a switch or light on them to see its name.
 
 ## Playing with switches
@@ -67,15 +69,16 @@ the names have to be switches or lights in the machine config.
 
 ## Resizing the panes
 
-**Drag the edge between two panes** to resize them: the list's edge, the
-playfield's edge, and the edges between the backbox and each display. No
-pane gets smaller than 5% of the window.
+**Drag the edge between two panes** to resize them: the list's edge (5% to
+50% of the window), and the edges between the backbox and each display. The
+playfield sizes itself.
 
 ## `config/dashboard.yaml`
 
 Whenever you resize a pane or place something, `vuk me` saves the layout to
-`config/dashboard.yaml`. Pane sizes are a percentage of the window, to the
-nearest tenth:
+`config/dashboard.yaml`: the list's width and the heights of the backbox and
+display panes, as a percentage of the window to the nearest tenth, and
+everything you've placed:
 
 ```yaml
 # vuk me's dashboard. vuk me rewrites this file when you resize a pane or drag
@@ -84,12 +87,13 @@ nearest tenth:
 
 dashboard:
   arrangement_lock: false  # true: vuk me can't change the layout
-  panes:  # each pane's width and height, as a % of the window
-    list:      {width: 40.0, height: 100.0}
-    backbox:   {width: 35.0, height: 55.0}
-    main:      {width: 35.0, height: 22.5}
-    apron:     {width: 35.0, height: 22.5}
-    playfield: {width: 25.0, height: 100.0}
+  # Pane sizes, as a % of the window. The playfield is as wide as its 1:2 shape
+  # needs (at most 33%); the backbox and displays take the rest.
+  panes:
+    list:    {width: 40.0}
+    backbox: {height: 55.0}
+    main:    {height: 22.5}
+    apron:   {height: 22.5}
   playfield:  # switches and lights placed in the playfield: [x, y], each 0 to 1
     s_target: [0.5, 0.62]
 ```
@@ -97,15 +101,11 @@ dashboard:
 - **Set `arrangement_lock: true`** once the layout is right. Then panes
   can't be resized, and nothing can be placed or moved.
 - **Each display has a pane named after it** (`main` and `apron` above).
-- **If you edit sizes by hand, they have to fit together:**
-  - the list and playfield are full height;
-  - the backbox and display panes share the middle column's width, and
-    their heights add up to 100;
-  - the widths across add up to 100.
-
-  vukery says which pane doesn't fit.
+- **If you edit sizes by hand,** the list's width is 5 to 50, and the
+  heights of the backbox and display panes add up to 100. vukery says what
+  doesn't fit.
 - **Panes left out keep their default size.** Without the file, the list is
-  40%, the playfield 25%, and the backbox gets 55% of the middle column.
+  40% wide and the backbox gets 55% of the middle column's height.
 - **The file is for `vuk me` only.** `vuk it` creates it, and it's the
   `dashboard:` section of the config, merged like any other config file.
 

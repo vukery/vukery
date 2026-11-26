@@ -138,13 +138,21 @@ def describe_the_dashboard_config():
 
 
 def describe_the_layout():
-    def it_has_a_full_height_list_the_backbox_over_the_displays_and_the_playfield():
-        panes = lay.panes(1000, 800, Arrangement.default(["main", "apron"]))
-        expect(round(panes["list"].w)).to_equal(392)                          # 40%, less the margins
+    def it_has_a_list_the_backbox_over_the_displays_and_the_playfield():
+        panes = lay.panes(1280, 800, Arrangement.default(["main", "apron"]))
+        expect(round(panes["list"].w)).to_equal(504)                          # 40%, less the margins
         expect(round(panes["list"].h)).to_equal(792)                          # full height
         expect(panes["main"].x).to_equal(panes["backbox"].x)
         expect(panes["backbox"].y > panes["main"].y > panes["apron"].y).to_equal(True)
         expect(panes["playfield"].x > panes["backbox"].x > panes["list"].x).to_equal(True)
+
+    def it_sizes_the_playfield_for_its_shape_and_gives_the_middle_column_the_rest():
+        panes = lay.panes(1280, 800)
+        expect(round(lay.playfield_width(1280, 800))).to_equal(393)  # a 1:2 playfield at full height
+        expect(round(panes["backbox"].x + panes["backbox"].w + 8)).to_equal(round(panes["playfield"].x))
+
+    def it_keeps_the_playfield_to_a_third_of_the_window():
+        expect(lay.playfield_width(1000, 1200)).to_equal(330.0)
 
     def it_fits_a_display_in_its_pane_keeping_its_shape():
         screen = lay.fit(lay.Rect(0, 0, 400, 400), 1920, 720)
@@ -153,6 +161,12 @@ def describe_the_layout():
     def it_lists_the_game_then_switches_lights_coils_and_devices(rig):
         rows, _ = lay.list_rows(rig.dashboard.layout)
         expect([r.name for r in rows if r.kind == "title"]).to_equal(["Game", "Switches", "Lights", "Coils", "Devices"])
+
+    def it_puts_each_section_in_two_columns_the_left_one_first(rig):
+        rows, _ = lay.list_rows(rig.dashboard.layout)
+        switches = [r for r in rows if r.kind == "switch"]  # 9 in examples/basic: 5 on the left, 4 on the right
+        expect([r.column for r in switches]).to_equal([0, 0, 0, 0, 0, 1, 1, 1, 1])
+        expect(switches[5].top).to_equal(switches[0].top)
 
     def it_gives_every_row_a_fixed_height_so_text_never_shrinks(rig):
         rows, total = lay.list_rows(rig.dashboard.layout)
@@ -186,23 +200,26 @@ def describe_the_game_pane():
 
 
 def describe_the_arrangement():
-    def it_defaults_to_the_list_at_40_percent():
+    def it_stores_the_lists_width_and_the_middle_columns_heights():
         panes = Arrangement.default(["dmd"]).to_panes()
-        expect(list(panes)).to_equal(["list", "backbox", "dmd", "playfield"])
-        expect(panes["list"]).to_equal({"width": 40.0, "height": 100.0})
-        expect(round(panes["list"]["width"] + panes["backbox"]["width"] + panes["playfield"]["width"], 1)).to_equal(
-            100.0)
-        expect(round(panes["backbox"]["height"] + panes["dmd"]["height"], 1)).to_equal(100.0)
+        expect(panes).to_equal({"list": {"width": 40.0}, "backbox": {"height": 55.0}, "dmd": {"height": 45.0}})
 
     def it_reads_back_what_it_writes():
-        arrangement = Arrangement(x1=35.0, x2=70.5, stack=(("backbox", 60.0), ("main", 25.0), ("apron", 15.0)))
+        arrangement = Arrangement(x1=35.0, stack=(("backbox", 60.0), ("main", 25.0), ("apron", 15.0)))
         expect(Arrangement.from_panes(arrangement.to_panes(), ["main", "apron"])).to_equal(arrangement)
 
-    def it_rejects_panes_that_dont_fit_together():
-        panes = Arrangement.default(["dmd"]).to_panes()
-        panes["dmd"]["width"] = 20.0  # the backbox is 35% wide, and the dmd shares its column
-        with pytest.raises(ConfigError, match="dmd"):
-            Arrangement.from_panes(panes, ["dmd"])
+    def it_ignores_widths_it_works_out_itself():  # files from before the playfield sized itself
+        old = {"list": {"width": 40.0, "height": 100.0}, "backbox": {"width": 35.0, "height": 100.0},
+               "playfield": {"width": 25.0, "height": 100.0}}
+        expect(Arrangement.from_panes(old)).to_equal(Arrangement())
+
+    def it_rejects_heights_that_dont_add_up():
+        with pytest.raises(ConfigError, match="add up to 120.0"):
+            Arrangement.from_panes({"backbox": {"height": 70.0}, "dmd": {"height": 50.0}}, ["dmd"])
+
+    def it_rejects_a_list_wider_than_half_the_window():
+        with pytest.raises(ConfigError, match="list: width"):
+            Arrangement.from_panes({"list": {"width": 60.0}})
 
     def it_rejects_unknown_panes():
         with pytest.raises(ConfigError, match="no pane named switches"):
@@ -210,10 +227,10 @@ def describe_the_arrangement():
 
     def describe_dragging_an_edge():
         def it_rounds_to_a_tenth_of_a_percent():
-            expect(Arrangement().drag("x2", 66.6666).x2).to_equal(66.7)
+            expect(Arrangement().drag("x1", 33.3333).x1).to_equal(33.3)
 
-        def it_keeps_every_pane_at_least_five_percent():
-            expect(Arrangement().drag("x2", 99.0).x2).to_equal(95.0)
+        def it_keeps_the_list_between_five_percent_and_half_the_window():
+            expect(Arrangement().drag("x1", 80.0).x1).to_equal(50.0)
             expect(Arrangement().drag("x1", 0.0).x1).to_equal(5.0)
 
         def it_moves_the_edge_between_the_backbox_and_a_display():
@@ -226,11 +243,11 @@ def describe_config_dashboard_yaml():
         path = tmp_path / "dashboard.yaml"
         path.write_text("dashboard:\n  arrangement_lock: false\n")
         positions = {"backbox": {"l_frenzy": [0.25, 0.5]}, "playfield": {"s_target": [0.5, 0.62]}}
-        write_config(path, Arrangement().drag("x2", 66.66), positions)
+        write_config(path, Arrangement().drag("x1", 33.33), positions)
         config = DashboardConfig.from_yaml(yaml.safe_load(path.read_text())["dashboard"])
-        expect(config.arrangement.x2).to_equal(66.7)
+        expect(config.arrangement.x1).to_equal(33.3)
         expect(config.positions["backbox"]).to_equal({"l_frenzy": (0.25, 0.5)})
-        expect("playfield: {width: 33.3, height: 100.0}" in path.read_text()).to_equal(True)
+        expect("list:    {width: 33.3}" in path.read_text()).to_equal(True)
 
     def it_is_where_the_examples_keep_their_dashboard(rig):
         expect(rig.dashboard.layout["config_file"].endswith("examples/basic/config/dashboard.yaml")).to_equal(True)
@@ -267,10 +284,10 @@ def describe_the_dashboard_window():
 
     def it_drags_an_edge_and_saves_on_release(tmp_path):
         view, _, _ = _view(tmp_path)
-        view.press(750, 400)  # the edge between the middle column and the playfield (75%)
-        view.drag_to(800, 400)
-        view.release(800, 400)
-        expect(_saved(tmp_path)["panes"]["playfield"]).to_equal({"width": 20.0, "height": 100.0})
+        view.press(400, 400)  # the list's edge (40% of 1000)
+        view.drag_to(300, 400)
+        view.release(300, 400)
+        expect(_saved(tmp_path)["panes"]["list"]).to_equal({"width": 30.0})
 
     def it_taps_a_switch_on_a_quick_click(tmp_path):
         view, sent, clock = _view(tmp_path)
@@ -316,9 +333,9 @@ def describe_the_dashboard_window():
 
     def it_changes_nothing_when_the_arrangement_is_locked(tmp_path):
         view, _, _ = _view(tmp_path, lock=True)
-        view.press(750, 400)
-        view.drag_to(800, 400)
-        view.release(800, 400)
+        view.press(400, 400)
+        view.drag_to(300, 400)
+        view.release(300, 400)
         field = view.area("playfield")
         view.press(*_row(view, "s_target"))
         view.drag_to(*field.at(0.5, 0.5))
@@ -328,7 +345,7 @@ def describe_the_dashboard_window():
 
     def it_keeps_the_playfield_1_to_2_and_the_backbox_square_however_the_panes_are_sized(tmp_path):
         view, _, _ = _view(tmp_path)
-        for edge, percent in (("x2", 60.0), ("x1", 20.0), ("x2", 90.0)):
+        for edge, percent in (("x1", 50.0), ("x1", 5.0), ("x1", 30.0)):
             view.drag_to(0, 0)  # (nothing grabbed)
             view.arrangement = view.arrangement.drag(edge, percent)
             view.layout_panes()
@@ -339,7 +356,7 @@ def describe_the_dashboard_window():
     def it_scrolls_the_list_with_the_wheel_but_not_past_its_end(tmp_path):
         view, _, _ = _view(tmp_path)
         view.list_total = view.list_area.h + 100
-        view.scroll_by(100, 400, -50)
+        view.scroll_by(100, 400, -5)
         expect(view.scroll).to_equal(100.0)
-        view.scroll_by(100, 400, 50)
+        view.scroll_by(100, 400, 5)
         expect(view.scroll).to_equal(0.0)
