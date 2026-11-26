@@ -6,6 +6,14 @@ vukery is in **0.0.x** while it works toward parity with MPF. Every push to
 
 Check your version with `vuk --version`.
 
+## 0.0.7 (2026-11-25)
+
+- **Every earlier push now has a version and a tag** (v0.0.1 to v0.0.6),
+  as if vukery had been versioned from the start. The planning commits are
+  squashed into one. Code is unchanged.
+- **The README says who vukery is for:** developers who don't mind writing
+  a little Python, and tech-savvy LLM users.
+
 ## 0.0.6 (2026-11-25)
 
 - **The README opens with "Get VUKed!":** an AI-assisted total vukery of a
@@ -18,7 +26,21 @@ Check your version with `vuk --version`.
 
 ## 0.0.5 (2026-11-25)
 
-The first numbered version. Everything built so far:
+- **Versioning:** the version lives only in `pyproject.toml`, and
+  `vuk --version` prints it. Every push to `main` bumps the last digit and
+  is tagged.
+- **This changelog.**
+
+## 0.0.4 (2026-11-25)
+
+- **Scoring:** `scoring` tables on modes (`Score`, `Award`, functions);
+  MPF's per-variable scoring blocks; `BLOCK`; score adjusters for
+  multipliers.
+- **A Modes page** in the docs: priority, scoring, blocking and adjusters.
+- **Examples:** `basic` gets a Frenzy mode for priority and blocking, and
+  every example is commented for game makers.
+
+## 0.0.3 (2026-11-25)
 
 - **Game engine:**
   - events with MPF's ordering rules;
@@ -26,22 +48,32 @@ The first numbered version. Everything built so far:
   - the async game loop (players, balls, turns, extra balls);
   - attract;
   - switches and player variables;
-  - config with `development` / `test` / `production` environments.
-- **Scoring:** `scoring` tables on modes (`Score`, `Award`, functions);
-  MPF's per-variable scoring blocks; `BLOCK`; score adjusters for
-  multipliers.
-- **Devices:** coils with limits enforced in the engine; lights
-  (MPF's channel numbering, colors, fades, RGBW); a simple trough;
-  single-wound flippers; autofire coils.
+  - config with `development` / `test` / `production` environments;
+  - the simulated `development` and `test` platforms, a simple trough,
+    single-wound flippers and autofire coils.
 - **Displays:** text slides with live player values on any number of
   displays, drawn by the pyglet media controller (one process per display)
   over vukery's JSON media protocol. The config decides whether a media
   controller loads.
+- **Tools:** `vuk it` runs a game from its folder; `vuk mc`.
+- **Testing:** RSpec-style specs on virtual time (`GameRig`, `expect`).
+- **Examples:** `basic`, `display` and `dual_display`.
+- MkDocs installs by default; tools run through `uv`.
+
+## 0.0.2 (2026-11-25)
+
 - **Hardware:** the FAST Nano's NET and RGB ports, ported from MPF and
   tested against MPF's mock boards; port auto-detection. Not yet tried on a
   real machine.
-- **Tools:** `vuk it`, `vuk mc` and `vuk doctor`; `VUK_ENV` and `VUK_LOG`;
-  logging in MPF's format, one file per environment.
-- **Testing:** RSpec-style specs on virtual time (`GameRig`, `expect`).
-- **Examples:** `basic` (with a Frenzy mode for priority and blocking),
-  `display`, and `dual_display`, each commented.
+- **Devices:** coils with limits enforced in the engine; lights (MPF's
+  channel numbering, colors, fades, RGBW).
+- **Logging** in MPF's format, one file per environment, with dotted
+  component names; `VUK_ENV` and `VUK_LOG`.
+- **The `vuk` command,** with `vuk doctor`.
+- **The first user docs.**
+
+## 0.0.1 (2026-11-23)
+
+- **The plan:** the repo, license, project conventions, the MPF import
+  script (pinned to MPF 0.57.x), the pyglet media controller choice,
+  Python 3.15, and RSpec-style test tooling.
