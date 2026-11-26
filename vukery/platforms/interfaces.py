@@ -120,3 +120,23 @@ class PlatformHost(Protocol):
         ...
 
     def create_task(self, coro: Any) -> asyncio.Task[Any]: ...
+
+    def now(self) -> float:
+        """The machine clock in seconds. Light fades are timed against it."""
+        ...
+
+
+class LightPlatformInterface:
+    """One channel of a light, as a platform implements it (MPF's interface of the same name)."""
+
+    def __init__(self, number: str):
+        self.number = number
+
+    def set_fade(self, start_brightness: float, start_time: float, target_brightness: float,
+                 target_time: float) -> None:
+        """Fade from start_brightness at start_time to target_brightness at target_time (0.0-1.0)."""
+        raise NotImplementedError
+
+    def get_successor_number(self) -> str:
+        """The number of the next channel on the hardware, in config format."""
+        raise NotImplementedError

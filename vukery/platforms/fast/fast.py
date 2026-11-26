@@ -5,8 +5,8 @@
 """FAST hardware platform: Nano and Neuron controllers.
 
 Changes from MPF (trimmed to what vukery supports):
-- Only the NET port (Nano and Neuron controllers) for now; RGB and EXP come
-  next. Retro, audio, DMD, segment displays, servos, steppers, shakers, GI
+- The NET port (Nano and Neuron controllers) and the Nano's RGB port. EXP
+  (Neuron expansion boards) comes next. Retro, audio, DMD, segment displays, servos, steppers, shakers, GI
   strings and matrix lights are gone.
 - Built from a ``PlatformHost`` and a typed ``FastConfig`` instead of MPF's
   ``machine``. Lifecycle is explicit methods the host calls (``initialize``,
@@ -23,9 +23,11 @@ from vukery.core.log import Logs
 from vukery.core.util import Util
 from vukery.platforms.fast.communicators.net_nano import FastNetNanoCommunicator
 from vukery.platforms.fast.communicators.net_neuron import FastNetNeuronCommunicator
+from vukery.platforms.fast.communicators.rgb import FastRgbCommunicator
 from vukery.platforms.fast.config import FastConfig
 from vukery.platforms.fast.fast_driver import FASTDriver
 from vukery.platforms.fast.fast_io_board import FastIoBoard
+from vukery.platforms.fast.fast_led import FASTLEDChannel, FASTRGBLED
 from vukery.platforms.fast.fast_switch import FASTSwitch
 from vukery.platforms.interfaces import DriverConfig, DriverSettings, PlatformHost, SwitchConfig, SwitchSettings
 
@@ -50,6 +52,8 @@ class FastHardwarePlatform(Logs):
         self.machine_type = config.net.controller
 
         self.serial_connections = dict()
+        self.fast_rgb_leds = dict()
+        self.exp_boards_by_name = dict()  # filled in by the EXP port (stage 3)
         self.hw_switch_data = {i: 0 for i in range(112)}
         self.new_switch_data = asyncio.Event()  # Used to signal when we have updated switch data
         self.io_boards = dict()     # type: Dict[int, FastIoBoard]
@@ -126,6 +130,14 @@ class FastHardwarePlatform(Logs):
         await communicator.connect()
         await communicator.init()
         self.serial_connections['net'] = communicator
+
+        if self.config.rgb:
+            if 'auto' in self.config.rgb.port:
+                raise ConfigError("fast: rgb: port: auto isn't supported by vukery yet. Set the port explicitly.")
+            rgb = FastRgbCommunicator(platform=self, processor='rgb', config=self.config.rgb)
+            await rgb.connect()
+            await rgb.init()
+            self.serial_connections['rgb'] = rgb
 
     async def get_hw_switch_states(self, query_hw=False):
         """Return a dict of hw switch states.
@@ -291,3 +303,77 @@ class FastHardwarePlatform(Logs):
         driver = coil.hw_driver
 
         driver.clear_autofire()
+
+    def configure_light(self, number, subtype=None, config=None, platform_settings=None) -> FASTLEDChannel:
+        """Configure one channel of an LED (``number`` like ``"97-0"``: LED 0x97, channel 0)."""
+        del platform_settings
+        match subtype:
+            case None | "led":
+                pass
+            case _:
+                raise ConfigError(f"FAST: light subtype {subtype!r} isn't supported by vukery "
+                                  "(only LEDs; GI and matrix lights were Retro features)")
+
+        parts, channel = number.lower().rsplit('-', 1)
+        parts = parts.split('-')
+
+        if parts[0] in self.exp_boards_by_name or int(parts[0]) > 255:
+            raise ConfigError(f"FAST: LED {number} is on an expansion board, which isn't supported yet")
+
+        try:
+            number = self.port_idx_to_hex(parts[0], parts[1], 64)
+        except IndexError:
+            number = f'{int(parts[0]):02X}'
+
+        if number not in self.fast_rgb_leds:
+            self.fast_rgb_leds[number] = FASTRGBLED(number, self)
+        fast_led_channel = FASTLEDChannel(self.fast_rgb_leds[number], channel)
+        self.fast_rgb_leds[number].add_channel(int(channel), fast_led_channel)
+        return fast_led_channel
+
+    def port_idx_to_hex(self, port, device_num, devices_per_port, name=None):
+        """Converts port number and LED index into the proper FAST hex number.
+
+        port: the LED port number printed on the board. First port is 1. No zeros.
+        device_num: LED position in the chain, First LED is 1. No zeros.
+        devices_per_port: number of LEDs per port. Typically 32.
+        name: used for config error logging
+
+        Returns: FAST hex string for the LED
+        """
+        port = int(port)
+        device_num = int(device_num)
+
+        if device_num < 1:
+            raise ConfigError(f"Device number {device_num} is not valid for device {name}. "
+                              "The first device in the chain should be 1, not 0")
+
+        if port < 1:
+            raise ConfigError(f"Port {port} is not valid for device {device_num}")
+
+        if device_num > devices_per_port:
+            raise ConfigError(f"Device number {device_num} exceeds the number of devices per port "
+                              f"({devices_per_port}) for LED {name}")
+
+        port_offset = (port - 1) * devices_per_port
+        device_num = device_num - 1
+        return f'{(port_offset + device_num):02X}'
+
+    def parse_light_number_to_channels(self, number: str, subtype: str | None = None):
+        """Turn a light ``number:`` from config into its three channel numbers.
+
+        number: 15 --> Nano LED 15
+        number: 3-24 --> Nano LED port 3, LED 24 (both 1-based)
+        """
+        match subtype:
+            case None | "led":
+                pass
+            case _:
+                raise ConfigError(f"FAST: light subtype {subtype!r} isn't supported by vukery")
+
+        if '-' in str(number):
+            parts = str(number).lower().split("-")
+            index = int(self.port_idx_to_hex(parts[0], parts[1], 64), 16)
+        else:
+            index = int(number)
+        return [{"number": f"{index}-{i}"} for i in range(3)]

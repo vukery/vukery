@@ -88,9 +88,13 @@ class NetConfig:
 
 @dataclass(frozen=True)
 class RgbConfig:
+    """The Nano's RGB (LED) port."""
+
     port: list[str] = field(default_factory=lambda: ["auto"])
     baud: int = 921600
     debug: bool = False
+    led_hz: int = 30  # LED updates per second (FAST's maximum is 30)
+    ignore_reboot: bool = True
 
     @classmethod
     def from_yaml(cls, data: dict[str, Any]) -> RgbConfig:
@@ -98,6 +102,8 @@ class RgbConfig:
             port=ports(data.get("port")),
             baud=int(data.get("baud", 921600)),
             debug=bool(data.get("debug", False)),
+            led_hz=min(int(data.get("led_hz", 30)), 30),
+            ignore_reboot=bool(data.get("ignore_reboot", True)),
         )
 
 

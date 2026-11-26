@@ -2,27 +2,29 @@
 # https://github.com/missionpinball/mpf/blob/9ef886f4f263db44704f09a87bfd11229036ab5c/mpf/platforms/fast/fast_led.py
 # Copyright (c) The Mission Pinball Framework team and other contributors.
 # MIT License: see vukery/_mpf/NOTICE.
-"""WS2812 LED on the FAST controller."""
+"""WS2812 LED on the FAST controller.
+
+Changes from MPF: the clock comes from the vukery host (``host.now()``).
+"""
 import logging
 
 from typing import Optional
 from typing import List
 
-from mpf.platforms.interfaces.light_platform_interface import LightPlatformInterface
+from vukery.platforms.interfaces import LightPlatformInterface
 
 
 class FASTRGBLED:
 
     """FAST RGB LED."""
 
-    __slots__ = ["number", "number_int", "dirty", "log", "channels", "machine", "platform", "hardware_fade_ms"]
 
     def __init__(self, number: str, platform) -> None:
         """Initialize FAST LED on RGB processor."""
         self.number = number  # 5 char hex string, board address, breakout
         self.number_int = int(number, 16)  # Need this for doing math on the number
         self.dirty = True
-        self.machine = platform.machine
+        self.host = platform.host
         self.platform = platform
         self.hardware_fade_ms = 0
         self.log = logging.getLogger('FASTLED')
@@ -39,7 +41,7 @@ class FASTRGBLED:
         """Return current color."""
         result = ""
         self.dirty = False
-        current_time = self.machine.clock.get_time()
+        current_time = self.host.now()
         for index in [0, 1, 2]:
             channel = self.channels[index]
             if channel:
@@ -57,8 +59,6 @@ class FASTExpLED(FASTRGBLED):
 
     """FAST RGB LED on an expansion board."""
 
-    __slots__ = ["board_address", "breakout_board", "port",
-                 "breakout", "index", "address", "exp_board"]
 
     def __repr__(self):
         """Return representation of this LED."""
@@ -76,7 +76,7 @@ class FASTExpLED(FASTRGBLED):
 
         # self.port = self.port
         self.dirty = False  # we can reset the board on connection so we don't need to send the first color
-        self.machine = platform.machine
+        self.host = platform.host
         self.platform = platform
         self.hardware_fade_ms = hardware_fade_ms
         self.log = logging.getLogger('FASTLED')
@@ -89,7 +89,6 @@ class FASTLEDChannel(LightPlatformInterface):
 
     """Represents a single RGB LED channel connected to the FAST hardware platform."""
 
-    __slots__ = ["led", "channel", "_current_fade", "_last_brightness"]
 
     def __repr__(self):
         """Return representation of this LED."""
