@@ -100,3 +100,26 @@
                 return lookup_table[mapped_int]
 
         raise ValueError("%s is an invalid pwm hex value. (Expected value between 0.0 and 1.0)" % source_float)
+
+# Copied from the Mission Pinball Framework (MPF) 0.57.6:
+# https://github.com/missionpinball/mpf/blob/9ef886f4f263db44704f09a87bfd11229036ab5c/mpf/core/utility_functions.py#L535-L552
+# Copyright (c) The Mission Pinball Framework team and other contributors.
+# MIT License: see vukery/_mpf/NOTICE.
+    @staticmethod
+    def normalize_hex_string(source_hex: str, num_chars: int = 2) -> str:
+        """Take an incoming hex value and convert it to uppercase and fills in leading zeros.
+
+        Args:
+        ----
+            source_hex: Incoming source number. Can be any format.
+            num_chars: Total number of characters that will be returned. Default
+                is two.
+
+        Returns string, uppercase, zero padded to the num_chars.
+
+        Example usage: Send "c" as source_hex, returns "0C".
+        """
+        if len(str(source_hex)) > num_chars:
+            raise ValueError("Hex string is too long.")
+
+        return str(source_hex).upper().zfill(num_chars)
