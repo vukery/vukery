@@ -92,6 +92,12 @@ think one is wrong, say so instead of working around it.
   libraries.
 - **Lean:** don't add features no current game needs. Check the non-goals
   in `notes/PLAN.md` before expanding scope.
+- **Versioning: every push to `main` bumps the patch version.**
+  - Run `uv version --bump patch` (the version lives only in
+    `pyproject.toml`; `vukery.__version__` reads it).
+  - Add an entry to `docs/changelog.md`.
+  - Commit, then tag `vX.Y.Z` and push the tag with `main`.
+  - Stay in 0.0.x until reasonable parity with MPF; then 0.1.0.
 - **Record new decisions** in `notes/DECISIONS.md`, newest first, with what
   was decided, why, and what it costs.
 - **Examples are the tutorial.** Code in `examples/` (config, modes, specs) has
