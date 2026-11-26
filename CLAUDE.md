@@ -73,7 +73,8 @@ think one is wrong, say so instead of working around it.
 - **Keep MPF's names wherever there's an equivalent:** events
   (`ball_started`, `mode_<name>_started`, `<switch>_active`), hardware YAML
   keys and device fields. That's what makes MPF games easy to migrate with
-  an LLM.
+  an LLM. Core config and hardware config (`fast:`, `io_loop`, device
+  settings) stay 1:1 with MPF: don't rename them.
 - **One method per concept, with options. Never combined helper names.**
   Tests use pytest with pytest-describe (`describe_` / `context_` /
   `it_`):
