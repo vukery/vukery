@@ -123,3 +123,19 @@
             raise ValueError("Hex string is too long.")
 
         return str(source_hex).upper().zfill(num_chars)
+
+# Copied from the Mission Pinball Framework (MPF) 0.57.6:
+# https://github.com/missionpinball/mpf/blob/9ef886f4f263db44704f09a87bfd11229036ab5c/mpf/core/utility_functions.py#L789-L799
+# Copyright (c) The Mission Pinball Framework team and other contributors.
+# MIT License: see vukery/_mpf/NOTICE.
+    @staticmethod
+    def raise_exceptions(future: asyncio.Future) -> None:
+        """Re-raise any error except CancelledError on this exception.
+
+        Use this with add_done_callback on any future which is not awaited
+        directly to prevent swallowed exceptions.
+        """
+        try:
+            future.result()
+        except asyncio.CancelledError:
+            pass
