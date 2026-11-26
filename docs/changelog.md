@@ -6,6 +6,14 @@ vukery is in **0.0.x** while it works toward parity with MPF. Every push to
 
 Check your version with `vuk --version`.
 
+## 0.0.16 (2026-11-26)
+
+- **Code coverage:** `uv run pytest --cov` measures how much of vukery the
+  specs run (pytest-cov), branches included.
+- **CI:** every push and pull request runs the specs with coverage on GitHub
+  Actions. On `main` it redraws the coverage badge at the top of the README,
+  kept on the `badges` branch, with no outside service.
+
 ## 0.0.15 (2026-11-26)
 
 - **A mode is a folder, and its main file is `mode.py`:** `modes/<name>/mode.py`.

@@ -63,7 +63,7 @@ think one is wrong, say so instead of working around it.
 
 ## Conventions
 
-- Python 3.15. Use `uv`, `ruff`, `pyright` in strict mode,
+- Python 3.15. Use `uv`, `ruff`, `pyright` in strict mode, `pytest-cov`
   and `pytest`.
 - **Prefer `match` / `case` over chains of `if` / `elif` / `else`** wherever
   it fits: dispatching on values, types, config shapes or message headers.
