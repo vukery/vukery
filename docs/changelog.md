@@ -10,6 +10,8 @@ Check your version with `vuk --version`.
 
 - **A mode is a folder, and its main file is `mode.py`:** `modes/<name>/mode.py`.
   Rename `modes/<name>/<name>.py` to `mode.py`; vukery tells you which.
+- **Every folder in `modes/` needs a `mode.py`:** vukery checks when the
+  machine starts (`modes/vukery/` excepted).
 - **Split a mode into files** next to `mode.py` (`scoring.py`,
   `slides.py`…) and import them (`from .scoring import SCORING`). That's the
   recommended layout; one file still works.

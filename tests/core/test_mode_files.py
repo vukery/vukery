@@ -80,3 +80,17 @@ def describe_mode_files():
         (base / "mode.py").rename(base / "base.py")
         with pytest.raises(ConfigError, match="a mode's main file is mode.py: rename"):
             GameRig(machine)
+
+    def it_needs_a_mode_py_in_every_mode_folder(machine):
+        from vukery.core.errors import ConfigError
+
+        (machine / "modes" / "jackpot").mkdir()
+        (machine / "modes" / "jackpot" / "scoring.py").write_text("SCORING = {}")
+        with pytest.raises(ConfigError, match=r"No mode.py in: modes/jackpot/"):
+            GameRig(machine)
+
+    def it_leaves_the_vukery_overrides_folder_and_folders_inside_modes_alone(machine):
+        (machine / "modes" / "vukery").mkdir()
+        (machine / "modes" / "vukery" / "README.md").write_text("overrides")
+        (machine / "modes" / "base" / "helpers").mkdir()
+        GameRig(machine).stop()
