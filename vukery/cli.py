@@ -136,7 +136,8 @@ def _specs(args: argparse.Namespace) -> int:
         else:
             coverage = ["--cov"]  # [tool.coverage] in pyproject.toml says what and how
     environment = {**os.environ, "VUK_ENV": "test"}  # specs always run in test: no hardware, ever
-    return subprocess.run([sys.executable, "-m", "pytest", *coverage, *args.pytest_args], cwd=folder,
+    # coverage options go last: a bare --cov would take a test path after it as its value
+    return subprocess.run([sys.executable, "-m", "pytest", *args.pytest_args, *coverage], cwd=folder,
                           env=environment, check=False).returncode
 
 
