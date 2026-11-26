@@ -12,6 +12,7 @@ theme:
 nav:
   - Home: index.md
   - Status (0.0.x): status.md
+  - Changelog: changelog.md
   - Getting started: getting-started.md
   - Writing a game: writing-a-game.md
   - Modes: modes.md

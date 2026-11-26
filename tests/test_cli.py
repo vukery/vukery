@@ -18,6 +18,18 @@ def describe_vuk():
         with pytest.raises(SystemExit):
             main(["--log", "fast=debug", "it"])
 
+    def it_reports_the_version_from_pyproject(capsys):
+        import tomllib
+        from pathlib import Path
+
+        import vukery
+
+        project = tomllib.loads((Path(__file__).parents[1] / "pyproject.toml").read_text())["project"]
+        assert vukery.__version__ == project["version"]
+        with pytest.raises(SystemExit):
+            main(["--version"])
+        assert capsys.readouterr().out.strip() == f"vukery {project['version']}"
+
     def it_runs_doctor(capsys):
         assert main(["doctor"]) == 0
         assert "Python" in capsys.readouterr().out
