@@ -114,15 +114,20 @@ async def connect(state: MediaState, port: int, displays: list[str], audio: bool
 
 
 def run(port: int, display_configs: dict[str, dict[str, Any]], only: str | None = None,
-        windowed: bool = False) -> int:
+        windowed: bool = False, audio: bool = False) -> int:
     """Open a full-screen window for each display (or just ``only``) and draw until the engine stops.
 
-    ``windowed`` opens them at their configured size instead (``--windowed``).
+    ``windowed`` opens them at their configured size instead (``--windowed``). ``audio``:
+    this process plays the machine's sounds too (``vuk us`` picks one); with no displays,
+    it only plays sound.
     """
     import pyglet  # imported here so nothing else needs pyglet
 
+    from vukery.mc.audio import Audio
+
     names = [only] if only else list(display_configs)
-    state = MediaState()
+    state = MediaState(audio=audio)
+    sound = Audio(state) if audio else None
     windows: dict[str, Any] = {}
     screens = pyglet.display.get_display().get_screens()
     for name in names:
@@ -139,6 +144,8 @@ def run(port: int, display_configs: dict[str, dict[str, Any]], only: str | None 
     async def frames() -> None:
         while not state.engine_stopped and all(not w.has_exit for w in windows.values()):
             pyglet.clock.tick()
+            if sound is not None:
+                sound.frame()
             for name, window in windows.items():
                 window.dispatch_events()
                 draw(window, state, name)
@@ -146,7 +153,7 @@ def run(port: int, display_configs: dict[str, dict[str, Any]], only: str | None 
             await asyncio.sleep(FRAME_SECONDS)
 
     async def main() -> None:
-        connection = asyncio.create_task(connect(state, port, names, audio=False))
+        connection = asyncio.create_task(connect(state, port, names, audio=audio))
         try:
             await frames()
         finally:

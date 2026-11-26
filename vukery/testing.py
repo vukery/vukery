@@ -61,10 +61,12 @@ class GameRig:
             self.machine.events.monitors.append(lambda event, kwargs: self.posted.append((event, kwargs)))
             # an in-process media controller on virtual time: what the screens would show, entrances included
             self.display = MediaState(now=self.clock.now)
+            if self.machine.media is not None:   # listening from power-on, so it hears the first sounds too
+                self.machine.media.attach(self.display.apply)
             self.loop.run_until_complete(self.machine.start())
             self.dashboard = DashboardState(now=self.clock.now)  # what vuk me would show
             if self.machine.media is not None:
-                self.machine.media.attach(self.display.apply)
+                self.display.apply(self.machine.media.welcome())   # the scenes the modes defined as it started
                 if dashboard:
                     self.machine.media.attach(self.dashboard.apply, dashboard=True)
             if fill_troughs:
@@ -190,6 +192,16 @@ class GameRig:
     def times_posted(self, event: str) -> int:
         return sum(1 for name, _ in self.posted if name == event)
 
+    def sounds(self) -> list[str]:
+        """The sounds played so far, in order (a pool's pick, not the pool's name)."""
+        return [m["sound"] for m in self.display.played] if self.machine.media is not None else []
+
+    def times_played(self, sound: str) -> int:
+        """How many times a sound, or any of a pool's, was played."""
+        if self.machine.media is None:
+            return 0
+        return sum(1 for m in self.display.played if sound in (m["sound"], m["name"]))
+
 
 class Expectation:
     def __init__(self, value: Any):
@@ -260,6 +272,18 @@ class Expectation:
     def not_to_have_posted(self, event: str) -> None:
         count = self._rig().times_posted(event)
         assert count == 0, f"expected {event!r} not to have been posted, but it was ({count} time(s))"
+
+    def to_have_played(self, sound: str, times: int | None = None) -> None:
+        """A sound, or a pool (any of its sounds), was played."""
+        count = self._rig().times_played(sound)
+        if times is None:
+            assert count > 0, f"expected {sound!r} to have been played, but it wasn't"
+        else:
+            assert count == times, f"expected {sound!r} played {times} time(s), got {count}"
+
+    def not_to_have_played(self, sound: str) -> None:
+        count = self._rig().times_played(sound)
+        assert count == 0, f"expected {sound!r} not to have been played, but it was ({count} time(s))"
 
     def _mode(self) -> Mode:
         match self.value:

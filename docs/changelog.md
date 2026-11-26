@@ -6,6 +6,20 @@ vukery is in **0.0.x** while it works toward parity with MPF. Every push to
 
 Check your version with `vuk --version`.
 
+## 0.0.21 (2026-11-26)
+
+- **Sound.** Every file in `assets/sounds/` is a sound; MPF's `sounds:`,
+  `sound_pools:` and `sound_system: tracks:` give them settings, so an MPF
+  machine's sound config carries over. Modes `play_sound(...)` with MPF's
+  `sound_player` options (`volume`, `loops`, `priority`, `start_at`, `delay`,
+  `max_queue_time`) and `stop_sound(...)`. The media controller mixes as MPF
+  does: track limits, priorities, queueing, loops and ducking. `vuk me` plays
+  sound, and so does the first display's media controller in `vuk us`. See
+  [Sound](sound.md).
+- **Specs:** `expect(game).to_have_played("name")`, `game.sounds()`. The
+  rig now listens from power-on.
+- `examples/display` beeps when its target is hit.
+
 ## 0.0.20 (2026-11-26)
 
 - **Scenes are clipped to their display:** an actor moving past the edge is

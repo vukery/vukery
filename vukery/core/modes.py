@@ -22,6 +22,7 @@ The lifecycle and its events match MPF's:
 A mode's handlers run at the mode's priority plus their own, as in MPF.
 """
 
+import random
 import re
 from collections.abc import Callable
 from dataclasses import dataclass
@@ -178,6 +179,26 @@ class Mode(Logs):
         if self.machine.media is not None:
             self.machine.media.show(self, scene_name(scene), display, priority)
 
+    def play_sound(self, sound: str, *, volume: float | None = None, loops: int | None = None, priority: int = 0,
+                   start_at: float = 0.0, delay: float = 0.0, max_queue_time: float | None = None) -> None:
+        """Play a sound, or one of a sound pool's (MPF: ``sound_player``).
+
+        ``volume``, ``loops`` and ``max_queue_time`` replace the sound's own (``sounds:``);
+        ``priority`` is added to its own. ``start_at``: seconds into the file. ``delay``:
+        seconds to wait first. When the mode stops, its sounds stop or finish their loop
+        (the sound's ``mode_end_action``).
+        """
+        if self.machine.media is not None:
+            self.machine.media.play_sound(self, sound, volume=volume, loops=loops, priority=priority,
+                                          start_at=start_at, delay=delay, max_queue_time=max_queue_time)
+        else:
+            self.machine.sounds.resolve(sound, random.Random(), {})  # still explain a name that doesn't exist
+
+    def stop_sound(self, sound: str) -> None:
+        """Stop a sound (or a pool's) this mode played."""
+        if self.machine.media is not None:
+            self.machine.media.stop_sound(self, sound)
+
     def play_show(self, name: str, *, priority: int = 0, speed: float = 1.0, loops: int = -1, start_step: int = 1,
                   show_tokens: dict[str, Any] | None = None, key: str | None = None,
                   events_when_played: tuple[str, ...] = (), events_when_stopped: tuple[str, ...] = (),
@@ -255,6 +276,7 @@ class Mode(Logs):
             self.mode_stop(**kwargs)
             if self.machine.media is not None:
                 self.machine.media.remove(self)
+                self.machine.media.stop_sounds(self)
             self.events.remove_handlers(self._event_handlers)
             self._event_handlers = []
             self.active = False

@@ -5,7 +5,7 @@
     platforms: switches, coils, lights, a simple trough, single-wound
     flippers, autofire coils, the attract and game modes, and your own
     modes, [shows](shows.md), and scenes on displays ([Displays and scenes](scenes.md)).
-    Ball saves, tilt and sound come later. The complete examples are
+    [Sound](sound.md) too. Ball saves and tilt come later. The complete examples are
     [`examples/basic` and `examples/display`](examples.md).
 
 ## A game folder
@@ -83,6 +83,7 @@ octal number.
 `light_groups`, `ball_devices` (troughs and plunger lanes, see below),
 `flippers` (single-wound, no EOS),
 `autofire_coils`, `game`, `modes`, `player_vars`, `displays`, `media`,
+`sound_system`, `sounds`, `sound_pools` ([Sound](sound.md)),
 `hardware`, `fast`, `logging`.
 
 **Ball devices:** a trough (`tags: trough`) and a mechanical plunger lane

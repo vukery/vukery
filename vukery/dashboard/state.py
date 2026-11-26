@@ -14,8 +14,8 @@ FLASH_SECONDS = 0.25  # how long a pulsed coil stays lit on the dashboard
 
 
 class DashboardState(MediaState):
-    def __init__(self, now: Callable[[], float] = time.monotonic) -> None:
-        super().__init__()
+    def __init__(self, now: Callable[[], float] = time.monotonic, audio: bool = False) -> None:
+        super().__init__(audio=audio)
         self.now = now
         self.layout: dict[str, Any] = {}
         self.devices: dict[str, Any] = {}

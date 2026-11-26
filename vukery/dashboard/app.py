@@ -522,10 +522,13 @@ class DashboardView:
 
 
 def run(port: int, size: tuple[int, int] = WINDOW) -> int:
-    """Open the dashboard window until it's closed or the engine stops."""
+    """Open the dashboard window until it's closed or the engine stops. It plays the machine's sounds."""
     import pyglet
 
-    state = DashboardState()
+    from vukery.mc.audio import Audio
+
+    state = DashboardState(audio=True)
+    sound = Audio(state)
     link: dict[str, Any] = {}
     window = pyglet.window.Window(*size, caption="vukery: vuk me", resizable=True)
 
@@ -561,13 +564,14 @@ def run(port: int, size: tuple[int, int] = WINDOW) -> int:
     async def frames() -> None:
         while not state.engine_stopped and not window.has_exit:
             pyglet.clock.tick()
+            sound.frame()
             window.dispatch_events()
             view.draw()
             window.flip()
             await asyncio.sleep(FRAME_SECONDS)
 
     async def main() -> None:
-        connection = asyncio.create_task(connect(state, port, [], audio=False, dashboard=True, link=link))
+        connection = asyncio.create_task(connect(state, port, [], audio=True, dashboard=True, link=link))
         try:
             await frames()
         finally:

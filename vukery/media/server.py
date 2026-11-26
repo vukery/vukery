@@ -8,8 +8,9 @@ changed.
 
 import asyncio
 import json
+import random
 from collections.abc import Callable
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 from itertools import count
 from typing import TYPE_CHECKING, Any
 
@@ -17,6 +18,7 @@ from vukery.core.errors import ConfigError
 from vukery.core.log import Logs
 from vukery.media import dashboard, protocol
 from vukery.media.scenes import Scene
+from vukery.media.sounds import Sound
 
 if TYPE_CHECKING:
     from vukery.core.machine import Machine
@@ -78,6 +80,11 @@ class MediaServer(Logs):
         self._last_state: dict[str, Any] | None = None
         self._poller: Any = None
         self._server: asyncio.Server | None = None
+        self.random = random.Random()   # picks from sound pools
+        self._pool_turns: dict[str, int] = {}
+        self._sound_ids = count(1)
+        self._sounds: dict[str, list[tuple[int, str, Sound]]] = {}   # mode -> (id, name played, sound)
+        self._delayed: dict[str, list[Any]] = {}                     # mode -> timers for delayed sounds
         self.configure_logging("media")
         machine.events.monitors.append(self._event_posted)
 
@@ -120,6 +127,43 @@ class MediaServer(Logs):
             self.showing[display] = top
             self._send({"type": "show", "display": display, "scene": top})
 
+    # --- sounds
+
+    def play_sound(self, mode: Mode, name: str, *, volume: float | None = None, loops: int | None = None,
+                   priority: int = 0, start_at: float = 0.0, delay: float = 0.0,
+                   max_queue_time: float | None = None) -> None:
+        sound = self.machine.sounds.resolve(name, self.random, self._pool_turns)   # explains a missing name now
+        message = {"type": "sound", "action": "play", "sound": sound.name, "name": name, "track": sound.track,
+                   "volume": sound.volume if volume is None else volume,
+                   "loops": sound.loops if loops is None else loops, "priority": sound.priority + priority,
+                   "start_at": start_at,
+                   "max_queue_time": sound.max_queue_time if max_queue_time is None else max_queue_time,
+                   "ducking": None if sound.ducking is None else asdict(sound.ducking)}
+        if delay > 0:
+            timers = self._delayed.setdefault(mode.name, [])
+            timers.append(self.machine.clock.call_later(delay, self._play, mode, name, sound, message))
+        else:
+            self._play(mode, name, sound, message)
+
+    def _play(self, mode: Mode, name: str, sound: Sound, message: dict[str, Any]) -> None:
+        sound_id = next(self._sound_ids)
+        self._sounds.setdefault(mode.name, []).append((sound_id, name, sound))
+        self._send({**message, "id": sound_id})
+
+    def stop_sound(self, mode: Mode, name: str) -> None:
+        """Stop what a mode played under ``name`` (a sound, or a pool)."""
+        mine = self._sounds.get(mode.name, [])
+        for sound_id, played, sound in [entry for entry in mine if name in (entry[1], entry[2].name)]:
+            mine.remove((sound_id, played, sound))
+            self._send({"type": "sound", "action": "stop", "id": sound_id})
+
+    def stop_sounds(self, mode: Mode) -> None:
+        """A mode stopped: its sounds stop, or finish the loop they're on (``mode_end_action``)."""
+        for timer in self._delayed.pop(mode.name, []):
+            timer.cancel()
+        for sound_id, _, sound in self._sounds.pop(mode.name, []):
+            self._send({"type": "sound", "action": sound.mode_end_action, "id": sound_id})
+
     # --- game state for widgets
 
     def _event_posted(self, event: str, kwargs: dict[str, Any]) -> None:
@@ -150,6 +194,7 @@ class MediaServer(Logs):
             "showing": dict(self.showing),
             "player": game.player.number if game and game.player else None,
             "players": players,
+            **self.machine.sounds.to_data(),
         }
 
     # --- clients
