@@ -43,6 +43,8 @@ build-backend = "hatchling.build"
 [tool.ruff]
 line-length = 100
 target-version = "py315"
+# MPF's files, kept verbatim as references (see vukery/_mpf/NOTICE)
+extend-exclude = ["tests/mpf_ported"]
 
 [tool.ruff.lint.per-file-ignores]
 # Game modes declare `slides = {...}` on the class; asking game authors for ClassVar is noise
