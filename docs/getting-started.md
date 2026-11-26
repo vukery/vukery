@@ -17,10 +17,10 @@
 
 ```console
 uv tool install "vukery[mc] @ git+https://github.com/vukery/vukery"
-vuk doctor
+vuk health
 ```
 
-`vuk doctor` prints:
+`vuk health` prints:
 - the vukery version, and where it was installed from (git and the commit,
   or a folder);
 - the Python and platform versions;

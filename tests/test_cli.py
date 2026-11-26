@@ -52,8 +52,8 @@ def describe_vuk():
             main(["--version"])
         expect(capsys.readouterr().out.strip()).to_equal(f"vukery {project['version']}")
 
-    def it_runs_doctor(capsys):
-        expect(main(["doctor"])).to_equal(0)
+    def it_runs_health(capsys):
+        expect(main(["health"])).to_equal(0)
         expect(capsys.readouterr().out).to_contain("Python")
 
     @pytest.mark.parametrize(("direct_url", "says"), [

@@ -52,7 +52,7 @@ def _parser() -> argparse.ArgumentParser:
                                "lights: walk every LED; coil: pulse one coil (asks first)")
     hardware.add_argument("name", nargs="?", help="the coil to pulse (for: coil)")
 
-    commands.add_parser("doctor", help="check the setup: versions, where vukery is from, pyglet and FFmpeg "
+    commands.add_parser("health", help="check the setup: versions, where vukery is from, pyglet and FFmpeg "
                                        "(MPF: mpf diagnosis)")
     commands.add_parser("wire", help="FAST wiring instructions for the config (MPF: mpf wire)")
 
@@ -60,8 +60,8 @@ def _parser() -> argparse.ArgumentParser:
                               help="run the specs, in the test environment, with coverage (MPF: mpf test)")
     you.add_argument("pytest_args", nargs=argparse.REMAINDER, help="passed to pytest, e.g. -k scoring")
 
-    generate = commands.add_parser("generate", help="create a mode, show or slide in a game (MPF: mpf create_config)")
-    generate.add_argument("kind", choices=("mode", "show", "slide"))
+    generate = commands.add_parser("generate", help="create a mode, show or scene in a game (MPF: mpf create_config)")
+    generate.add_argument("kind", choices=("mode", "show", "scene"))
     generate.add_argument("name")
 
     commands.add_parser("stubs", help="generate typed stubs from the machine config")
@@ -90,7 +90,7 @@ def installed_from() -> str:
             return url
 
 
-def _doctor() -> int:
+def _health() -> int:
     print(f"vukery {__version__}, from {installed_from()}")
     print(f"Python {platform.python_version()} ({sys.executable})")
     print(f"Platform {platform.platform()}")
@@ -297,8 +297,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         case None:
             parser.print_help()
             return 0
-        case "doctor":
-            return _doctor()
+        case "health":
+            return _health()
         case "it":
             return _create(args)
         case "you" | "test":  # vuk test is an alias
