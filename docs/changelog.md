@@ -6,6 +6,23 @@ vukery is in **0.0.x** while it works toward parity with MPF. Every push to
 
 Check your version with `vuk --version`.
 
+## 0.0.17 (2026-11-26)
+
+- **Coverage from 74% to 83%:** 78 new specs.
+  - **FAST Nano:** MPF's single-wound and dual-wound flipper rule
+    scenarios (the exact serial commands), an RGB processor reboot, and the
+    messages for switch and driver numbers that don't exist.
+  - **Switches held down** (`@on.switch(..., hold=2)`), including across
+    balls, plus `events_when_activated` / `deactivated`.
+  - Light channel orders, `previous`, RGBW and fades; coil limits; extra
+    balls and `player_vars:`; environment folders; and the error messages
+    for config, machine, slides and scoring mistakes.
+  - The FAST EXP board code isn't counted until EXP support is built: nothing
+    can run it yet.
+- **Fixed:** `vuk you <test path>` measured the tests instead of the code (a
+  bare `--cov` took the path as its value).
+- **Fixed:** a machine that failed while setting up left its event loop open.
+
 ## 0.0.16 (2026-11-26)
 
 - **Code coverage:** `vuk you` measures how much code the specs run

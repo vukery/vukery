@@ -592,7 +592,7 @@ wheels = [
 
 [[package]]
 name = "vukery"
-version = "0.0.16"
+version = "0.0.17"
 source = { editable = "." }
 default-groups = ["dev", "docs"]
 dependencies = [
