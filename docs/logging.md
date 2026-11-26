@@ -1,7 +1,7 @@
 # Logging
 
 !!! note "0.0.x"
-    Logging is built and tested. `vuk run` doesn't start it yet.
+    Logging is built, tested, and started by `vuk run`.
 
 vukery's logs look like MPF's, but each environment writes to one file
 instead of a new one every run, and every component can be switched on or

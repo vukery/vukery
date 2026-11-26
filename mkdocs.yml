@@ -13,6 +13,9 @@ nav:
   - Home: index.md
   - Status (0.0.x): status.md
   - Getting started: getting-started.md
+  - Writing a game: writing-a-game.md
+  - Testing a game: testing.md
+  - Examples: examples.md
   - The vuk command: cli.md
   - Logging: logging.md
   - Hardware:

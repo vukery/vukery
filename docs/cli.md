@@ -36,7 +36,7 @@ VUK_LOG=debug vuk run
 | Command | Status | What it does | MPF equivalent |
 |---|---|---|---|
 | `vuk doctor` | **works** | Shows versions and checks for FFmpeg | `mpf diagnosis` |
-| `vuk run` | planned | Runs the game and its media controllers | `mpf`, `mpf game`, `mpf both` |
+| `vuk run` | **works** in development | Runs the game. In development, type a switch name to tap it. Media controllers come next. | `mpf`, `mpf game`, `mpf both` |
 | `vuk mc` | planned | Runs a media controller only (`--display NAME`) | `mpf mc` |
 | `vuk view` | planned | Playfield GUI: lights, switches, coils | `mpf monitor` |
 | `vuk top` | planned | Terminal dashboard of a running game; works over SSH | `mpf -t` |
@@ -53,15 +53,15 @@ VUK_LOG=debug vuk run
 
 A command that isn't built yet says so and exits with code 2.
 
-### `vuk run` options (planned)
+### `vuk run` options
 
-| Option | What it does | MPF flag |
-|---|---|---|
-| `--hardware` | Use real hardware in development | |
-| `--no-mc` | Don't start the media controllers | (`mpf game` instead of `mpf both`) |
-| `--no-sound` | Run without audio | `--no-sound` |
-| `--preload` | Load every asset at startup | `-f` |
-| `--log-dir DIR` | Where log files go (default `log/`) | `-l` |
+| Option | Status | What it does | MPF flag |
+|---|---|---|---|
+| `--log-dir DIR` | works | Where log files go (default `log/`) | `-l` |
+| `--hardware` | works | Allow real hardware in development | |
+| `--no-mc` | planned | Don't start the media controllers | (`mpf game` instead of `mpf both`) |
+| `--no-sound` | planned | Run without audio | `--no-sound` |
+| `--preload` | planned | Load every asset at startup | `-f` |
 
 ### Global options
 
