@@ -535,7 +535,7 @@ wheels = [
 
 [[package]]
 name = "vukery"
-version = "0.0.2"
+version = "0.0.3"
 source = { editable = "." }
 default-groups = ["dev", "docs"]
 dependencies = [
@@ -549,6 +549,7 @@ mc = [
 
 [package.dev-dependencies]
 dev = [
+    { name = "pyglet" },
     { name = "pyright" },
     { name = "pytest" },
     { name = "pytest-describe" },
@@ -569,6 +570,7 @@ provides-extras = ["mc"]
 
 [package.metadata.requires-dev]
 dev = [
+    { name = "pyglet", specifier = ">=2.1.19" },
     { name = "pyright" },
     { name = "pytest" },
     { name = "pytest-describe" },

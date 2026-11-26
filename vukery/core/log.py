@@ -15,7 +15,7 @@
 ``VUK_LOG`` sets one level for everything on the fly, overriding the whole
 ``logging:`` config (like Rails' log level)::
 
-    VUK_LOG=debug vuk run
+    VUK_LOG=debug vuk it
 
 Levels: debug, info, warning, error. Per-component levels only come from the
 ``logging:`` config section::
@@ -40,6 +40,7 @@ from pathlib import Path
 from typing import Any
 
 from vukery.core.errors import ConfigError
+from vukery.core.yaml_values import mapping
 
 ROOT = "vukery"
 FORMAT = "%(asctime)s : %(levelname)s : %(name)s : %(message)s"
@@ -94,8 +95,8 @@ class LoggingConfig:
             level=parse_level(data.get("level", "info"), "level"),
             console=parse_level(data.get("console", "info"), "console"),
             file=parse_level(data.get("file", "debug"), "file"),
-            components={str(name): parse_level(level, f"components: {name}")
-                        for name, level in (data.get("components") or {}).items()},
+            components={name: parse_level(level, f"components: {name}")
+                        for name, level in mapping(data.get("components"), "logging: components").items()},
             max_file_mb=int(data.get("max_file_mb", 10)),
             backups=int(data.get("backups", 5)),
         )

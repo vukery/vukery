@@ -4,10 +4,14 @@
 each one does one thing.
 
 ```console
+cd my_game
+vuk it          # run the game in this folder
+vuk doctor      # check your setup
 vuk --help
-vuk --version
-vuk doctor
 ```
+
+`vuk it` runs the game whose `config/` folder is in the current folder (or
+in the folder given with `-C DIR`).
 
 ## Environment variables
 
@@ -20,8 +24,8 @@ not command-line flags.
 | `VUK_LOG` | One log level for everything (see [Logging](logging.md)) | `debug`, `info`, `warning`, `error` | from the `logging:` config |
 
 ```console
-VUK_ENV=production vuk run
-VUK_LOG=debug vuk run
+VUK_ENV=production vuk it
+VUK_LOG=debug vuk it
 ```
 
 ### Environments
@@ -36,8 +40,8 @@ VUK_LOG=debug vuk run
 | Command | Status | What it does | MPF equivalent |
 |---|---|---|---|
 | `vuk doctor` | **works** | Shows versions and checks for FFmpeg | `mpf diagnosis` |
-| `vuk run` | planned | Runs the game and its media controllers | `mpf`, `mpf game`, `mpf both` |
-| `vuk mc` | planned | Runs a media controller only (`--display NAME`) | `mpf mc` |
+| `vuk it` | **works** in development | Runs the game and a media controller per display. In development, type a switch name to tap it. | `mpf`, `mpf game`, `mpf both` |
+| `vuk mc` | **works** | Runs a media controller only (`--display NAME`) | `mpf mc` |
 | `vuk view` | planned | Playfield GUI: lights, switches, coils | `mpf monitor` |
 | `vuk top` | planned | Terminal dashboard of a running game; works over SSH | `mpf -t` |
 | `vuk console` | planned | Python prompt attached to the running game | `mpf service` |
@@ -53,15 +57,17 @@ VUK_LOG=debug vuk run
 
 A command that isn't built yet says so and exits with code 2.
 
-### `vuk run` options (planned)
+### `vuk it` options
 
-| Option | What it does | MPF flag |
-|---|---|---|
-| `--hardware` | Use real hardware in development | |
-| `--no-mc` | Don't start the media controllers | (`mpf game` instead of `mpf both`) |
-| `--no-sound` | Run without audio | `--no-sound` |
-| `--preload` | Load every asset at startup | `-f` |
-| `--log-dir DIR` | Where log files go (default `log/`) | `-l` |
+The config decides whether media controllers start: one per display in
+`displays:`, none without it. Sound will work the same way, from the
+config. (MPF chose with `mpf game` versus `mpf both`, and `--no-sound`.)
+
+| Option | Status | What it does | MPF flag |
+|---|---|---|---|
+| `--log-dir DIR` | works | Where log files go (default `log/`) | `-l` |
+| `--hardware` | works | Allow real hardware in development | |
+| `--preload` | planned | Load every asset at startup | `-f` |
 
 ### Global options
 

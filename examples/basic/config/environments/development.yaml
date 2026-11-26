@@ -1,0 +1,3 @@
+# development: the simulated machine (balls leave the trough by themselves)
+logging:
+  level: info

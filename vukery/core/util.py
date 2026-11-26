@@ -137,7 +137,7 @@ class Util:
 # Copyright (c) The Mission Pinball Framework team and other contributors.
 # MIT License: see vukery/_mpf/NOTICE.
     @staticmethod
-    def raise_exceptions(future: asyncio.Future) -> None:
+    def raise_exceptions(future: asyncio.Future[object]) -> None:
         """Re-raise any error except CancelledError on this exception.
 
         Use this with add_done_callback on any future which is not awaited
