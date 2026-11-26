@@ -42,7 +42,7 @@ def describe_vuk_it_media_controllers():
         import os
         from pathlib import Path
 
-        import vukery.cli as cli
+        from vukery import cli
 
         started = []
         monkeypatch.setattr(cli, "_start_media_controllers",
