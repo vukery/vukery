@@ -5,7 +5,7 @@ import pytest
 from tests.helpers import basic_machine
 from vukery.core.errors import CoilLimitError, ConfigError
 from vukery.devices.coil import CoilConfig
-from vukery.testing import GameRig
+from vukery.testing import GameRig, expect
 
 
 @pytest.fixture
@@ -47,7 +47,7 @@ def describe_coil_limits():
     def it_holds_at_its_max_hold_power_by_default(rig):
         coil = rig.machine.coils["c_limited"]
         coil.enable()
-        assert coil.hw_driver.enabled.power == 0.25
+        expect(coil.hw_driver.enabled.power).to_equal(0.25)
 
     def it_refuses_a_negative_timed_enable(rig):
         with pytest.raises(CoilLimitError, match="negative"):
@@ -56,4 +56,4 @@ def describe_coil_limits():
     def it_timed_enables_within_its_limits(rig):
         coil = rig.machine.coils["c_limited"]
         coil.timed_enable(timed_enable_ms=500, hold_power=0.2)
-        assert (coil.pulses, coil.hw_driver.enabled.power, coil.hw_driver.enabled.duration) == (1, 0.2, 500)
+        expect((coil.pulses, coil.hw_driver.enabled.power, coil.hw_driver.enabled.duration)).to_equal((1, 0.2, 500))

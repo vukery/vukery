@@ -10,6 +10,7 @@ from vukery.core.machine import Machine
 from vukery.mc.state import MediaState
 from vukery.media import protocol
 from vukery.media.slides import Slide, Text
+from vukery.testing import expect
 
 EXAMPLE = Path(__file__).parents[2] / "examples" / "display"
 
@@ -26,31 +27,31 @@ def describe_media_state():
     def it_fills_in_live_values():
         state = MediaState()
         state.apply(welcome())
-        assert [t.text for t in state.texts("main")] == ["12,340", "BALL 2", ""]
+        expect([t.text for t in state.texts("main")]).to_equal(["12,340", "BALL 2", ""])
 
     def it_follows_player_changes_and_turns():
         state = MediaState()
         state.apply(welcome())
         state.apply({"type": "player", "number": 2, "vars": {"score": 50, "ball": 1}})
         state.apply({"type": "turn", "number": 2})
-        assert [t.text for t in state.texts("main")][:2] == ["50", "BALL 1"]
+        expect([t.text for t in state.texts("main")][:2]).to_equal(["50", "BALL 1"])
 
     def it_shows_nothing_for_an_unknown_or_empty_slide():
         state = MediaState()
         state.apply(welcome())
         state.apply({"type": "show", "display": "main", "slide": None})
-        assert state.texts("main") == []
+        expect(state.texts("main")).to_equal([])
 
     def it_ignores_messages_it_doesnt_know():  # so the protocol can grow
         state = MediaState()
         state.apply(welcome())
         state.apply({"type": "something_new", "x": 1})
-        assert state.connected
+        expect(state.connected).to_be_true()
 
     def it_notices_the_engine_stopping():
         state = MediaState()
         state.apply({"type": "bye"})
-        assert state.engine_stopped
+        expect(state.engine_stopped).to_be_true()
 
 
 def describe_slides():
@@ -78,10 +79,10 @@ def describe_media_server():
 
         try:
             message = loop.run_until_complete(scenario())
-            assert message["type"] == "welcome"
-            assert message["showing"] == {"main": "start_screen"}
-            assert set(message["slides"]) == {"start_screen", "score"}
-            assert message["displays"] == {"main": {"width": 800, "height": 480}}
+            expect(message["type"]).to_equal("welcome")
+            expect(message["showing"]).to_equal({"main": "start_screen"})
+            expect(set(message["slides"])).to_equal({"start_screen", "score"})
+            expect(message["displays"]).to_equal({"main": {"width": 800, "height": 480}})
         finally:
             machine.stop("test")
             pending = [t for t in asyncio.all_tasks(loop) if not t.done()]
@@ -154,7 +155,7 @@ def describe_slide_mistakes():
             return answer
 
         try:
-            assert loop.run_until_complete(scenario()) == b""  # the engine hung up
+            expect(loop.run_until_complete(scenario())).to_equal(b"")  # the engine hung up
         finally:
             machine.stop()
             loop.run_until_complete(asyncio.sleep(0.05))

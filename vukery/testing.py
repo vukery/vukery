@@ -186,8 +186,42 @@ class Expectation:
     def __init__(self, value: Any):
         self.value = value
 
+    # --- values (named after MPF's assertions: assertEqual, assertTrue, assertIn…)
+
     def to_equal(self, expected: Any) -> None:
         assert self.value == expected, f"expected {expected!r}, got {self.value!r}"
+
+    def not_to_equal(self, unexpected: Any) -> None:
+        assert self.value != unexpected, f"expected anything but {unexpected!r}"
+
+    def to_be_true(self) -> None:
+        assert self.value, f"expected something true, got {self.value!r}"
+
+    def to_be_false(self) -> None:
+        assert not self.value, f"expected something false, got {self.value!r}"
+
+    def to_be_none(self) -> None:
+        assert self.value is None, f"expected None, got {self.value!r}"
+
+    def not_to_be_none(self) -> None:
+        assert self.value is not None, "expected a value, got None"
+
+    def to_contain(self, item: Any) -> None:
+        assert item in self.value, f"expected {self.value!r} to contain {item!r}"
+
+    def not_to_contain(self, item: Any) -> None:
+        assert item not in self.value, f"expected {self.value!r} not to contain {item!r}"
+
+    def to_be_close_to(self, expected: float, within: float = 1e-6) -> None:
+        assert abs(self.value - expected) <= within, f"expected {expected!r} (within {within}), got {self.value!r}"
+
+    def to_be_greater_than(self, other: Any) -> None:
+        assert self.value > other, f"expected more than {other!r}, got {self.value!r}"
+
+    def to_be_less_than(self, other: Any) -> None:
+        assert self.value < other, f"expected less than {other!r}, got {self.value!r}"
+
+    # --- the machine
 
     def to_be_running(self) -> None:
         mode = self._mode()

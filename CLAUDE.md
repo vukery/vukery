@@ -81,7 +81,8 @@ think one is wrong, say so instead of working around it.
     `every=`) replaces MPF's `hit_and_release_switch` family;
   - `game.advance(seconds)` is always a separate, consecutive call;
   - assertions are `expect(...)` matchers named after MPF's assertions
-    (`expect(game.mode("base")).to_be_running()`).
+    (`expect(game.mode("base")).to_be_running()`), **never a bare `assert`**.
+    Add a matcher to `vukery.testing` when one is missing.
 - **Game folder layout:**
   - `config/`, with `config/environments/<env>` deep-merged over the
     shared files;

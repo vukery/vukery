@@ -4,7 +4,7 @@ import pytest
 
 from tests.helpers import basic_machine
 from vukery.core.errors import ConfigError
-from vukery.testing import GameRig
+from vukery.testing import GameRig, expect
 
 RED, GREEN, BLUE, BLACK = (255, 0, 0), (0, 255, 0), (0, 0, 255), (0, 0, 0)
 
@@ -26,9 +26,9 @@ def describe_the_light_stack():
         light = rig.machine.lights["l_lane_1"]
         light.color("ff0000")                           # priority 0, no key
         light.color("00ff00", priority=10, key="show")
-        assert light.current_color() == GREEN
+        expect(light.current_color()).to_equal(GREEN)
         light.color("0000ff", priority=5, key="mode")  # lower: saved, not shown
-        assert light.current_color() == GREEN
+        expect(light.current_color()).to_equal(GREEN)
 
     def it_reveals_whats_underneath_when_a_key_is_removed(rig):
         light = rig.machine.lights["l_lane_1"]
@@ -36,27 +36,27 @@ def describe_the_light_stack():
         light.color("00ff00", priority=10, key="show")
         light.color("0000ff", priority=5, key="mode")
         light.remove("show")
-        assert light.current_color() == BLUE
+        expect(light.current_color()).to_equal(BLUE)
         light.remove("mode")
-        assert light.current_color() == RED
+        expect(light.current_color()).to_equal(RED)
 
     def it_replaces_an_entry_with_the_same_key(rig):
         light = rig.machine.lights["l_lane_1"]
         light.color("ff0000", priority=10, key="show")
         light.color("00ff00", priority=10, key="show")
-        assert (light.current_color(), len(light.stack)) == (GREEN, 1)
+        expect((light.current_color(), len(light.stack))).to_equal((GREEN, 1))
 
     def it_shows_the_latest_on_a_tie(rig):
         light = rig.machine.lights["l_lane_1"]
         light.color("ff0000", priority=10, key="a")
         light.color("00ff00", priority=10, key="b")
-        assert light.current_color() == GREEN
+        expect(light.current_color()).to_equal(GREEN)
 
     def it_is_off_with_nothing_on_the_stack(rig):
         light = rig.machine.lights["l_lane_1"]
         light.color("ff0000", key="only")
         light.remove("only")
-        assert light.current_color() == BLACK
+        expect(light.current_color()).to_equal(BLACK)
 
     def it_fades_to_whats_underneath(rig):
         light = rig.machine.lights["l_lane_1"]
@@ -64,34 +64,34 @@ def describe_the_light_stack():
         light.color("ffffff", priority=10, key="show")
         light.remove("show", fade_ms=1000)
         rig.advance(0.5)
-        assert light.current_color() == (128, 128, 128)
+        expect(light.current_color()).to_equal((128, 128, 128))
 
     def it_ignores_removing_a_key_that_isnt_there(rig):
         light = rig.machine.lights["l_lane_1"]
         light.color("ff0000")
         light.remove("nothing")
-        assert light.current_color() == RED
+        expect(light.current_color()).to_equal(RED)
 
 
 def describe_light_groups():
     def it_keeps_its_lights_in_order(rig):
         group = rig.machine.light_groups["lanes"]
-        assert [light.name for light in group] == ["l_lane_1", "l_lane_2", "l_lane_3"]
-        assert (len(group), group[1].name) == (3, "l_lane_2")
+        expect([light.name for light in group]).to_equal(["l_lane_1", "l_lane_2", "l_lane_3"])
+        expect((len(group), group[1].name)).to_equal((3, "l_lane_2"))
 
     def it_colors_every_light_in_it(rig):
         group = rig.machine.light_groups["lanes"]
         group.color("ff0000", priority=10, key="show")
-        assert [light.current_color() for light in group] == [RED, RED, RED]
+        expect([light.current_color() for light in group]).to_equal([RED, RED, RED])
         group.remove("show")
-        assert [light.current_color() for light in group] == [BLACK, BLACK, BLACK]
+        expect([light.current_color() for light in group]).to_equal([BLACK, BLACK, BLACK])
 
     def it_turns_them_on_and_off(rig):
         group = rig.machine.light_groups["lanes"]
         group.on()
-        assert group[0].current_color() == (255, 255, 255)
+        expect(group[0].current_color()).to_equal((255, 255, 255))
         group.off()
-        assert group[2].current_color() == BLACK
+        expect(group[2].current_color()).to_equal(BLACK)
 
     @pytest.mark.parametrize(("groups", "message"), [
         ({"lanes": "l_lane_1, l_nope"}, "no light named l_nope"),
