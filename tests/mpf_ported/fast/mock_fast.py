@@ -14,7 +14,18 @@ MockFastRgbDmd
 """
 
 import re
-from mpf.tests.loop import MockSerial
+
+
+class MockSerial:
+    """vukery: a stand-in for MPF's ``mpf.tests.loop.MockSerial``.
+
+    vukery's test harness reads and writes the mock boards directly instead of
+    going through MPF's custom test event loop, so only an ``is_open`` flag is needed.
+    """
+
+    def __init__(self):
+        self.is_open = True
+
 
 class MockFastSerial(MockSerial):
 
