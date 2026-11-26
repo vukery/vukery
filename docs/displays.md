@@ -20,13 +20,31 @@ displays:
 ```
 
 **The config decides whether there's a media controller.** With a
-`displays:` section, `vuk it` starts one media controller window per
-display. Without one, none is loaded. There's no command-line switch for
+`displays:` section, `vuk it` starts one full-screen media controller window
+per display. Without one, none is loaded. There's no command-line switch for
 it. To run a game without its display in one environment, leave
 `displays:` out of the config that environment uses.
 
+**Each display goes full screen on its own monitor**, in config order: the
+first display on the first monitor, and so on. To choose, give its monitor
+number (from 0):
+
+```yaml
+displays:
+  main:
+    width: 800
+    height: 480
+    screen: 1    # the second monitor
+```
+
+`width` and `height` give the display's shape; full screen, the slide fills
+the monitor.
+
 `vuk mc --display main` runs a media controller on its own, for example to
-restart one.
+restart one. Add `--windowed` to open it at its configured size instead.
+
+[`vuk me`](dashboard.md) doesn't open these windows: its dashboard draws
+every display in its virtual backbox.
 
 ## Slides (Python)
 
@@ -118,13 +136,16 @@ The engine and media controllers talk JSON messages over a local socket
 controller in any language: it says hello with its displays, gets a welcome
 with the slide definitions and the current state, then follows `show`,
 `player` and `turn` messages. Messages it doesn't recognize must be ignored.
+The [`vuk me` dashboard](dashboard.md) is a media controller too: it says
+`"dashboard": true` in its hello and also gets the machine's layout and
+`state` messages, and it may send `switch` messages back.
 The message formats are in `vukery/media/protocol.py`.
 
 ## Coming from MPF
 
 | MPF | vukery |
 |---|---|
-| `displays:` | `displays:` (`width`, `height`) |
+| `displays:` | `displays:` (`width`, `height`, `screen`) |
 | `slides:` and `widgets:` YAML | `Slide(...)` and `Text(...)` in the mode |
 | `slide_player: some_event: slide_name` | `self.show_slide("slide_name")` in a handler |
 | `slide_player` `target:` | `display=` |

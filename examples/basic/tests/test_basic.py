@@ -134,6 +134,13 @@ def describe_basic():
             game.switch("s_target", times=2)
             expect(game.player.targets).to_equal(5)  # Base kept counting under the block
 
+        def it_lights_its_light_while_it_runs(game):
+            game.start_game()
+            _light_frenzy(game)
+            expect(game.machine.lights["l_frenzy"].current_color()).to_equal((255, 255, 255))
+            game.advance(10)  # Frenzy ends
+            expect(game.machine.lights["l_frenzy"].current_color()).to_equal((0, 0, 0))
+
         def it_ends_after_ten_seconds(game):
             game.start_game()
             _light_frenzy(game)

@@ -20,6 +20,7 @@ nav:
   - Displays and slides: displays.md
   - Testing a game: testing.md
   - Examples: examples.md
+  - The dashboard (vuk me): dashboard.md
   - The vuk command: cli.md
   - Logging: logging.md
   - Hardware:

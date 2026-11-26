@@ -15,7 +15,7 @@ from typing import TYPE_CHECKING, Any
 
 from vukery.core.errors import ConfigError
 from vukery.core.log import Logs
-from vukery.media import protocol
+from vukery.media import dashboard, protocol
 from vukery.media.slides import Slide
 
 if TYPE_CHECKING:
@@ -30,13 +30,16 @@ class DisplayConfig:
     name: str
     width: int = 800
     height: int = 480
+    screen: int | None = None  # which monitor vuk it puts it on, full screen (default: the next one)
 
     @classmethod
     def from_yaml(cls, name: str, data: dict[str, Any]) -> DisplayConfig:
-        unknown = sorted(set(data) - {"width", "height"})
+        unknown = sorted(set(data) - {"width", "height", "screen"})
         if unknown:
             raise ConfigError(f"displays: {name}: not supported yet: {', '.join(unknown)}")
-        return cls(name=name, width=int(data.get("width", 800)), height=int(data.get("height", 480)))
+        screen = data.get("screen")
+        return cls(name=name, width=int(data.get("width", 800)), height=int(data.get("height", 480)),
+                   screen=None if screen is None else int(screen))
 
 
 @dataclass
@@ -56,6 +59,9 @@ def _jsonable(value: Any) -> bool:
     return True
 
 
+STATE_SECONDS = 1 / 20  # how often dashboards are told what changed
+
+
 class MediaServer(Logs):
     """Tracks what each display shows and keeps media controllers up to date."""
 
@@ -68,6 +74,9 @@ class MediaServer(Logs):
         self._stack: list[_Shown] = []
         self._order = count()
         self._clients: list[Callable[[dict[str, Any]], None]] = []
+        self._dashboards: list[Callable[[dict[str, Any]], None]] = []
+        self._last_state: dict[str, Any] | None = None
+        self._poller: Any = None
         self._server: asyncio.Server | None = None
         self.configure_logging("media")
         machine.events.monitors.append(self._event_posted)
@@ -84,6 +93,8 @@ class MediaServer(Logs):
         self.slides[name] = slide
 
     def show(self, mode: Mode, slide: str, display: str | None = None, priority: int = 0) -> None:
+        if not self.displays:
+            return  # running for the dashboard only, with no displays to show slides on
         if slide not in self.slides:
             raise ConfigError(f"Mode {mode.name} shows slide {slide!r}, which isn't defined")
         display = display or self.default_display
@@ -142,10 +153,53 @@ class MediaServer(Logs):
 
     # --- clients
 
-    def attach(self, receive: Callable[[dict[str, Any]], None]) -> None:
-        """Connect an in-process media controller (tests). It gets the welcome right away."""
+    def attach(self, receive: Callable[[dict[str, Any]], None], dashboard: bool = False) -> None:
+        """Connect an in-process media controller or dashboard (tests). It gets the welcome right away."""
+        self._add_client(receive, dashboard)
+
+    def _add_client(self, receive: Callable[[dict[str, Any]], None], is_dashboard: bool) -> None:
         self._clients.append(receive)
-        receive(self.welcome())
+        welcome = self.welcome()
+        if is_dashboard:
+            self._dashboards.append(receive)
+            state = dashboard.snapshot(self.machine)
+            self._last_state = state
+            welcome |= {"dashboard": dashboard.layout(self.machine), "state": state}
+            if self._poller is None:
+                self._poller = self.machine.schedule_interval(self.send_state, STATE_SECONDS)
+        receive(welcome)
+
+    def _remove_client(self, receive: Callable[[dict[str, Any]], None]) -> None:
+        for clients in (self._clients, self._dashboards):
+            if receive in clients:
+                clients.remove(receive)
+
+    def send_state(self) -> None:
+        """Tell dashboards the machine's state, if it changed since last time."""
+        if not self._dashboards:
+            return
+        state = dashboard.snapshot(self.machine)
+        if state != self._last_state:
+            self._last_state = state
+            for receive in list(self._dashboards):
+                receive({"type": "state", **state})
+
+    def handle(self, message: dict[str, Any], from_dashboard: bool) -> None:
+        """A message from a media controller or dashboard.
+
+        The only one acted on is a dashboard's switch change, on the simulated
+        platforms. Nothing a client sends can fire a coil.
+        """
+        match message:
+            case {"type": "switch", "name": str() as name, "state": 0 | 1 as state} if from_dashboard:
+                if not self.machine.platform_is_simulated():
+                    self.warning_log("Ignoring switch %s from the dashboard: switches come from the hardware", name)
+                elif name not in self.machine.switches.switches:
+                    self.warning_log("Ignoring switch %s from the dashboard: no such switch", name)
+                else:
+                    self.machine.set_switch(name, state)
+            case _:
+                self.debug_log("Ignoring a message from a media controller: %s", message)
 
     def _send(self, message: dict[str, Any]) -> None:
         for receive in list(self._clients):
@@ -165,16 +219,16 @@ class MediaServer(Logs):
                 self.warning_log("Refusing a media controller: %s", hello)
                 writer.close()
                 return
-            self.info_log("Media controller connected: displays %s", hello.get("displays"))
-            self._clients.append(receive)
-            receive(self.welcome())
-            while await reader.readline():
-                pass  # nothing is expected from media controllers yet
+            is_dashboard = hello.get("dashboard") is True
+            self.info_log("%s connected: displays %s", "Dashboard" if is_dashboard else "Media controller",
+                          hello.get("displays"))
+            self._add_client(receive, is_dashboard)
+            while line := await reader.readline():
+                self.handle(protocol.decode(line), is_dashboard)
         except (ConnectionError, ValueError) as e:
             self.warning_log("Media controller connection failed: %s", e)
         finally:
-            if receive in self._clients:
-                self._clients.remove(receive)
+            self._remove_client(receive)
             writer.close()
             self.info_log("Media controller disconnected")
 

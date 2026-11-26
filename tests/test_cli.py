@@ -77,3 +77,45 @@ def describe_vuk_it_media_controllers():
 
     def it_starts_one_for_each_of_two_displays(monkeypatch, capsys, tmp_path):
         assert _started(monkeypatch, capsys, tmp_path, "dual_display") == ["main", "apron"]
+
+
+def describe_vuk_me():
+    """vuk me runs the game with the dashboard instead of display windows."""
+
+    def _run(monkeypatch, capsys, tmp_path, example):
+        from pathlib import Path
+
+        from vukery import cli
+
+        started = {"dashboard": [], "media_controllers": []}
+
+        class ClosedDashboard:  # stands in for the dashboard process; "closed" right away
+            def __init__(self, command):
+                started["dashboard"].append(command)
+
+            def poll(self):
+                return 0
+
+            def wait(self, timeout=None):
+                return 0
+
+        monkeypatch.setattr(cli.subprocess, "Popen", ClosedDashboard)
+        monkeypatch.setattr(cli, "_start_media_controllers",
+                            lambda game_dir, displays: started["media_controllers"].extend(displays) or [])
+        game = Path(__file__).parents[1] / "examples" / example
+        assert cli.main(["-C", str(game), "me", "--log-dir", str(tmp_path)]) == 0
+        capsys.readouterr()
+        return started
+
+    def it_starts_the_dashboard_and_no_display_windows(monkeypatch, capsys, tmp_path):
+        started = _run(monkeypatch, capsys, tmp_path, "dual_display")
+        assert len(started["dashboard"]) == 1
+        assert started["dashboard"][0][1:3] == ["-m", "vukery.dashboard"]
+        assert started["media_controllers"] == []  # the dashboard draws the displays itself
+
+    def it_works_for_a_game_without_displays(monkeypatch, capsys, tmp_path):
+        assert len(_run(monkeypatch, capsys, tmp_path, "basic")["dashboard"]) == 1
+
+    def it_has_no_vuk_view():
+        with pytest.raises(SystemExit):
+            main(["view"])

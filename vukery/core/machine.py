@@ -32,7 +32,7 @@ from vukery.devices.ball_device import BallDeviceConfig, Trough
 from vukery.devices.coil import Coil, CoilConfig
 from vukery.devices.light import Light, LightConfig
 from vukery.devices.rules import AutofireCoil, Flipper
-from vukery.media import protocol
+from vukery.media import dashboard, protocol
 from vukery.media.server import DisplayConfig, MediaServer
 from vukery.modes.attract import Attract
 from vukery.modes.game import Game
@@ -45,7 +45,8 @@ BUILT_IN_MODES: tuple[type[Mode], ...] = (Attract, Game)
 class Machine(Logs):
     """A pinball machine, real or simulated."""
 
-    def __init__(self, config: GameConfig, clock: Clock | None = None, hardware: bool = False):
+    def __init__(self, config: GameConfig, clock: Clock | None = None, hardware: bool = False,
+                 dashboard: bool = False):
         self.config = config
         self.environment = config.environment
         self.production = config.environment == "production"
@@ -70,12 +71,13 @@ class Machine(Logs):
         displays = {name: DisplayConfig.from_yaml(name, entry or {})
                     for name, entry in config.section("displays").items()}
         port = int(config.section("media").get("port", protocol.DEFAULT_PORT))
-        self.media: MediaServer | None = MediaServer(self, displays, port) if displays else None
+        # A media server runs when there's something to show: displays, or the vuk me dashboard.
+        self.media: MediaServer | None = MediaServer(self, displays, port) if displays or dashboard else None
 
     @classmethod
     def from_folder(cls, game_dir: Path, env: str | None = None, clock: Clock | None = None,
-                    hardware: bool = False) -> Machine:
-        return cls(load_game_config(game_dir, env), clock=clock, hardware=hardware)
+                    hardware: bool = False, dashboard: bool = False) -> Machine:
+        return cls(load_game_config(game_dir, env), clock=clock, hardware=hardware, dashboard=dashboard)
 
     # --- platform
 
@@ -102,6 +104,10 @@ class Machine(Logs):
         """
         return list(self.media.displays) if self.media is not None else []
 
+    def platform_is_simulated(self) -> bool:
+        """The development or test platform: switches can be set from code and from vuk me."""
+        return isinstance(self.platform, SimulatedPlatform)
+
     def platform_simulates_balls(self) -> bool:
         return isinstance(self.platform, SimulatedPlatform) and self.platform.simulate_balls
 
@@ -110,6 +116,7 @@ class Machine(Logs):
     async def start(self) -> None:
         await self.platform.initialize()
         self._create_devices()
+        dashboard.config(self)  # checks dashboard: playfield: names, whether or not vuk me runs
         await self.platform.soft_reset()
         self.platform.start()
         if self.config.platform == "development":
@@ -189,7 +196,7 @@ class Machine(Logs):
                          ", ".join(f"{d.name} {d.balls}/{d.capacity}" for d in home))
         return False
 
-    # --- switches from code (simulation, tests, vuk view)
+    # --- switches from code (simulation, tests, vuk me)
 
     def set_switch(self, name: str, state: int) -> None:
         """Change a switch as the hardware would. Only on the simulated platforms."""
