@@ -75,6 +75,65 @@ def _doctor() -> int:
     return 0
 
 
+def _run(args: argparse.Namespace) -> int:
+    """Run the game in the game folder until Ctrl-C (or "quit")."""
+    import asyncio
+    import os
+    from pathlib import Path
+
+    from vukery.core.config import load_game_config
+    from vukery.core.errors import VukeryError
+    from vukery.core.log import LoggingConfig, setup_logging
+    from vukery.core.machine import Machine
+
+    game_dir = Path(args.game_dir).resolve()
+    try:
+        config = load_game_config(game_dir)
+        logging_config = LoggingConfig.from_yaml(config.section("logging")).with_vuk_log(os.environ.get("VUK_LOG"))
+        log_dir = None if config.environment == "test" else game_dir / args.log_dir
+        setup_logging(logging_config, config.environment, log_dir)
+        machine = Machine(config, hardware=args.hardware)
+    except VukeryError as e:
+        print(f"vuk run: {e}", file=sys.stderr)
+        return 1
+
+    loop = machine.loop
+    asyncio.set_event_loop(loop)
+
+    async def type_switches() -> None:
+        """development: type a switch name and press Enter to tap it ("quit" to stop)."""
+        reader = asyncio.StreamReader()
+        await loop.connect_read_pipe(lambda: asyncio.StreamReaderProtocol(reader), sys.stdin)
+        while line := (await reader.readline()).decode().strip():
+            match line:
+                case "quit" | "exit":
+                    break
+                case name if name in machine.switches.switches:
+                    machine.set_switch(name, 1)
+                    machine.clock.call_later(0.05, machine.set_switch, name, 0)
+                case other:
+                    print(f"No switch named {other!r}. Switches: {', '.join(machine.switches.switches)}")
+        machine.stop("quit")
+
+    try:
+        loop.run_until_complete(machine.start())
+        print(f"vukery is running {game_dir.name} ({config.environment}). Ctrl-C to stop.")
+        if config.platform == "development":
+            if sys.stdin.isatty():
+                print("Type a switch name and press Enter to tap it, e.g. s_start.")
+            loop.run_until_complete(type_switches())
+        else:
+            loop.run_forever()
+    except KeyboardInterrupt:
+        machine.stop("Ctrl-C")
+    except VukeryError as e:
+        print(f"vuk run: {e}", file=sys.stderr)
+        return 1
+    finally:
+        loop.close()
+    return 0
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     parser = _parser()
     args = parser.parse_args(argv)
@@ -84,6 +143,8 @@ def main(argv: Sequence[str] | None = None) -> int:
             return 0
         case "doctor":
             return _doctor()
+        case "run":
+            return _run(args)
         case command:
             print(f"vuk {command} isn't built yet.", file=sys.stderr)
             return 2

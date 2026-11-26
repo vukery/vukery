@@ -22,6 +22,10 @@ def describe_vuk():
         assert main(["doctor"]) == 0
         assert "Python" in capsys.readouterr().out
 
+    def it_explains_a_folder_that_isnt_a_game(capsys, tmp_path):
+        assert main(["-C", str(tmp_path), "run"]) == 1
+        assert "has no config/ folder" in capsys.readouterr().err
+
     def it_says_when_a_command_isnt_built_yet(capsys):
         assert main(["hardware", "scan"]) == 2
         assert "isn't built yet" in capsys.readouterr().err

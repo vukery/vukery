@@ -99,6 +99,8 @@ class Machine(Logs):
         self._create_devices()
         await self.platform.soft_reset()
         self.platform.start()
+        if self.config.platform == "development":
+            self._fill_troughs()
         self._load_modes()
         self.events.post("init_done")
         self.events.post("reset_complete")
@@ -122,6 +124,13 @@ class Machine(Logs):
         for name, entry in config.section("autofire_coils").items():
             self.autofire_coils[name] = AutofireCoil.from_yaml(name, entry or {}, self)
         self.events.add_handler("request_to_start_game", self._balls_home_check, priority=100)
+
+    def _fill_troughs(self) -> None:
+        """development: every ball starts at home, like MPF's smart_virtual platform."""
+        for device in self.ball_devices.values():
+            for name in device.config.ball_switches:
+                if not self.switches[name].state:
+                    self.set_switch(name, 1)
 
     def _load_modes(self) -> None:
         for mode_class in BUILT_IN_MODES:
