@@ -11,7 +11,8 @@ import pytest
 from tests.mpf_ported.fast.mock_fast import MockFastNetNano, MockFastRgb
 from tests.platforms.fast.rig import FastRig, SilentBoard, mpf_expected_commands
 from vukery.core.errors import CoilLimitError, ConfigError, HardwareError
-from vukery.platforms.interfaces import SerialPortInfo
+from vukery.devices.coil import Coil, CoilConfig
+from vukery.platforms.interfaces import SerialPortInfo, SwitchConfig
 
 # MPF's own expected startup traffic for this config, minus the digital output on driver 0x01
 STARTUP = {
@@ -164,6 +165,98 @@ def describe_fast_nano():
                 with pytest.raises(ConfigError, match="different boards"):
                     rig.enable_autofire("ac_broken_combination")
 
+    def describe_flippers():
+        def it_drives_a_single_wound_flipper(rig):  # MPF: test_flipper_single_coil
+            main = rig.coils["c_flipper_main"]
+            rule = rig.flipper_rule("c_flipper_main", "s_flipper", pulse_ms=11)
+
+            rig.expect("com6", {"TN:20,01": "TN:P"})                        # a manual flip, no rule
+            main.pulse()
+            assert rig.sent("com6")
+            rig.expect("com6", {"DN:20,C1,00,18,0A,FF,01,00,00": "DN:P"})  # manual enable, no rule
+            main.enable()
+            assert rig.sent("com6")
+            rig.expect("com6", {"TN:20,02": "TN:P"})                        # manual disable
+            main.disable()
+            assert rig.sent("com6")
+
+            rig.expect("com6", {"DN:20,01,01,18,0B,FF,01,00,00": "DN:P"})  # the flipper rule
+            rig.platform.set_pulse_on_hit_and_enable_and_release_rule(*rule)
+            assert rig.sent("com6")
+            rig.expect("com6", {"DN:20,09,01,18,0A,FF,01,00,00": "DN:P",   # a manual flip under the rule...
+                                "DN:20,01,01,18,0B,FF,01,00,00": "DN:P"})  # ...then the rule comes back
+            main.pulse()
+            assert rig.sent("com6")
+            rig.expect("com6", {"TN:20,01": "TN:P"})                        # the rule's own pulse: no reconfigure
+            main.pulse(11)
+            assert rig.sent("com6")
+            rig.expect("com6", {"TN:20,03": "TN:P"})                        # enable with the rule's pulse
+            main.enable(pulse_ms=11)
+            assert rig.sent("com6")
+            rig.expect("com6", {"TN:20,02": "TN:P"})
+            main.disable()
+            assert rig.sent("com6")
+            rig.expect("com6", {"DN:20,C1,01,18,0A,FF,01,00,00": "DN:P"})  # enable with a different pulse
+            main.enable()
+            assert rig.sent("com6")
+            rig.expect("com6", {"DN:20,01,01,18,0B,FF,01,00,00": "DN:P"})  # disabling restores the rule
+            main.disable()
+            assert rig.sent("com6")
+
+            rig.expect("com6", {"TN:20,02": "TN:P"})                        # the rule off
+            rig.platform.clear_hw_rule(*rule)
+            assert rig.sent("com6")
+            rig.expect("com6", {"DN:20,89,01,18,0A,FF,01,00,00": "DN:P"})  # a manual flip, reconfigured
+            main.pulse()
+            assert rig.sent("com6")
+            rig.expect("com6", {"TN:20,01": "TN:P"})                        # and again, from the cached config
+            main.pulse()
+            assert rig.sent("com6")
+
+        def it_drives_a_dual_wound_flipper(rig):  # MPF: test_flipper_two_coils
+            main = rig.flipper_rule("c_flipper_main", "s_flipper", hold=False)
+            hold = rig.flipper_rule("c_flipper_hold", "s_flipper")
+            rig.expect("com6", {"DN:20,01,01,18,0A,FF,00,00,00": "DN:P",   # main: pulse, cancel on release
+                                "DN:21,01,01,18,0A,FF,01,00,00": "DN:P"})  # hold: pulse, hold, release
+            rig.platform.set_pulse_on_hit_and_release_rule(*main)
+            rig.platform.set_pulse_on_hit_and_enable_and_release_rule(*hold)
+            assert rig.sent("com6")
+            rig.expect("com6", {"TN:20,02": "TN:P", "TN:21,02": "TN:P"})
+            rig.platform.clear_hw_rule(*main)
+            rig.platform.clear_hw_rule(*hold)
+            assert rig.sent("com6")
+
+    def describe_numbers():  # what a typo in a machine's wiring config gets you
+        def _switch(rig, number):
+            return rig.platform.configure_switch(number, SwitchConfig(name="s_typo", invert=False, debounce="auto"))
+
+        def _coil(rig, number):
+            return Coil(CoilConfig.from_yaml("c_typo", {"number": number}), rig.platform,
+                        rig.platform.features["max_pulse"])
+
+        def it_numbers_switches_by_board_and_position(rig):
+            assert _switch(rig, "1616_2-3").number == _switch(rig, "1616_2-3").number
+
+        @pytest.mark.parametrize(("number", "message"), [
+            ("3208-40", "only has switches 0-31"),
+            ("nope-1", "Board nope does not exist"),
+            ("7F", "Could not parse switch number s_typo/7F"),
+        ])
+        def it_explains_a_switch_that_doesnt_exist(rig, number, message):
+            with pytest.raises(ConfigError, match=message):
+                _switch(rig, number)
+
+        @pytest.mark.parametrize(("number", "message"), [
+            ("3208-40", "only has drivers 0-7"),
+            ("nope-1", "I/O Board nope does not exist"),
+        ])
+        def it_explains_a_driver_that_doesnt_exist(rig, number, message):
+            with pytest.raises(ConfigError, match=message):
+                _coil(rig, number)
+
+        def it_takes_a_plain_hex_driver_number(rig):  # a driver number without a board
+            assert _coil(rig, "05").hw_driver.number == 5
+
     def describe_switches():
         def it_reports_a_switch_closing_and_opening(rig):  # MPF: _test_switch_changes
             net = rig.platform.serial_connections["net"]
@@ -185,6 +278,11 @@ def describe_fast_nano():
             rig.boards["com6"].queue.append("!B:00")
             rig.settle()
             assert rig.host.stopped == "FAST NET Nano rebooted"
+
+        def it_only_logs_an_rgb_processor_reboot(rig):  # MPF: test_bootloader_crash_ignored
+            rig.boards["com5"].queue.append("!B:00")
+            rig.settle()
+            assert rig.host.stopped is None
 
     def describe_leds():  # MPF: test_leds
         def _leds(rig):

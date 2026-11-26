@@ -180,6 +180,17 @@ def describe_vuk_you():
         out = capfd.readouterr().out
         assert "coverage" in out and "TOTAL" in out
 
+    def it_still_measures_the_code_when_given_a_test_path(tmp_path, capfd):
+        folder = tmp_path / "project"
+        folder.mkdir()
+        (folder / "pyproject.toml").write_text("[tool.coverage.run]\nsource = ['lib']\n")
+        (folder / "lib.py").write_text("def answer():\n    return 42\n")
+        (folder / "tests").mkdir()
+        (folder / "tests" / "test_lib.py").write_text("from lib import answer\n\ndef test_it():\n    assert answer() == 42\n")
+        assert main(["-C", str(folder), "you", "tests/test_lib.py", "-q", "-p", "no:spec"]) == 0
+        table = capfd.readouterr().out.split("coverage:")[-1]  # the coverage report, after the results
+        assert "lib.py" in table and "tests/test_lib.py" not in table
+
     def it_runs_without_coverage_when_asked(tmp_path, capfd):
         assert main(["-C", str(_machine(tmp_path)), "you", "-q", "--no-cov"]) == 0
         assert "TOTAL" not in capfd.readouterr().out
