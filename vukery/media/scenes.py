@@ -26,9 +26,12 @@ as one idea). Scenes are made by functions in a mode's ``scenes.py``::
   ``size`` is its height, as a fraction of the parent's. A placed scene's
   ``width`` and ``height`` are fractions of its parent too, so everything
   scales with the display.
-- **Movement:** ``.enters("left", seconds=0.3)`` slides an actor in from that
-  side when the scene appears; ``.exits("right")`` slides it out when the
-  scene goes away. Sides: left, right, top, bottom.
+- **Entrances and exits:** ``.enters("left", seconds=0.3)`` slides an actor in
+  from that side when the scene appears; ``.exits("right")`` slides it out
+  when the scene goes away. Sides: left, right, top, bottom.
+- **Animations:** ``.moves(x=-0.5, seconds=4, repeat=True)`` moves an actor
+  from where it's placed to another point; ``.blinks(every=0.25)`` turns it
+  off and on (``fade=True`` fades it instead). Both start once it has entered.
 - **Live values:** ``{player.score:,}`` is filled in by the media controller,
   with Python formatting, from the current player's variables.
 """
@@ -73,6 +76,36 @@ class Move:
 
 
 @dataclass(frozen=True)
+class Motion:
+    """Where an actor moves to from where it's placed, how long it takes, and whether it repeats."""
+
+    x: float
+    y: float
+    seconds: float
+    repeat: bool = False
+    back: bool = False   # there and back again, instead of jumping back to the start
+
+    def __post_init__(self) -> None:
+        if self.seconds <= 0:
+            raise ConfigError(f"A move takes some time, not {self.seconds}")
+
+
+@dataclass(frozen=True)
+class Blink:
+    """Off and on (or fading out and in) every so many seconds, a number of times or forever."""
+
+    every: float
+    times: int | None = None
+    fade: bool = False
+
+    def __post_init__(self) -> None:
+        if self.every <= 0:
+            raise ConfigError(f"A blink takes some time, not {self.every}")
+        if self.times is not None and self.times < 1:
+            raise ConfigError(f"Blink times must be 1 or more (or None: forever), not {self.times}")
+
+
+@dataclass(frozen=True)
 class Actor:
     """Anything in a scene. Every actor is placed and moves the same way."""
 
@@ -80,6 +113,8 @@ class Actor:
     y: float = 0.5
     enter: Move | None = field(default=None, kw_only=True)
     exit: Move | None = field(default=None, kw_only=True)
+    motion: Motion | None = field(default=None, kw_only=True)
+    blink: Blink | None = field(default=None, kw_only=True)
 
     def enters(self, side: str, seconds: float = 0.3) -> Self:
         """Slide in from ``side`` when the scene appears."""
@@ -88,6 +123,26 @@ class Actor:
     def exits(self, side: str, seconds: float = 0.3) -> Self:
         """Slide out to ``side`` when the scene goes away."""
         return _with(self, exit=Move(side, seconds))
+
+    def moves(self, x: float | None = None, y: float | None = None, seconds: float = 1.0, repeat: bool = False,
+              back: bool = False) -> Self:
+        """Move from where it's placed to ``x``, ``y`` (fractions of its scene; either one may stay put).
+
+        ``repeat``: keep moving (MPF's ``repeat: true``), jumping back to the start each time, or with
+        ``back``, going there and back again. Without ``repeat`` it stays at the end (or, with
+        ``back``, back where it started).
+        """
+        if x is None and y is None:
+            raise ConfigError("moves() needs an x or a y to move to")
+        return _with(self, motion=Motion(self.x if x is None else x, self.y if y is None else y, seconds, repeat,
+                                         back))
+
+    def blinks(self, every: float = 0.5, times: int | None = None, fade: bool = False) -> Self:
+        """On for ``every`` seconds, then off for ``every`` seconds, ``times`` times or forever.
+
+        ``fade``: fade out and back in instead (MPF's ``pulsate`` animations, on opacity).
+        """
+        return _with(self, blink=Blink(every, times, fade))
 
     def to_data(self) -> dict[str, Any]:
         raise NotImplementedError
@@ -103,11 +158,13 @@ class Text(Actor):
     anchor: str = "center"  # left, center or right: which part of the text is at x
 
     def __init__(self, text: str, x: float = 0.5, y: float = 0.5, size: float = 0.1, color: str = "ffffff",
-                 anchor: str = "center", *, enter: Move | None = None, exit: Move | None = None):
+                 anchor: str = "center", *, enter: Move | None = None, exit: Move | None = None,
+                 motion: Motion | None = None, blink: Blink | None = None):
         if anchor not in ("left", "center", "right"):
             raise ConfigError(f"Text anchor must be left, center or right, got {anchor!r}")
         for name, value in (("text", text), ("x", x), ("y", y), ("size", size), ("color", _color(color)),
-                            ("anchor", anchor), ("enter", enter), ("exit", exit)):
+                            ("anchor", anchor), ("enter", enter), ("exit", exit), ("motion", motion),
+                            ("blink", blink)):
             object.__setattr__(self, name, value)
 
     def to_data(self) -> dict[str, Any]:
@@ -132,7 +189,7 @@ class Scene(Actor):
         object.__setattr__(self, "actors", tuple(actors))
         object.__setattr__(self, "background", None if background is None else _color(background))
         for name, value in (("x", 0.5), ("y", 0.5), ("width", 1.0), ("height", 1.0), ("enter", None),
-                            ("exit", None)):
+                            ("exit", None), ("motion", None), ("blink", None)):
             object.__setattr__(self, name, value)
 
     def placed(self, x: float = 0.5, y: float = 0.5, width: float = 1.0, height: float = 1.0) -> Scene:
@@ -144,9 +201,10 @@ class Scene(Actor):
     def to_data(self) -> dict[str, Any]:
         data: dict[str, Any] = {"type": "scene", "x": self.x, "y": self.y, "width": self.width,
                                 "height": self.height, "actors": [actor.to_data() for actor in self.actors]}
-        for key, value in (("background", self.background), ("enter", self.enter), ("exit", self.exit)):
+        for key, value in (("background", self.background), ("enter", self.enter), ("exit", self.exit),
+                           ("motion", self.motion), ("blink", self.blink)):
             if value is not None:
-                data[key] = asdict(value) if isinstance(value, Move) else value
+                data[key] = value if isinstance(value, str) else asdict(value)
         return data
 
 

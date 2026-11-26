@@ -15,8 +15,8 @@ cp -r vukery/examples/basic my_game
 | Example | Displays | Shows |
 |---|---|---|
 | [`basic`](https://github.com/vukery/vukery/tree/main/examples/basic) | none | the game engine, modes, scoring tables, priority and blocking, tests |
-| [`display`](https://github.com/vukery/vukery/tree/main/examples/display) | one | scenes with live values and an entrance |
-| [`dual_display`](https://github.com/vukery/vukery/tree/main/examples/dual_display) | two | a media controller per display, scenes per display |
+| [`display`](https://github.com/vukery/vukery/tree/main/examples/display) | one | scenes with live values, an entrance and a blink |
+| [`dual_display`](https://github.com/vukery/vukery/tree/main/examples/dual_display) | two | a media controller per display, scenes per display, a move and a fade |
 
 ## `examples/basic`
 
