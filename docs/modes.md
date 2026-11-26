@@ -27,13 +27,18 @@ modes).
 
 ## A mode's files
 
-A mode is a folder. Its main file is always `mode.py`, and **the
-recommended way is to split the mode's parts into files next to it**:
+A mode is a folder, and its main file is always `mode.py`.
+
+- **`mode.py` holds the class and everything that configures the mode:**
+  its settings (priority, `start_on`…) and its scoring table.
+- **Bigger parts go in files next to it,** imported with a relative import:
+  - its slides in `slides.py`;
+  - helper code in a module of its own;
+  - its shows (planned).
 
 ```text
 modes/base/
-  mode.py       the Mode class: its settings and rules
-  scoring.py    SCORING = {...}
+  mode.py       the Mode class: settings, scoring table, rules
   slides.py     SLIDES = {...}
 ```
 
@@ -41,24 +46,19 @@ modes/base/
 # modes/base/mode.py
 from vukery import Mode
 
-from .scoring import SCORING   # a file next to this one
-from .slides import SLIDES
+from .slides import SLIDES   # a file next to this one
 
 
 class Base(Mode):
     priority = 100
     start_on = "ball_started"
-    scoring = SCORING
+    scoring = {"s_target": 1000, "s_left_sling": 10}
     slides = SLIDES
 ```
 
-- **Any file name works:** `scoring.py` and `slides.py` are conventions.
-  Add whatever keeps `mode.py` readable (`rules.py`, `lights.py`…), and
-  import it with a relative import (`from .rules import …`).
-- **A small mode can stay in one file:** everything in `mode.py`, as in
-  `examples/basic`. Both ways load the same.
-- `examples/display`, `examples/dual_display` and every machine `vuk it`
-  creates use split files.
+- **Any file name works;** `slides.py` is a convention.
+- **A small mode can stay in one file,** as in `examples/basic`. Both ways
+  load the same.
 - **Every folder in `modes/` is a mode**, so each needs a `mode.py`; vukery
   checks when the machine starts. The exceptions are `modes/vukery/`
   (reserved for overrides) and folders inside a mode.

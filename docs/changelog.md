@@ -12,9 +12,10 @@ Check your version with `vuk --version`.
   Rename `modes/<name>/<name>.py` to `mode.py`; vukery tells you which.
 - **Every folder in `modes/` needs a `mode.py`:** vukery checks when the
   machine starts (`modes/vukery/` excepted).
-- **Split a mode into files** next to `mode.py` (`scoring.py`,
-  `slides.py`…) and import them (`from .scoring import SCORING`). That's the
-  recommended layout; one file still works.
+- **Split a mode into files:** `mode.py` keeps the class and what
+  configures it (settings, scoring table); bigger parts go next to it
+  (`slides.py`, helper code), imported with `from .slides import SLIDES`.
+  That's the recommended layout; one file still works.
 - `examples/display`, `examples/dual_display` and new machines from `vuk it`
   use split files; `examples/basic` stays in one file per mode.
 - `config/dashboard.yaml`'s positions are where each light and switch

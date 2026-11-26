@@ -2,14 +2,17 @@
 
 from vukery import Mode
 
-from .scoring import SCORING
 from .slides import SLIDES
 
 
 class Base(Mode):
     priority = 100
     start_on = "ball_started"
-    scoring = SCORING
+    scoring = {                 # what this mode scores (MPF: variable_player)
+        "s_target": 1000,
+        "s_left_sling": 10,
+        "s_right_sling": 10,
+    }
     slides = SLIDES
 
     def mode_start(self, **_):
