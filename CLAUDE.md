@@ -103,6 +103,8 @@ think one is wrong, say so instead of working around it.
   - Add an entry to `docs/changelog.md`.
   - Commit, then tag `vX.Y.Z` and push the tag with `main`.
   - Stay in 0.0.x until reasonable parity with MPF; then 0.1.0.
+- **Run the specs with `uv run vuk you`**, here and in machine folders,
+  never plain `pytest`. It sets the test environment and measures coverage.
 - **Record new decisions** in `notes/DECISIONS.md`, newest first, with what
   was decided, why, and what it costs.
 - **Examples are the tutorial.** Code in `examples/` (config, modes, specs) has

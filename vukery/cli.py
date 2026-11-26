@@ -57,7 +57,7 @@ def _parser() -> argparse.ArgumentParser:
     commands.add_parser("wire", help="FAST wiring instructions for the config (MPF: mpf wire)")
 
     you = commands.add_parser("you", aliases=["test"],
-                              help="run the machine's specs, in the test environment (MPF: mpf test)")
+                              help="run the specs, in the test environment, with coverage (MPF: mpf test)")
     you.add_argument("pytest_args", nargs=argparse.REMAINDER, help="passed to pytest, e.g. -k scoring")
 
     generate = commands.add_parser("generate", help="create a mode, show or slide in a game (MPF: mpf create_config)")
@@ -106,20 +106,37 @@ def _create(args: argparse.Namespace) -> int:
 
 
 def _specs(args: argparse.Namespace) -> int:
-    """vuk you: run the machine folder's specs with pytest, in the test environment."""
+    """vuk you: run the specs with pytest, in the test environment, measuring coverage.
+
+    In a machine folder (one with ``config/``) coverage measures the machine's
+    own code (``modes/``); in vukery itself, or any project with a
+    ``pyproject.toml``, it follows that file's ``[tool.coverage]`` settings.
+    ``--no-cov`` turns coverage off.
+    """
     import importlib.util
     import os
     from pathlib import Path
 
     folder = Path(args.game_dir).resolve()
-    if not (folder / "config").is_dir():
-        print(f"vuk you: {folder} isn't a machine folder (it has no config/ folder)", file=sys.stderr)
+    machine = (folder / "config").is_dir()
+    if not machine and not (folder / "pyproject.toml").is_file():
+        print(f"vuk you: {folder} isn't a machine folder (no config/) or a Python project (no pyproject.toml)",
+              file=sys.stderr)
         return 1
     if importlib.util.find_spec("pytest") is None:
-        print("vuk you: the specs need pytest (uv add --dev pytest pytest-describe pytest-spec)", file=sys.stderr)
+        print("vuk you: the specs need pytest (uv add --dev pytest pytest-describe pytest-spec pytest-cov)",
+              file=sys.stderr)
         return 1
+    coverage: list[str] = []
+    if "--no-cov" not in args.pytest_args:
+        if importlib.util.find_spec("pytest_cov") is None:
+            print("vuk you: running without coverage: add pytest-cov (uv add --dev pytest-cov)", file=sys.stderr)
+        elif machine:
+            coverage = ["--cov=modes", "--cov-branch", "--cov-report=term-missing:skip-covered"]
+        else:
+            coverage = ["--cov"]  # [tool.coverage] in pyproject.toml says what and how
     environment = {**os.environ, "VUK_ENV": "test"}  # specs always run in test: no hardware, ever
-    return subprocess.run([sys.executable, "-m", "pytest", *args.pytest_args], cwd=folder,
+    return subprocess.run([sys.executable, "-m", "pytest", *coverage, *args.pytest_args], cwd=folder,
                           env=environment, check=False).returncode
 
 

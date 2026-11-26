@@ -8,6 +8,16 @@ from vukery.cli import main
 
 
 @pytest.fixture(autouse=True)
+def development(monkeypatch):
+    """These specs run vuk us and vuk me as you would: on the development platform.
+
+    (vuk you runs specs with VUK_ENV=test, and on the test platform a game runs
+    until it's stopped.)
+    """
+    monkeypatch.setenv("VUK_ENV", "development")
+
+
+@pytest.fixture(autouse=True)
 def free_media_port(monkeypatch):
     """Games started here listen on a free port, so a vuk me left open (port 5051) doesn't get in the way."""
     with socket.socket() as probe:
@@ -165,9 +175,25 @@ def describe_vuk_you():
     def it_answers_to_vuk_test_too(tmp_path, capsys):
         assert main(["-C", str(_machine(tmp_path)), "test"]) == 0
 
+    def it_measures_the_machines_own_code(tmp_path, capfd):
+        assert main(["-C", str(_machine(tmp_path)), "you", "-q"]) == 0
+        out = capfd.readouterr().out
+        assert "coverage" in out and "TOTAL" in out
+
+    def it_runs_without_coverage_when_asked(tmp_path, capfd):
+        assert main(["-C", str(_machine(tmp_path)), "you", "-q", "--no-cov"]) == 0
+        assert "TOTAL" not in capfd.readouterr().out
+
+    def it_runs_a_python_projects_specs_too(tmp_path, capfd):  # like vukery's own
+        (tmp_path / "pyproject.toml").write_text("[tool.pytest.ini_options]\ntestpaths = ['tests']\n")
+        (tmp_path / "tests").mkdir()
+        (tmp_path / "tests" / "test_it.py").write_text("def test_it():\n    assert True\n")
+        assert main(["-C", str(tmp_path), "you", "-q", "-p", "no:spec"]) == 0
+        assert "1 passed" in capfd.readouterr().out
+
     def it_explains_a_folder_that_isnt_a_machine(tmp_path, capsys):
         assert main(["-C", str(tmp_path), "you"]) == 1
-        assert "isn't a machine folder" in capsys.readouterr().err
+        assert "isn't a machine folder (no config/) or a Python project" in capsys.readouterr().err
 
 
 def describe_the_media_controller():

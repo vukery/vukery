@@ -8,7 +8,7 @@ vuk it my_machine  # create a machine, ready to play and test
 cd my_machine
 vuk me             # play the game on your computer, with the dashboard
 vuk us             # run the game the way a machine does: displays full screen
-vuk you            # run the machine's specs
+vuk you            # run the specs, with coverage
 vuk doctor         # check your setup
 vuk --help
 ```
@@ -56,7 +56,7 @@ VUK_LOG=debug vuk us
 | `vuk doctor` | **works** | Shows versions and checks for FFmpeg | `mpf diagnosis` |
 | `vuk it NAME` | **works** | Creates a machine folder, ready to play and test | `mpf create_config` |
 | `vuk me` | **works** on the simulated platforms | Runs the game with the [dashboard](dashboard.md), in a window | `mpf both` plus `mpf monitor` |
-| `vuk you` (or `vuk test`) | **works** | Runs the machine's specs with pytest, always in the test environment. Extra arguments go to pytest (`vuk you -k scoring`). | `mpf test` |
+| `vuk you` (or `vuk test`) | **works** | Runs the specs with pytest, always in the test environment, and measures coverage (`--no-cov` turns it off). In a machine folder it covers `modes/`; in vukery itself, the `vukery/` package. Extra arguments go to pytest (`vuk you -k scoring`). | `mpf test` |
 | `vuk us` | **works** in development | Runs the game and a full-screen media controller per display. On the development platform you can also type a switch name in the terminal to tap it. | `mpf`, `mpf game`, `mpf both` |
 | `vuk top` | planned | Terminal dashboard of a running game; works over SSH | `mpf -t` |
 | `vuk console` | planned | Python prompt attached to the running game | `mpf service` |

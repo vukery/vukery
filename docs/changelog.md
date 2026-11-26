@@ -8,8 +8,11 @@ Check your version with `vuk --version`.
 
 ## 0.0.16 (2026-11-26)
 
-- **Code coverage:** `uv run pytest --cov` measures how much of vukery the
-  specs run (pytest-cov), branches included.
+- **Code coverage:** `vuk you` measures how much code the specs run
+  (pytest-cov, branches included): a machine's `modes/`, or vukery itself
+  when run in vukery. `--no-cov` turns it off. New machines get pytest-cov.
+- **`vuk you` is how vukery's own suite runs too** (`uv run vuk you`, here
+  and in CI).
 - **CI:** every push and pull request runs the specs with coverage on GitHub
   Actions. On `main` it redraws the coverage badge at the top of the README,
   kept on the `badges` branch, with no outside service.
