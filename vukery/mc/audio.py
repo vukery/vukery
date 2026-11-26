@@ -58,8 +58,9 @@ class Audio:
         player = pyglet.media.Player()
         player.queue(self._source(sound.sound))
         player.loop = sound.loops != 0      # the mixer decides when a looping sound has played enough
-        if sound.start_at:
-            player.seek(sound.start_at)
+        assert self.mixer is not None
+        if position := self.mixer.position(sound):   # start_at, or further if we joined late
+            player.seek(position)
         player.play()
         self.players[sound.id] = player
         return player

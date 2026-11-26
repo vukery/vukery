@@ -146,6 +146,24 @@ def describe_mixer():
             song = next(p for p in mixer.playing if p.sound == "song")
             expect(mixer.volume(song)).to_be_close_to(0.375)
 
+    def describe_joining_late():  # a media controller that connected after the sound started
+        def it_starts_a_sound_partway():
+            mixer, clock = _mixer()
+            _play(mixer, "song", "music", elapsed=4, start_at=1)
+            expect(mixer.position(mixer.playing[0])).to_equal(5.0)
+            expect(_now(mixer, clock, 4.9)).to_equal(["song"])
+            expect(_now(mixer, clock, 5.0)).to_equal([])   # 9 s from 1 s in, and it started 4 s before we joined
+
+        def it_finds_its_place_in_a_loop():
+            mixer, _ = _mixer()
+            _play(mixer, "boom", loops=-1, elapsed=5.5)
+            expect(mixer.position(mixer.playing[0])).to_be_close_to(1.5)
+
+        def it_skips_a_sound_thats_already_over():
+            mixer, clock = _mixer()
+            _play(mixer, "ping", elapsed=3)
+            expect(_now(mixer, clock, 0)).to_equal([])
+
     def it_waits_for_a_stop_when_it_doesnt_know_a_sounds_length():
         clock = Clock()
         mixer = Mixer(TRACKS, clock)

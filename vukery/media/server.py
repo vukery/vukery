@@ -62,6 +62,19 @@ def _jsonable(value: Any) -> bool:
 
 
 STATE_SECONDS = 1 / 20  # how often dashboards are told what changed
+MAX_REMEMBERED = 200    # sounds remembered per mode, for media controllers that connect late
+
+
+@dataclass(frozen=True)
+class _Played:
+    id: int
+    name: str        # what the mode asked for: a sound or a pool
+    sound: Sound     # what played
+    message: dict[str, Any]
+    at: float        # when, on the machine's clock
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "message", {**self.message, "id": self.id})
 
 
 class MediaServer(Logs):
@@ -83,7 +96,7 @@ class MediaServer(Logs):
         self.random = random.Random()   # picks from sound pools
         self._pool_turns: dict[str, int] = {}
         self._sound_ids = count(1)
-        self._sounds: dict[str, list[tuple[int, str, Sound]]] = {}   # mode -> (id, name played, sound)
+        self._sounds: dict[str, list[_Played]] = {}   # mode -> what it played that may still be going
         self._delayed: dict[str, list[Any]] = {}                     # mode -> timers for delayed sounds
         self.configure_logging("media")
         machine.events.monitors.append(self._event_posted)
@@ -146,23 +159,31 @@ class MediaServer(Logs):
             self._play(mode, name, sound, message)
 
     def _play(self, mode: Mode, name: str, sound: Sound, message: dict[str, Any]) -> None:
-        sound_id = next(self._sound_ids)
-        self._sounds.setdefault(mode.name, []).append((sound_id, name, sound))
-        self._send({**message, "id": sound_id})
+        played = _Played(next(self._sound_ids), name, sound, message, self.machine.clock.now())
+        mine = self._sounds.setdefault(mode.name, [])
+        mine.append(played)
+        del mine[:-MAX_REMEMBERED]   # a mode that runs for hours plays thousands; the old ones are long over
+        self._send(played.message)
 
     def stop_sound(self, mode: Mode, name: str) -> None:
         """Stop what a mode played under ``name`` (a sound, or a pool)."""
         mine = self._sounds.get(mode.name, [])
-        for sound_id, played, sound in [entry for entry in mine if name in (entry[1], entry[2].name)]:
-            mine.remove((sound_id, played, sound))
-            self._send({"type": "sound", "action": "stop", "id": sound_id})
+        for played in [p for p in mine if name in (p.name, p.sound.name)]:
+            mine.remove(played)
+            self._send({"type": "sound", "action": "stop", "id": played.id})
 
     def stop_sounds(self, mode: Mode) -> None:
         """A mode stopped: its sounds stop, or finish the loop they're on (``mode_end_action``)."""
         for timer in self._delayed.pop(mode.name, []):
             timer.cancel()
-        for sound_id, _, sound in self._sounds.pop(mode.name, []):
-            self._send({"type": "sound", "action": sound.mode_end_action, "id": sound_id})
+        for played in self._sounds.pop(mode.name, []):
+            self._send({"type": "sound", "action": played.sound.mode_end_action, "id": played.id})
+
+    def playing(self) -> list[dict[str, Any]]:
+        """What modes played that may still be going, with how long ago (for a media controller that
+        connects late: it starts them partway, and drops the ones that are over)."""
+        now = self.machine.clock.now()
+        return [{**p.message, "elapsed": now - p.at} for mine in self._sounds.values() for p in mine]
 
     # --- game state for widgets
 
@@ -195,6 +216,7 @@ class MediaServer(Logs):
             "player": game.player.number if game and game.player else None,
             "players": players,
             **self.machine.sounds.to_data(),
+            "playing": self.playing(),
         }
 
     # --- clients
