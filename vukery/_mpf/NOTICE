@@ -115,3 +115,7 @@ tests/mpf_ported/fast/test_Fast_Neuron.py
 tests/mpf_ported/fast/test_Fast_Exp.py
     from: mpf/tests/test_Fast_Exp.py @ 9ef886f4f263db44704f09a87bfd11229036ab5c (MPF 0.57.6)
     permalink: https://github.com/missionpinball/mpf/blob/9ef886f4f263db44704f09a87bfd11229036ab5c/mpf/tests/test_Fast_Exp.py
+
+tests/mpf_ported/fast/loop.py
+    from: mpf/tests/loop.py @ 9ef886f4f263db44704f09a87bfd11229036ab5c (MPF 0.57.6)
+    permalink: https://github.com/missionpinball/mpf/blob/9ef886f4f263db44704f09a87bfd11229036ab5c/mpf/tests/loop.py
