@@ -12,6 +12,11 @@ Check your version with `vuk --version`.
   never heard: the attract music, which starts at power-on, before `vuk me`'s
   dashboard or `vuk us`'s displays connect. A media controller that connects
   late now picks up what's playing, from where it is.
+- **Fixed:** `.ogg`, `.mp3` and other sounds played in silence. pyglet's
+  FFmpeg binding returned no audio with FFmpeg 8.1 on macOS, so vukery now
+  decodes every sound but `.wav` with the `ffmpeg` command: short sounds
+  once, into memory, and music as it plays. `vuk health` checks for the
+  command.
 
 ## 0.0.21 (2026-11-26)
 
