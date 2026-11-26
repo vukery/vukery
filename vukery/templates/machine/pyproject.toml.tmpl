@@ -1,0 +1,21 @@
+[project]
+name = "{{name}}"
+version = "0.1.0"
+description = "A pinball machine built with vukery."
+requires-python = ">=3.15"
+dependencies = [
+    # vukery, pinned to the version that made this game; [mc] adds pyglet for displays and vuk me
+    "vukery[mc] @ git+https://github.com/vukery/vukery@v{{version}}",
+]
+
+[dependency-groups]
+dev = ["pytest", "pytest-describe", "pytest-spec"]
+
+[tool.uv]
+package = false  # a game folder, not a Python package
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+# RSpec-style specs: describe_*/it_* functions (pytest-describe), tree output (pytest-spec)
+addopts = "--spec"
+describe_prefixes = ["describe_", "context_"]

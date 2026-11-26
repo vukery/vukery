@@ -1,0 +1,16 @@
+# {{name}}
+
+A pinball machine built with [vukery](https://github.com/vukery/vukery).
+
+```console
+uv sync            # install vukery and the test tools
+uv run vuk me      # play it on your computer, with the dashboard
+uv run pytest      # run the specs
+VUK_ENV=production uv run vuk us   # run it on the machine
+```
+
+- `config/`: the machine (switches, coils, devices, displays), with
+  `config/environments/` for development and production;
+- `modes/`: the game's logic, one mode per folder;
+- `assets/`: sounds, images, videos and fonts, named by file name;
+- `tests/`: the specs.

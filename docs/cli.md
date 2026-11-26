@@ -5,9 +5,9 @@ each one does one thing.
 
 ```console
 cd my_game
-vuk me          # play the game on your computer, with the dashboard
+vuk me             # play the game on your computer, with the dashboard
 vuk it          # run the game the way a machine does: displays full screen
-vuk doctor      # check your setup
+vuk doctor         # check your setup
 vuk --help
 ```
 

@@ -31,11 +31,15 @@ def _parser() -> argparse.ArgumentParser:
                         help="the game folder (default: the current folder)")
     commands = parser.add_subparsers(dest="command", metavar="COMMAND")
 
-    it = commands.add_parser("it", help="run the game, displays full screen, no dashboard: how a machine runs "
-                                        "(MPF: mpf both)")
+    it = commands.add_parser("it", help="create a new machine folder, ready to play and test (MPF: mpf create_config)")
+    it.add_argument("name", nargs="?", help="the folder to create; its name is the machine's name, e.g. combat "
+                                           "(asked for if left out)")
+
+    us = commands.add_parser("us", help="run the game, displays full screen, no dashboard: how a machine runs "
+                                            "(MPF: mpf both)")
     me = commands.add_parser("me", help="run the game with the full-screen vuk me dashboard, to play it on "
                                         "your computer (MPF: mpf both plus mpf monitor)")
-    for run in (it, me):
+    for run in (us, me):
         run.add_argument("--hardware", action="store_true", help="use real hardware in development")
         run.add_argument("--preload", action="store_true", help="load every asset at startup (MPF: -f)")
         run.add_argument("--log-dir", default="log", help="where log files go (default: log/)")
@@ -58,9 +62,6 @@ def _parser() -> argparse.ArgumentParser:
     test = commands.add_parser("test", help="run the game's specs in the test environment (MPF: mpf test)")
     test.add_argument("pytest_args", nargs=argparse.REMAINDER, help="passed to pytest")
 
-    new = commands.add_parser("new", help="create a game folder (MPF: mpf create_config)")
-    new.add_argument("name")
-
     generate = commands.add_parser("generate", help="create a mode, show or slide in a game (MPF: mpf create_config)")
     generate.add_argument("kind", choices=("mode", "show", "slide"))
     generate.add_argument("name")
@@ -78,10 +79,38 @@ def _doctor() -> int:
     return 0
 
 
+def _create(args: argparse.Namespace) -> int:
+    """vuk it NAME: create a machine folder."""
+    from pathlib import Path
+
+    from vukery.core.errors import VukeryError
+    from vukery.generator import create_machine
+
+    name = args.name
+    while not name:
+        try:
+            name = input("Name your machine (e.g. combat): ").strip()
+        except EOFError:
+            print("\nvuk it: no name given", file=sys.stderr)
+            return 1
+    folder = Path(args.game_dir) / name
+    try:
+        created = create_machine(folder)
+    except VukeryError as e:
+        print(f"vuk it: {e}", file=sys.stderr)
+        return 1
+    for path in created:
+        print(f"      create  {path}")
+    print(f"\nGet VUKed! Your machine is in {folder}. Next:\n\n"
+          f"  cd {folder}\n  uv sync          # install vukery and the test tools\n"
+          f"  uv run vuk me    # play it, with the dashboard\n  uv run pytest    # run its specs")
+    return 0
+
+
 def _run(args: argparse.Namespace) -> int:
     """Run the game in the game folder until Ctrl-C (or "quit").
 
-    ``vuk it`` starts a full-screen media controller per display. ``vuk me``
+    ``vuk us`` starts a full-screen media controller per display. ``vuk me``
     starts the dashboard instead, which draws the displays itself, and stops
     the game when the dashboard closes.
     """
@@ -224,7 +253,9 @@ def main(argv: Sequence[str] | None = None) -> int:
             return 0
         case "doctor":
             return _doctor()
-        case "it" | "me":
+        case "it":
+            return _create(args)
+        case "us" | "me":
             return _run(args)
         case "mc":
             return _mc(args)
