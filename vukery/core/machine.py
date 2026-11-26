@@ -32,6 +32,7 @@ from vukery.core.switches import SwitchConfig, SwitchController
 from vukery.devices.ball_device import BallDeviceConfig, Trough
 from vukery.devices.coil import Coil, CoilConfig
 from vukery.devices.light import Light, LightConfig
+from vukery.devices.light_group import LightGroup
 from vukery.devices.rules import AutofireCoil, Flipper
 from vukery.media import dashboard, protocol
 from vukery.media.server import DisplayConfig, MediaServer
@@ -64,6 +65,7 @@ class Machine(Logs):
         self.game: Game | None = None
         self.coils: dict[str, Coil] = {}
         self.lights: dict[str, Light] = {}
+        self.light_groups: dict[str, LightGroup] = {}
         self.ball_devices: dict[str, Trough] = {}
         self.flippers: dict[str, Flipper] = {}
         self.autofire_coils: dict[str, AutofireCoil] = {}
@@ -146,6 +148,8 @@ class Machine(Logs):
                                     self.platform.features["max_pulse"])
         for name, entry in config.section("lights").items():
             self.lights[name] = Light(LightConfig.from_yaml(name, entry or {}), self.platform, self.lights, self.now)
+        for name, members in config.section("light_groups").items():
+            self.light_groups[name] = LightGroup.from_yaml(name, members, self.lights)
         for name, entry in config.section("ball_devices").items():
             device = BallDeviceConfig.from_yaml(name, entry or {})
             if "trough" not in device.tags:
