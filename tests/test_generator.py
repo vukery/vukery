@@ -21,13 +21,13 @@ def made(tmp_path):
 def describe_vuk_it():
     def it_creates_a_complete_machine_folder(made):
         folder, created = made
-        for path in ("config/machine.yaml", "config/environments/development.yaml",
+        for path in ("config/machine.yaml", "config/dashboard.yaml", "config/environments/development.yaml",
                      "config/environments/production.yaml", "modes/base/base.py", "modes/vukery/README.md",
                      "tests/test_my_machine.py", "pyproject.toml", "README.md", ".gitignore", ".python-version",
                      "assets/sounds/.gitkeep", "assets/images/.gitkeep", "assets/videos/.gitkeep",
                      "assets/fonts/.gitkeep"):
             assert (folder / path).is_file(), path
-        assert len(created) == 14
+        assert len(created) == 15
 
     def it_fills_in_the_name_and_pins_this_vukery(made):
         folder, created = made

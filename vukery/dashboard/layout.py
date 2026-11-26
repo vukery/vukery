@@ -2,16 +2,23 @@
 
 Three columns, in window units with the origin at the bottom left (pyglet's):
 
-1. device panes in a 2×2 grid: switches, lights, coils, other devices;
-2. the virtual backbox (a square, top half) over the game and mode state;
-3. the virtual playfield, as tall as the window and half as wide.
+1. device panes in two rows: switches and lights, coils and devices;
+2. the virtual backbox over the game and mode state;
+3. the virtual playfield, full height.
+
+Their sizes come from an ``Arrangement`` (``config/dashboard.yaml``); the
+edges between them can be dragged.
 """
 
 import math
 from dataclasses import dataclass
 from typing import Any
 
+from vukery.media.arrangement import Arrangement
+
 MARGIN = 8
+GRAB = 6  # how close to an edge (in window units) the pointer has to be to drag it
+DEFAULT = Arrangement()
 
 # Switches drawn only in the switches pane unless dashboard: playfield: places them:
 # the cabinet's buttons and the like aren't on the playfield.
@@ -36,20 +43,64 @@ class Rect:
         return self.x + fx * self.w, self.y + fy * self.h
 
 
-def panes(width: float, height: float) -> dict[str, Rect]:
-    """The dashboard's panes for a window of ``width`` × ``height``."""
-    side = min(height / 2, width / 3)  # the backbox square's side, and the playfield's width
-    first = width - 2 * side
-    half_w, half_h = first / 2, height / 2
-    return {
-        "switches": Rect(0, half_h, half_w, half_h).inset(MARGIN / 2),
-        "lights": Rect(half_w, half_h, half_w, half_h).inset(MARGIN / 2),
-        "coils": Rect(0, 0, half_w, half_h).inset(MARGIN / 2),
-        "devices": Rect(half_w, 0, half_w, half_h).inset(MARGIN / 2),
-        "backbox": Rect(first, height - side, side, side).inset(MARGIN / 2),
-        "game": Rect(first, 0, side, height - side).inset(MARGIN / 2),
-        "playfield": Rect(width - side, 0, side, height).inset(MARGIN / 2),
+def panes(width: float, height: float, arrangement: Arrangement = DEFAULT) -> dict[str, Rect]:
+    """The dashboard's panes for a window of ``width`` × ``height``, sized by ``arrangement``."""
+    a = arrangement
+
+    def x(percent: float) -> float:
+        return width * percent / 100
+
+    def tall(percent: float) -> float:
+        return height * percent / 100
+
+    rects = {
+        "switches": Rect(0, height - tall(a.y1), x(a.s1), tall(a.y1)),
+        "lights": Rect(x(a.s1), height - tall(a.y1), x(a.x1 - a.s1), tall(a.y1)),
+        "coils": Rect(0, 0, x(a.s2), tall(100 - a.y1)),
+        "devices": Rect(x(a.s2), 0, x(a.x1 - a.s2), tall(100 - a.y1)),
+        "backbox": Rect(x(a.x1), height - tall(a.y2), x(a.x2 - a.x1), tall(a.y2)),
+        "game": Rect(x(a.x1), 0, x(a.x2 - a.x1), tall(100 - a.y2)),
+        "playfield": Rect(x(a.x2), 0, x(100 - a.x2), height),
     }
+    return {name: rect.inset(MARGIN / 2) for name, rect in rects.items()}
+
+
+@dataclass(frozen=True)
+class Edge:
+    """A pane edge you can drag: its name in ``Arrangement`` and where to grab it."""
+
+    name: str
+    vertical: bool
+    grab: Rect
+
+
+def edges(width: float, height: float, arrangement: Arrangement = DEFAULT) -> list[Edge]:
+    """The draggable edges, inner ones first (they win where edges meet)."""
+    a, reach = arrangement, GRAB
+
+    def x(percent: float) -> float:
+        return width * percent / 100
+
+    def y(percent_from_top: float) -> float:
+        return height * (1 - percent_from_top / 100)
+
+    return [
+        Edge("s1", True, Rect(x(a.s1) - reach, y(a.y1), 2 * reach, height - y(a.y1))),
+        Edge("s2", True, Rect(x(a.s2) - reach, 0, 2 * reach, y(a.y1))),
+        Edge("y1", False, Rect(0, y(a.y1) - reach, x(a.x1), 2 * reach)),
+        Edge("y2", False, Rect(x(a.x1), y(a.y2) - reach, x(a.x2 - a.x1), 2 * reach)),
+        Edge("x1", True, Rect(x(a.x1) - reach, 0, 2 * reach, height)),
+        Edge("x2", True, Rect(x(a.x2) - reach, 0, 2 * reach, height)),
+    ]
+
+
+def edge_at(width: float, height: float, arrangement: Arrangement, px: float, py: float) -> Edge | None:
+    return next((e for e in edges(width, height, arrangement) if e.grab.contains(px, py)), None)
+
+
+def edge_percent(edge: Edge, width: float, height: float, px: float, py: float) -> float:
+    """Where the pointer puts ``edge``: % from the left, or % from the top."""
+    return px / width * 100 if edge.vertical else (height - py) / height * 100
 
 
 def cells(pane: Rect, count: int, header: float = 30, row: float = 26, min_width: float = 170) -> list[Rect]:
@@ -115,7 +166,7 @@ def playfield_spots(layout: dict[str, Any]) -> dict[str, tuple[float, float]]:
     for device in layout.get("ball_devices", []):
         todo = [s for s in device["switches"] if s not in placed]
         for i, name in enumerate(todo):
-            placed[name] = (0.5 + (i - (len(todo) - 1) / 2) * 0.1, 0.03)
+            placed[name] = (0.5 + (i - (len(todo) - 1) / 2) * 0.1, 0.07)
     autofire = [a["switch"] for a in layout.get("autofire_coils", []) if a["switch"] not in placed]
     for i, name in enumerate(autofire):
         side = _side(name)
