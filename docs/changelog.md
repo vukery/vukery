@@ -6,6 +6,25 @@ vukery is in **0.0.x** while it works toward parity with MPF. Every push to
 
 Check your version with `vuk --version`.
 
+## 0.0.13 (2026-11-25)
+
+- **A simpler `vuk me` dashboard:**
+  - one **list** pane (40%, full height) with the game, switches, lights,
+    coils and devices, in fixed-size text, with a scrollbar;
+  - a **backbox** pane, a pane for **each display**, and the **playfield**.
+- **Place switches and lights** by dragging them from the list into the
+  backbox or onto the playfield; drag them back to take them off. Positions
+  are fractions of the pane, so they follow it when it's resized.
+  Unplaced items no longer appear on the playfield.
+- **A quick click taps a switch;** holding presses it. Dragging never
+  presses one.
+- **The backbox stays square and the playfield 1:2,** however their panes
+  are sized; placed items stay put.
+- **The dashboard opens as a resizable 1280×800 window.**
+- `config/dashboard.yaml` has the new panes (`list`, `backbox`, one per
+  display, `playfield`) and `backbox:` positions. `arrangement_lock` also
+  stops placing.
+
 ## 0.0.12 (2026-11-25)
 
 - **No more `vuk mc`.** `vuk us` starts each display's window itself

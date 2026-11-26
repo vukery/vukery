@@ -37,7 +37,7 @@ def _parser() -> argparse.ArgumentParser:
 
     us = commands.add_parser("us", help="run the game, displays full screen, no dashboard: how a machine runs "
                                             "(MPF: mpf both)")
-    me = commands.add_parser("me", help="run the game with the full-screen vuk me dashboard, to play it on "
+    me = commands.add_parser("me", help="run the game with the vuk me dashboard, to play it on "
                                         "your computer (MPF: mpf both plus mpf monitor)")
     for run in (us, me):
         run.add_argument("--hardware", action="store_true", help="use real hardware in development")
@@ -127,7 +127,7 @@ def _run(args: argparse.Namespace) -> int:
     """Run the game in the game folder until Ctrl-C (or "quit").
 
     ``vuk us`` starts a full-screen media controller per display. ``vuk me``
-    starts the dashboard instead, which draws the displays itself, and stops
+    starts the dashboard instead, which shows the displays in its own panes, and stops
     the game when the dashboard closes.
     """
     import asyncio

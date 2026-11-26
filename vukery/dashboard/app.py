@@ -1,26 +1,35 @@
-"""The ``vuk me`` dashboard: one full-screen pyglet window showing the whole machine.
+"""The ``vuk me`` dashboard: one pyglet window showing the whole machine.
 
 Runs as its own process, started by ``vuk me``, and connects to the engine as
-a media controller with ``"dashboard": true``. The columns, left to right:
+a media controller with ``"dashboard": true``. It opens as a 1280×800 window
+(doubled on a Retina display) that you can resize. The panes, left to right:
 
-1. switches, lights, coils and other devices;
-2. the virtual backbox (the game's displays) over the game and its modes;
-3. the virtual playfield.
+1. the list: the game and its modes, then every switch, light, coil and
+   device. Scroll it with the wheel or its scrollbar;
+2. the backbox, over a pane for each of the game's displays;
+3. the playfield.
 
-Click a switch (in its pane or on the playfield) to press it while the mouse
-button is down; right-click to lock it on or off. That works on the simulated
-platforms only. Nothing here can fire a coil: the protocol has no message for
-it. Esc closes the dashboard, and ``vuk me`` stops the game with it.
+- **Click a switch** (in the list, the backbox or on the playfield) to press
+  it: a quick click taps it, holding the button holds it. Right-click locks
+  it on, or off again. That works on the simulated platforms only.
+- **Drag a switch or light** from the list into the backbox or onto the
+  playfield to place it there, or drag a placed one to move it. Drag it
+  back to the list to take it off. Positions are fractions of the pane, so
+  they move and scale with it.
+- **Drag the edge between two panes** to resize them.
 
-Drag the edge between two panes to resize them. Letting go saves every
-pane's size to ``config/dashboard.yaml``, unless ``arrangement_lock: true``.
-The backbox and playfield are drawn on ``vukery/assets/backbox.jpg`` and
-``playfield.jpg``.
+Layout changes are saved to ``config/dashboard.yaml``, unless
+``arrangement_lock: true``. Nothing here can fire a coil: the protocol has
+no message for it. Esc closes the dashboard, and ``vuk me`` stops the game
+with it.
 """
 
 import asyncio
 import math
 import sys
+import time
+from collections.abc import Callable
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Literal
 
@@ -29,22 +38,35 @@ from vukery.dashboard import layout as lay
 from vukery.dashboard.state import DashboardState
 from vukery.mc.app import FRAME_SECONDS, connect, draw_slide
 from vukery.media import protocol
-from vukery.media.arrangement import Arrangement, write_config
+from vukery.media.arrangement import PLACES, Arrangement, write_config
 
 log = get_logger("dashboard")
 ASSETS = Path(__file__).parents[1] / "assets"
+WINDOW = (1280, 800)    # in points: pyglet doubles it on a Retina display
 
+Color = tuple[int, int, int, int]
 BACKGROUND = (18, 18, 22)
 PANE = (30, 30, 36)
-Color = tuple[int, int, int, int]
 TEXT: Color = (225, 225, 230, 255)
 DIM: Color = (130, 130, 140, 255)
-ON_WOOD: Color = (55, 42, 30, 255)  # text on the backbox and playfield backgrounds
-RIGHT_BUTTON = 4  # pyglet.window.mouse.RIGHT
+WHITE: Color = (255, 255, 255, 255)
 OFF = (60, 60, 70)
 SWITCH_ON = (80, 210, 120)
 COIL_ON = (245, 95, 60)
-TEXT_SCALE_HEIGHT = 1000  # window height at which text is drawn at its base size
+DROP = (255, 205, 60)
+
+FONT = 12               # points; text never resizes, the list scrolls instead
+SMALL = 10
+TITLE = 13
+LINE = 20               # line height of the game and devices text
+SCROLLBAR = 10
+SPOT = 7                # radius of a placed switch or light
+HOLD = 0.15             # seconds a press waits, to tell a click from a drag
+TAP = 0.08              # how long a quick click holds a switch
+DRAG_START = 6          # how far (in window units) the pointer moves before a press becomes a drag
+RIGHT_BUTTON = 4        # pyglet.window.mouse.RIGHT
+FIXED_PANES = ("list", "backbox", "playfield")
+SHAPES = {"backbox": (1, 1), "playfield": (1, 2)}  # width : height, kept however the panes are sized
 
 
 def _rgb(color: str) -> tuple[int, int, int]:
@@ -57,25 +79,135 @@ def _light_color(color: str) -> tuple[int, int, int]:
     return rgb if any(rgb) else (40, 40, 44)
 
 
-class DashboardView:
-    """Builds the window's shapes once per layout and window size, then updates their colors."""
+@dataclass
+class _Pending:
+    """A left press on a switch or light, until it's clearly a click or a drag."""
 
-    def __init__(self, window: Any, state: DashboardState, send: Any):
+    name: str
+    kind: str
+    x: float
+    y: float
+    since: float
+    pressed: bool = False   # the switch press has gone to the engine
+
+
+@dataclass
+class _Carried:
+    """A switch or light being dragged to a new place."""
+
+    name: str
+    x: float
+    y: float
+
+
+def _scroll_group(view: DashboardView, order: int) -> Any:
+    """A group that clips to the list and moves it by the scroll amount."""
+    import pyglet
+    from pyglet import gl
+    from pyglet.math import Mat4, Vec3
+
+    class ScrollGroup(pyglet.graphics.Group):
+        def __init__(self) -> None:
+            super().__init__(order=order)
+            self.saved: Any = None
+
+        def __eq__(self, other: object) -> bool:  # pyglet merges equal groups; this one is unique
+            return self is other
+
+        def __hash__(self) -> int:
+            return id(self)
+
+        def set_state(self) -> None:
+            area, ratio = view.list_area, view.window.get_pixel_ratio()
+            gl.glEnable(gl.GL_SCISSOR_TEST)
+            gl.glScissor(int(area.x * ratio), int(area.y * ratio), int(area.w * ratio), int(area.h * ratio))
+            self.saved = view.window.view
+            view.window.view = self.saved @ Mat4.from_translation(Vec3(0, view.scroll, 0))
+
+        def unset_state(self) -> None:
+            gl.glDisable(gl.GL_SCISSOR_TEST)
+            view.window.view = self.saved
+
+    return ScrollGroup()
+
+
+class DashboardView:
+    """Builds the window's shapes once per layout, then updates colors and text each frame."""
+
+    def __init__(self, window: Any, state: DashboardState, send: Callable[[dict[str, Any]], None],
+                 now: Callable[[], float] = time.monotonic):
         self.window = window
         self.state = state
-        self.send = send  # send(message) to the engine
+        self.send = send          # send(message) to the engine
+        self.now = now
         self.built_for: tuple[Any, ...] | None = None
-        self.locked: set[str] = set()
-        self.pressed: str | None = None
-        self.hits: list[tuple[lay.Rect, str]] = []  # where each switch can be clicked (filled in by build)
-        self.arrangement = Arrangement()
         self.layout_version = 0
+        self.arrangement = Arrangement()
+        self.positions: dict[str, dict[str, list[float]]] = {place: {} for place in PLACES}
+        self.placed_version = 0
+        self.scroll = 0.0
+        self.scrolling = False
+        self.list_total = 0.0
+        self.list_area = lay.Rect(0, 0, 0, 0)
+        self.track = lay.Rect(0, 0, 0, 0)
+        self.panes: dict[str, lay.Rect] = {}
         self.dragging: lay.Edge | None = None
+        self.pending: _Pending | None = None
+        self.carried: _Carried | None = None
+        self.locked: set[str] = set()
+        self.releases: list[tuple[float, str]] = []   # (when, switch) for quick clicks
+        self.list_hits: list[tuple[lay.Rect, str, str]] = []   # (rect before scrolling, name, kind)
+        self.spot_hits: list[tuple[lay.Rect, str, str]] = []   # (rect, name, kind) in the backbox and playfield
+        self.hover: tuple[str, float, float] | None = None
         self.images: dict[str, Any] = {}
+        self.take_layout()
 
-    def text(self, size: float) -> int:
-        """A font size that grows with the window."""
-        return max(round(size * self.window.height / TEXT_SCALE_HEIGHT), 9)
+    # --- the layout
+
+    def take_layout(self) -> None:
+        """Take the configured sizes and places from the engine's welcome, and lay out the panes."""
+        self.layout_version = self.state.layout_version
+        layout = self.state.layout
+        panes = layout.get("panes", {})
+        displays = [name for name in panes if name not in FIXED_PANES]
+        self.arrangement = Arrangement.from_panes(panes, displays)
+        self.positions = {place: dict(layout.get("positions", {}).get(place, {})) for place in PLACES}
+        self.layout_panes()
+
+    def layout_panes(self) -> None:
+        """Where the panes, the list and its scrollbar are, for the current window size and arrangement."""
+        self.panes = lay.panes(self.window.width, self.window.height, self.arrangement)
+        pane = self.panes["list"]
+        self.list_area = lay.Rect(pane.x, pane.y + 4, pane.w - SCROLLBAR - 6, pane.h - 8)
+        self.track = lay.Rect(pane.x + pane.w - SCROLLBAR - 3, pane.y + 6, SCROLLBAR, pane.h - 12)
+        rows, self.list_total = lay.list_rows(self.state.layout, LINE)
+        self.scroll = min(self.scroll, lay.scroll_limit(self.list_total, self.list_area.h))
+        top = self.list_area.y + self.list_area.h
+        self.list_hits = [(lay.Rect(self.list_area.x, top - row.top - row.height, self.list_area.w, row.height),
+                           row.name, row.kind) for row in rows if row.kind in ("switch", "light")]
+        switches = {s["name"] for s in self.state.layout.get("switches", [])}
+        self.spot_hits = []
+        for place in PLACES:
+            area = self.area(place)
+            for name, (fx, fy) in self.positions[place].items():
+                x, y = area.at(fx, fy)
+                self.spot_hits.append((lay.Rect(x - SPOT - 3, y - SPOT - 3, SPOT * 2 + 6, SPOT * 2 + 6), name,
+                                       "switch" if name in switches else "light"))
+
+    def area(self, place: str) -> lay.Rect:
+        """The backbox (square) or playfield (1:2), as large as fits in its pane below the title.
+
+        Placed switches and lights are fractions of this area, so they stay put
+        however the window or the panes are resized.
+        """
+        width, height = SHAPES[place]
+        return lay.fit(lay.content(self.panes[place]), width, height)
+
+    def _key(self) -> tuple[Any, ...]:
+        return (self.state.layout_version, self.window.width, self.window.height, self.arrangement,
+                self.placed_version)
+
+    # --- building shapes
 
     def _image(self, name: str) -> Any:
         import pyglet
@@ -84,147 +216,109 @@ class DashboardView:
             self.images[name] = pyglet.image.load(str(ASSETS / f"{name}.jpg"))
         return self.images[name]
 
-    def _background(self, name: str, rect: lay.Rect) -> None:
-        """Stretch an asset over ``rect``, behind everything drawn on it."""
-        import pyglet
-
-        image = self._image(name)
-        sprite = pyglet.sprite.Sprite(image, x=rect.x, y=rect.y, batch=self.batch, group=self.groups[1])
-        sprite.scale_x, sprite.scale_y = rect.w / image.width, rect.h / image.height
-        self.keep.append(sprite)
-
-    # --- building
-
     def build(self) -> None:
         import pyglet
 
-        if self.layout_version != self.state.layout_version:  # a new welcome: take the configured sizes
-            self.layout_version = self.state.layout_version
-            self.arrangement = Arrangement.from_panes(self.state.layout.get("panes", {}))
+        if self.layout_version != self.state.layout_version:
+            self.take_layout()
+        else:
+            self.layout_panes()
         self.batch = pyglet.graphics.Batch()
         self.groups = tuple(pyglet.graphics.Group(order=i) for i in range(4))  # panes, backgrounds, marks, text
-        back = self.groups[0]
-        self.panes = lay.panes(self.window.width, self.window.height, self.arrangement)
-        self.title_height = self.text(17) * 2.2
-        self.keep: list[Any] = []  # static shapes and labels: kept alive, never touched again
-        self.switch_marks: list[tuple[str, Any]] = []
-        self.light_marks: list[tuple[str, Any]] = []
-        self.coil_marks: list[tuple[str, Any]] = []
+        scroll = _scroll_group(self, 5)
+        self.list_groups = (pyglet.graphics.Group(order=0, parent=scroll),
+                            pyglet.graphics.Group(order=1, parent=scroll))
+        self.keep: list[Any] = []
+        self.marks: list[tuple[str, str, Any]] = []   # (name, kind, shape): recolored every frame
         self.flippers: list[tuple[str, Any, Any]] = []
-        self.hits: list[tuple[lay.Rect, str]] = []
-        layout = self.state.layout
-        can_press = bool(layout.get("switch_input"))
-        titles = {
-            "switches": "Switches",
-            "lights": "Lights", "coils": "Coils", "devices": "Devices",
-            "backbox": "Backbox", "game": "Game", "playfield": "Playfield",
-        }
         for name, rect in self.panes.items():
             self.keep.append(pyglet.shapes.Rectangle(rect.x, rect.y, rect.w, rect.h, color=PANE,
-                                                     batch=self.batch, group=back))
-            self.keep.append(self._label(titles[name], rect.x + 10, rect.y + rect.h - 10, self.text(16), DIM,
-                                         anchor_y="top"))
-        switches = self.panes["switches"]
-        hint = "click: press · right-click: lock" if can_press else "from the hardware"
-        self.keep.append(self._label(hint, switches.x + 10, switches.y + 10 + self.text(13), self.text(13), DIM))
-        box = self.panes["backbox"]
-        self.backbox = lay.Rect(box.x + 6, box.y + 6, box.w - 12, box.h - self.title_height - 6)
-        self._background("backbox", self.backbox)
-
-        self._list("switches", [s["name"] for s in layout.get("switches", [])], self.switch_marks, square=True)
-        self._list("lights", [light["name"] for light in layout.get("lights", [])], self.light_marks)
-        self._list("coils", [c["name"] for c in layout.get("coils", [])], self.coil_marks, square=True)
-        for (name, _), cell in zip(self.switch_marks, self._cells(self.panes["switches"],
-                                                                   len(self.switch_marks)), strict=True):
-            self.hits.append((cell, name))
-
-        devices = self.panes["devices"]
-        self.devices_label = self._label("", devices.x + 12, devices.y + devices.h - self.title_height,
-                                         self.text(17), TEXT, anchor_y="top", width=devices.w - 24)
-        game = self.panes["game"]
-        self.game_label = self._label("", game.x + 12, game.y + game.h - self.title_height, self.text(20), TEXT,
-                                      anchor_y="top", width=game.w - 24)
-        self._build_playfield()
+                                                     batch=self.batch, group=self.groups[0]))
+            if name != "list":
+                title = name.capitalize() if name in PLACES else f"Display: {name}"
+                self.keep.append(self._label(title, rect.x + 10, rect.y + rect.h - 8, TITLE, DIM, anchor_y="top"))
+        self._build_list()
+        for place in PLACES:
+            self._build_place(place)
         self.built_for = self._key()
 
-    def _key(self) -> tuple[Any, ...]:
-        """What the built shapes depend on: rebuild when any of it changes."""
-        return self.state.layout_version, self.window.width, self.window.height, self.arrangement
-
-    def _cells(self, pane: lay.Rect, count: int) -> list[lay.Rect]:
-        row = self.text(17) * 1.9
-        return lay.cells(pane, count, header=self.title_height, row=row, min_width=self.text(17) * 12)
-
     def _label(self, text: str, x: float, y: float, size: int, color: Color,
-               anchor_y: Literal["top", "center"] = "center",
-               width: float | None = None) -> Any:
+               anchor_y: Literal["top", "center", "bottom"] = "center", width: float | None = None,
+               group: Any = None, bold: bool = False) -> Any:
         import pyglet
 
         return pyglet.text.Label(text, x=int(x), y=int(y), font_size=size, color=color, anchor_y=anchor_y,
-                                 width=int(width) if width else None, multiline=width is not None,
-                                 batch=self.batch, group=self.groups[3])
+                                 width=int(width) if width else None, multiline=width is not None, weight=
+                                 "bold" if bold else "normal", batch=self.batch, group=group or self.groups[3])
 
-    def _list(self, pane: str, names: list[str], marks: list[tuple[str, Any]], square: bool = False) -> None:
+    def _build_list(self) -> None:
         import pyglet
 
-        rect = self.panes[pane]
-        if not names:
-            self.keep.append(self._label("none", rect.x + 12, rect.y + rect.h - self.title_height - 10,
-                                         self.text(15), DIM))
-        for name, cell in zip(names, self._cells(rect, len(names)), strict=True):
-            size = cell.h * 0.55
-            cy = cell.y + cell.h / 2
-            shape = (pyglet.shapes.Rectangle(cell.x, cy - size / 2, size, size, color=OFF,
-                                             batch=self.batch, group=self.groups[2]) if square else
-                     pyglet.shapes.Circle(cell.x + size / 2, cy, size / 2, color=OFF,
-                                          batch=self.batch, group=self.groups[2]))
-            marks.append((name, shape))
-            self.keep.append(self._label(name, cell.x + size + 10, cy, max(int(cell.h * 0.42), 9), TEXT))
+        rows, _ = lay.list_rows(self.state.layout, LINE)
+        marks_group, text_group = self.list_groups
+        top = self.list_area.y + self.list_area.h
+        x = self.list_area.x + 10
+        place_of = {name: place for place in PLACES for name in self.positions[place]}
+        hints = {"Switches": ("click: press · right-click: lock" if self.state.layout.get("switch_input")
+                              else "from the hardware") + (" · drag to place" if self.can_change() else ""),
+                 "Lights": "drag to place" if self.can_change() else ""}
+        for row in rows:
+            y = top - row.top - row.height  # the row's bottom, before scrolling
+            match row.kind:
+                case "title":
+                    self.keep.append(self._label(row.name, x - 4, y + 10, TITLE, TEXT, anchor_y="bottom",
+                                                 group=text_group, bold=True))
+                    if hint := hints.get(row.name):
+                        self.keep.append(self._label(hint, x + 80, y + 10, SMALL, DIM, anchor_y="bottom",
+                                                     group=text_group))
+                case "switch" | "light" | "coil":
+                    cy = y + row.height / 2
+                    shape = (pyglet.shapes.Circle(x + 6, cy, 6, color=OFF, batch=self.batch, group=marks_group)
+                             if row.kind == "light" else
+                             pyglet.shapes.Rectangle(x, cy - 6, 12, 12, color=OFF, batch=self.batch,
+                                                     group=marks_group))
+                    self.marks.append((row.name, row.kind, shape))
+                    self.keep.append(self._label(row.name, x + 22, cy, FONT, TEXT, group=text_group))
+                    if row.name in place_of:
+                        self.keep.append(self._label(place_of[row.name], self.list_area.x + self.list_area.w - 80,
+                                                     cy, SMALL, DIM, group=text_group))
+                case "game":
+                    self.game_label = self._label("", x, y + row.height, FONT, TEXT, anchor_y="top",
+                                                  width=self.list_area.w - 20, group=text_group)
+                case "devices":
+                    self.devices_label = self._label("", x, y + row.height, FONT, TEXT, anchor_y="top",
+                                                     width=self.list_area.w - 20, group=text_group)
+                case _:
+                    pass
 
-    def _build_playfield(self) -> None:
+    def _build_place(self, place: str) -> None:
         import pyglet
 
-        pane = self.panes["playfield"]
-        field = lay.Rect(pane.x + 6, pane.y + 6, pane.w - 12, pane.h - self.title_height - 6)
-        self.field = field
-        self._background("playfield", field)
-        self.keep.append(pyglet.shapes.Box(field.x, field.y, field.w, field.h, thickness=2, color=(110, 85, 60),
-                                           batch=self.batch, group=self.groups[2]))
-        length = field.w * 0.17
-        for name, (fx, fy, direction) in lay.flipper_spots(self.state.layout).items():
-            x, y = field.at(fx, fy)
-            rest = (x + direction * length * math.cos(0.45), y - length * math.sin(0.45))
-            up = (x + direction * length * math.cos(0.35), y + length * math.sin(0.35))
-            down_line = pyglet.shapes.Line(x, y, *rest, thickness=7, color=OFF, batch=self.batch, group=self.groups[2])
-            up_line = pyglet.shapes.Line(x, y, *up, thickness=7, color=COIL_ON, batch=self.batch, group=self.groups[2])
-            coil = next(f["coil"] for f in self.state.layout["flippers"] if f["name"] == name)
-            self.flippers.append((coil, down_line, up_line))
-        switches = {s["name"] for s in self.state.layout.get("switches", [])}
-        radius = max(field.w * 0.022, 5)
-        spots = lay.playfield_spots(self.state.layout)
-        in_devices: set[str] = set()  # ball device switches share one label: the device's name
-        for device in self.state.layout.get("ball_devices", []):
-            row = [spots[s] for s in device["switches"] if s in spots]
-            in_devices |= set(device["switches"])
-            if row:
-                x, y = field.at(sum(fx for fx, _ in row) / len(row), row[0][1])
-                self.keep.append(pyglet.text.Label(device["name"], x=int(x), y=int(y - radius - 3),
-                                                   font_size=self.text(12), color=ON_WOOD, anchor_x="center",
-                                                   anchor_y="top", batch=self.batch, group=self.groups[3]))
-        for name, (fx, fy) in spots.items():
-            x, y = field.at(fx, fy)
-            if name in switches:
-                shape = pyglet.shapes.Rectangle(x - radius, y - radius, radius * 2, radius * 2, color=OFF,
-                                                batch=self.batch, group=self.groups[2])
-                self.switch_marks.append((name, shape))
-                self.hits.append((lay.Rect(x - radius * 1.5, y - radius * 1.5, radius * 3, radius * 3), name))
-            else:
-                shape = pyglet.shapes.Circle(x, y, radius, color=OFF, batch=self.batch, group=self.groups[2])
-                self.light_marks.append((name, shape))
-            if name not in in_devices:
-                self.keep.append(pyglet.text.Label(name, x=int(x), y=int(y - radius - 3), font_size=self.text(12),
-                                                   color=ON_WOOD, anchor_x="center", anchor_y="top",
-                                                   batch=self.batch, group=self.groups[3]))
+        area = self.area(place)
+        image = self._image(place)
+        sprite = pyglet.sprite.Sprite(image, x=area.x, y=area.y, batch=self.batch, group=self.groups[1])
+        sprite.scale_x, sprite.scale_y = area.w / image.width, area.h / image.height
+        self.keep.append(sprite)
+        if place == "playfield":
+            length = area.w * 0.17
+            for name, (fx, fy, direction) in lay.flipper_spots(self.state.layout).items():
+                x, y = area.at(fx, fy)
+                rest = (x + direction * length * math.cos(0.45), y - length * math.sin(0.45))
+                up = (x + direction * length * math.cos(0.35), y + length * math.sin(0.35))
+                down_line = pyglet.shapes.Line(x, y, *rest, thickness=6, color=OFF, batch=self.batch,
+                                               group=self.groups[2])
+                up_line = pyglet.shapes.Line(x, y, *up, thickness=6, color=COIL_ON, batch=self.batch,
+                                             group=self.groups[2])
+                coil = next(f["coil"] for f in self.state.layout["flippers"] if f["name"] == name)
+                self.flippers.append((coil, down_line, up_line))
+        for rect, name, kind in self.spot_hits:
+            if not area.contains(rect.x + rect.w / 2, rect.y + rect.h / 2) or name not in self.positions[place]:
+                continue
+            x, y = rect.x + rect.w / 2, rect.y + rect.h / 2
+            shape = (pyglet.shapes.Rectangle(x - SPOT, y - SPOT, SPOT * 2, SPOT * 2, color=OFF, batch=self.batch,
+                                             group=self.groups[2]) if kind == "switch" else
+                     pyglet.shapes.Circle(x, y, SPOT, color=OFF, batch=self.batch, group=self.groups[2]))
+            self.marks.append((name, kind, shape))
 
     # --- drawing
 
@@ -233,127 +327,218 @@ class DashboardView:
 
         if self.built_for != self._key():
             self.build()
+        self.tick()
         state = self.state
-        for name, shape in self.switch_marks:
-            shape.color = SWITCH_ON if state.switch(name) else OFF
-        for name, shape in self.light_marks:
-            shape.color = _light_color(state.light(name))
-        for name, shape in self.coil_marks:
-            shape.color = COIL_ON if state.coil_on(name) else OFF
+        for name, kind, shape in self.marks:
+            match kind:
+                case "switch":
+                    shape.color = SWITCH_ON if state.switch(name) else OFF
+                case "light":
+                    shape.color = _light_color(state.light(name))
+                case _:
+                    shape.color = COIL_ON if state.coil_on(name) else OFF
         for coil, down_line, up_line in self.flippers:
             up = state.coil_on(coil)
             down_line.visible, up_line.visible = not up, up
-        devices = "\n".join(state.device_lines()) or "none"
-        if self.devices_label.text != devices:
-            self.devices_label.text = devices
         game = "\n".join(state.game_lines() if state.connected else ["waiting for the engine…"])
         if self.game_label.text != game:
             self.game_label.text = game
+        devices = "\n".join(state.device_lines()) or "none"
+        if self.devices_label.text != devices:
+            self.devices_label.text = devices
 
         self.window.switch_to()
         pyglet.gl.glClearColor(BACKGROUND[0] / 255, BACKGROUND[1] / 255, BACKGROUND[2] / 255, 1)
         self.window.clear()
         self.batch.draw()
-        sizes = [(name, int(d.get("width", 800)), int(d.get("height", 480))) for name, d in state.displays.items()]
-        box = self.backbox
-        if not sizes:
-            pyglet.text.Label("no displays", x=int(box.x + box.w / 2), y=int(box.y + box.h / 2),
-                              font_size=self.text(16), color=ON_WOOD, anchor_x="center", anchor_y="center").draw()
-        for name, rect in lay.displays(box, sizes).items():
-            draw_slide(state, name, rect.x, rect.y, rect.w, rect.h)
+        for name, size in state.displays.items():
+            if name in self.panes:
+                screen = lay.fit(lay.content(self.panes[name]), int(size.get("width", 800)),
+                                 int(size.get("height", 480)))
+                draw_slide(state, name, screen.x, screen.y, screen.w, screen.h)
+        if self.list_total > self.list_area.h:
+            bar = lay.thumb(self.track, self.list_total, self.list_area.h, self.scroll)
+            pyglet.shapes.Rectangle(bar.x, bar.y, bar.w, bar.h, color=(90, 90, 100)).draw()
+        if self.carried:
+            c = self.carried
+            pyglet.shapes.Circle(c.x, c.y, SPOT + 2, color=DROP).draw()
+            pyglet.text.Label(c.name, x=int(c.x + 14), y=int(c.y), font_size=SMALL, color=WHITE,
+                              anchor_y="center").draw()
+        elif self.hover:
+            name, hx, hy = self.hover
+            label = pyglet.text.Label(name, x=int(hx), y=int(hy + SPOT + 6), font_size=SMALL, color=WHITE,
+                                      anchor_x="center", anchor_y="bottom")
+            pyglet.shapes.Rectangle(label.x - label.content_width / 2 - 4, label.y - 2, label.content_width + 8,
+                                    label.content_height + 4, color=(20, 20, 24)).draw()
+            label.draw()
 
-    # --- resizing panes
+    # --- what's under the pointer
 
-    def can_resize(self) -> bool:
+    def can_change(self) -> bool:
         return self.state.connected and not self.state.layout.get("arrangement_lock", False)
 
+    def item_at(self, x: float, y: float) -> tuple[str, str] | None:
+        """The switch or light (name, kind) under the pointer, in a pane or in the list."""
+        for rect, name, kind in self.spot_hits:
+            if rect.contains(x, y):
+                return name, kind
+        if self.list_area.contains(x, y):
+            for rect, name, kind in self.list_hits:
+                if rect.contains(x, y - self.scroll):
+                    return name, kind
+        return None
+
     def edge_at(self, x: float, y: float) -> lay.Edge | None:
-        if not self.can_resize():
+        if not self.can_change():
             return None
         return lay.edge_at(self.window.width, self.window.height, self.arrangement, x, y)
+
+    def hover_at(self, x: float, y: float) -> None:
+        spot = next(((rect, name) for rect, name, _ in self.spot_hits if rect.contains(x, y)), None)
+        self.hover = (spot[1], spot[0].x + spot[0].w / 2, spot[0].y + spot[0].h / 2) if spot else None
+
+    # --- input
+
+    def press(self, x: float, y: float, right: bool = False) -> None:
+        item = self.item_at(x, y)
+        if right:
+            if item and item[1] == "switch" and self.state.layout.get("switch_input"):
+                name = item[0]
+                if name in self.locked:
+                    self.locked.discard(name)
+                    self.send({"type": "switch", "name": name, "state": 0})
+                else:
+                    self.locked.add(name)
+                    self.send({"type": "switch", "name": name, "state": 1})
+            return
+        if edge := self.edge_at(x, y):
+            self.dragging = edge
+        elif self.track.contains(x, y) and self.list_total > self.list_area.h:
+            self.scrolling = True
+            self.scroll_to(y)
+        elif item:
+            self.pending = _Pending(item[0], item[1], x, y, self.now())
 
     def drag_to(self, x: float, y: float) -> None:
         if self.dragging is not None:
             percent = lay.edge_percent(self.dragging, self.window.width, self.window.height, x, y)
             self.arrangement = self.arrangement.drag(self.dragging.name, percent)
+            self.layout_panes()
+        elif self.scrolling:
+            self.scroll_to(y)
+        elif self.carried is not None:
+            self.carried.x, self.carried.y = x, y
+        elif (p := self.pending) and not p.pressed and self.can_change() \
+                and math.hypot(x - p.x, y - p.y) > DRAG_START:
+            self.carried = _Carried(p.name, x, y)
+            self.pending = None
+
+    def release(self, x: float = 0, y: float = 0) -> None:
+        if self.dragging is not None:
+            self.dragging = None
+            self.save()
+        elif self.scrolling:
+            self.scrolling = False
+        elif self.carried is not None:
+            self.drop(self.carried.name, x, y)
+            self.carried = None
+        elif (p := self.pending) is not None:
+            self.pending = None
+            if p.kind != "switch" or not self.state.layout.get("switch_input") or p.name in self.locked:
+                return
+            if p.pressed:
+                self.send({"type": "switch", "name": p.name, "state": 0})
+            else:  # a quick click: tap the switch
+                self.send({"type": "switch", "name": p.name, "state": 1})
+                self.releases.append((self.now() + TAP, p.name))
+
+    def tick(self) -> None:
+        """Send presses that waited long enough to be holds, and the ends of quick clicks."""
+        now = self.now()
+        p = self.pending
+        if p and not p.pressed and p.kind == "switch" and now - p.since >= HOLD \
+                and self.state.layout.get("switch_input") and p.name not in self.locked:
+            p.pressed = True
+            self.send({"type": "switch", "name": p.name, "state": 1})
+        for when, name in [r for r in self.releases if r[0] <= now]:
+            self.releases.remove((when, name))
+            self.send({"type": "switch", "name": name, "state": 0})
+
+    def scroll_by(self, x: float, y: float, amount: float) -> None:
+        if self.list_area.contains(x, y):
+            limit = lay.scroll_limit(self.list_total, self.list_area.h)
+            self.scroll = min(max(self.scroll - amount * LINE * 2, 0.0), limit)
+
+    def scroll_to(self, y: float) -> None:
+        """Put the scrollbar thumb's middle at ``y``."""
+        visible, limit = self.list_area.h, lay.scroll_limit(self.list_total, self.list_area.h)
+        bar = lay.thumb(self.track, self.list_total, visible, 0)
+        free = self.track.h - bar.h
+        if free > 0:
+            down = (self.track.y + self.track.h - bar.h / 2 - y) / free
+            self.scroll = min(max(down * limit, 0.0), limit)
+
+    def drop(self, name: str, x: float, y: float) -> None:
+        """Place ``name`` where it was dropped, or take it off if dropped on the list."""
+        target = next((place for place in PLACES if lay.content(self.panes[place]).contains(x, y)), None)
+        if target is None and not self.panes["list"].contains(x, y):
+            return  # dropped somewhere else: nothing changes
+        for place in PLACES:
+            self.positions[place].pop(name, None)
+        if target is not None:
+            self.positions[target][name] = list(self.area(target).fraction(x, y))
+        self.placed_version += 1
+        self.layout_panes()
+        self.save()
 
     def save(self) -> None:
-        """Write every pane's size to config/dashboard.yaml."""
+        """Write the panes and places to config/dashboard.yaml."""
         path = self.state.layout.get("config_file")
         if not path:
             return
         try:
-            write_config(Path(path), self.arrangement)
-            log.info("Saved the pane sizes to %s", path)
+            write_config(Path(path), self.arrangement, self.positions)
+            log.info("Saved the dashboard layout to %s", path)
         except OSError as e:
-            log.warning("Couldn't save the pane sizes to %s: %s", path, e)
-
-    # --- input
-
-    def switch_at(self, x: float, y: float) -> str | None:
-        return next((name for rect, name in self.hits if rect.contains(x, y)), None)
-
-    def press(self, x: float, y: float, right: bool) -> None:
-        if not right and (edge := self.edge_at(x, y)):
-            self.dragging = edge
-            return
-        name = self.switch_at(x, y)
-        if name is None or not self.state.layout.get("switch_input"):
-            return
-        if right:
-            if name in self.locked:
-                self.locked.discard(name)
-                self.send({"type": "switch", "name": name, "state": 0})
-            else:
-                self.locked.add(name)
-                self.send({"type": "switch", "name": name, "state": 1})
-        elif name not in self.locked:
-            self.pressed = name
-            self.send({"type": "switch", "name": name, "state": 1})
-
-    def release(self) -> None:
-        if self.dragging is not None:
-            self.dragging = None
-            self.save()
-            return
-        if self.pressed is not None:
-            self.send({"type": "switch", "name": self.pressed, "state": 0})
-            self.pressed = None
+            log.warning("Couldn't save the dashboard layout to %s: %s", path, e)
 
 
-def run(port: int, windowed: tuple[int, int] | None = None) -> int:
-    """Open the dashboard (full screen, or ``windowed`` at a size) until it's closed or the engine stops."""
+def run(port: int, size: tuple[int, int] = WINDOW) -> int:
+    """Open the dashboard window until it's closed or the engine stops."""
     import pyglet
 
     state = DashboardState()
     link: dict[str, Any] = {}
-    window = (pyglet.window.Window(*windowed, caption="vukery: vuk me") if windowed else
-              pyglet.window.Window(fullscreen=True, caption="vukery: vuk me"))
+    window = pyglet.window.Window(*size, caption="vukery: vuk me", resizable=True)
 
     def send(message: dict[str, Any]) -> None:
         if writer := link.get("writer"):
             writer.write(protocol.encode(message))
 
     view = DashboardView(window, state, send)
+    cursors = {True: window.get_system_mouse_cursor(window.CURSOR_SIZE_LEFT_RIGHT),
+               False: window.get_system_mouse_cursor(window.CURSOR_SIZE_UP_DOWN)}
 
     def on_mouse_press(x: int, y: int, button: int, modifiers: int) -> None:
         view.press(x, y, right=button == RIGHT_BUTTON)
 
     def on_mouse_release(x: int, y: int, button: int, modifiers: int) -> None:
-        view.release()
+        view.release(x, y)
 
     def on_mouse_drag(x: int, y: int, dx: int, dy: int, buttons: int, modifiers: int) -> None:
         view.drag_to(x, y)
 
-    cursors = {True: window.get_system_mouse_cursor(window.CURSOR_SIZE_LEFT_RIGHT),
-               False: window.get_system_mouse_cursor(window.CURSOR_SIZE_UP_DOWN)}
-
     def on_mouse_motion(x: int, y: int, dx: int, dy: int) -> None:
         edge = view.edge_at(x, y)
         window.set_mouse_cursor(cursors[edge.vertical] if edge else None)
+        view.hover_at(x, y)
+
+    def on_mouse_scroll(x: int, y: int, scroll_x: float, scroll_y: float) -> None:
+        view.scroll_by(x, y, scroll_y)
 
     window.push_handlers(on_mouse_press=on_mouse_press, on_mouse_release=on_mouse_release,
-                         on_mouse_drag=on_mouse_drag, on_mouse_motion=on_mouse_motion)
+                         on_mouse_drag=on_mouse_drag, on_mouse_motion=on_mouse_motion,
+                         on_mouse_scroll=on_mouse_scroll)
 
     async def frames() -> None:
         while not state.engine_stopped and not window.has_exit:
@@ -381,8 +566,8 @@ def run(port: int, windowed: tuple[int, int] | None = None) -> int:
 def main(argv: list[str]) -> int:
     """``python -m vukery.dashboard PORT [WIDTHxHEIGHT]``: vuk me starts it this way."""
     port = int(argv[0]) if argv else protocol.DEFAULT_PORT
-    windowed = tuple(int(n) for n in argv[1].split("x")) if len(argv) > 1 else None
-    return run(port, (windowed[0], windowed[1]) if windowed else None)
+    size = tuple(int(n) for n in argv[1].split("x")) if len(argv) > 1 else WINDOW
+    return run(port, (size[0], size[1]))
 
 
 if __name__ == "__main__":

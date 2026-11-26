@@ -1,8 +1,19 @@
 """The vuk command."""
 
+import socket
+
 import pytest
 
 from vukery.cli import main
+
+
+@pytest.fixture(autouse=True)
+def free_media_port(monkeypatch):
+    """Games started here listen on a free port, so a vuk me left open (port 5051) doesn't get in the way."""
+    with socket.socket() as probe:
+        probe.bind(("127.0.0.1", 0))
+        port = probe.getsockname()[1]
+    monkeypatch.setattr("vukery.media.protocol.DEFAULT_PORT", port)
 
 
 def describe_vuk():

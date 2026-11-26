@@ -1,28 +1,27 @@
 """Where everything goes on the ``vuk me`` dashboard. Pure math, no pyglet.
 
-Three columns, in window units with the origin at the bottom left (pyglet's):
+Window units, with the origin at the bottom left (pyglet's). The panes'
+sizes come from an ``Arrangement`` (``config/dashboard.yaml``):
 
-1. device panes in two rows: switches and lights, coils and devices;
-2. the virtual backbox over the game and mode state;
-3. the virtual playfield, full height.
+1. ``list``: the game, switches, lights, coils and devices, scrolling;
+2. the ``backbox`` over a pane per display;
+3. the ``playfield``.
 
-Their sizes come from an ``Arrangement`` (``config/dashboard.yaml``); the
-edges between them can be dragged.
+Text has a fixed size; the list scrolls instead of shrinking.
 """
 
-import math
 from dataclasses import dataclass
 from typing import Any
 
 from vukery.media.arrangement import Arrangement
 
 MARGIN = 8
-GRAB = 6  # how close to an edge (in window units) the pointer has to be to drag it
+GRAB = 6          # how close to an edge (in window units) the pointer has to be to drag it
+TITLE_BAR = 30    # a pane's title strip
+ROW = 24          # one list row
+SECTION_TITLE = 36
+SECTION_GAP = 12
 DEFAULT = Arrangement()
-
-# Switches drawn only in the switches pane unless dashboard: playfield: places them:
-# the cabinet's buttons and the like aren't on the playfield.
-CABINET_WORDS = ("start", "flipper", "tilt", "coin", "door", "button", "service", "launch", "plunger")
 
 
 @dataclass(frozen=True)
@@ -42,27 +41,37 @@ class Rect:
         """The point at fractions ``fx``, ``fy`` of the rect, from its bottom left."""
         return self.x + fx * self.w, self.y + fy * self.h
 
+    def fraction(self, px: float, py: float) -> tuple[float, float]:
+        """Where a point is in the rect, as fractions from its bottom left, kept inside it."""
+        fx = (px - self.x) / self.w if self.w else 0.0
+        fy = (py - self.y) / self.h if self.h else 0.0
+        return round(min(max(fx, 0.0), 1.0), 3), round(min(max(fy, 0.0), 1.0), 3)
+
 
 def panes(width: float, height: float, arrangement: Arrangement = DEFAULT) -> dict[str, Rect]:
-    """The dashboard's panes for a window of ``width`` × ``height``, sized by ``arrangement``."""
+    """Every pane's rect: ``list``, the middle column's panes, ``playfield``."""
     a = arrangement
-
-    def x(percent: float) -> float:
-        return width * percent / 100
-
-    def tall(percent: float) -> float:
-        return height * percent / 100
-
-    rects = {
-        "switches": Rect(0, height - tall(a.y1), x(a.s1), tall(a.y1)),
-        "lights": Rect(x(a.s1), height - tall(a.y1), x(a.x1 - a.s1), tall(a.y1)),
-        "coils": Rect(0, 0, x(a.s2), tall(100 - a.y1)),
-        "devices": Rect(x(a.s2), 0, x(a.x1 - a.s2), tall(100 - a.y1)),
-        "backbox": Rect(x(a.x1), height - tall(a.y2), x(a.x2 - a.x1), tall(a.y2)),
-        "game": Rect(x(a.x1), 0, x(a.x2 - a.x1), tall(100 - a.y2)),
-        "playfield": Rect(x(a.x2), 0, x(100 - a.x2), height),
-    }
+    x1, x2 = width * a.x1 / 100, width * a.x2 / 100
+    rects = {"list": Rect(0, 0, x1, height)}
+    top = height
+    for name, percent in a.stack:
+        tall = height * percent / 100
+        rects[name] = Rect(x1, top - tall, x2 - x1, tall)
+        top -= tall
+    rects["playfield"] = Rect(x2, 0, width - x2, height)
     return {name: rect.inset(MARGIN / 2) for name, rect in rects.items()}
+
+
+def content(pane: Rect) -> Rect:
+    """A pane without its title strip."""
+    return Rect(pane.x + 4, pane.y + 4, pane.w - 8, max(pane.h - TITLE_BAR - 4, 0))
+
+
+def fit(area: Rect, width: float, height: float) -> Rect:
+    """The largest rect of ``width`` × ``height``'s shape that fits in ``area``, centered."""
+    scale = min(area.w / width, area.h / height) if width and height else 0
+    w, h = width * scale, height * scale
+    return Rect(area.x + (area.w - w) / 2, area.y + (area.h - h) / 2, w, h)
 
 
 @dataclass(frozen=True)
@@ -75,23 +84,18 @@ class Edge:
 
 
 def edges(width: float, height: float, arrangement: Arrangement = DEFAULT) -> list[Edge]:
-    """The draggable edges, inner ones first (they win where edges meet)."""
+    """The draggable edges; the middle column's first, since they meet x1 and x2."""
     a, reach = arrangement, GRAB
-
-    def x(percent: float) -> float:
-        return width * percent / 100
-
-    def y(percent_from_top: float) -> float:
-        return height * (1 - percent_from_top / 100)
-
-    return [
-        Edge("s1", True, Rect(x(a.s1) - reach, y(a.y1), 2 * reach, height - y(a.y1))),
-        Edge("s2", True, Rect(x(a.s2) - reach, 0, 2 * reach, y(a.y1))),
-        Edge("y1", False, Rect(0, y(a.y1) - reach, x(a.x1), 2 * reach)),
-        Edge("y2", False, Rect(x(a.x1), y(a.y2) - reach, x(a.x2 - a.x1), 2 * reach)),
-        Edge("x1", True, Rect(x(a.x1) - reach, 0, 2 * reach, height)),
-        Edge("x2", True, Rect(x(a.x2) - reach, 0, 2 * reach, height)),
-    ]
+    x1, x2 = width * a.x1 / 100, width * a.x2 / 100
+    result: list[Edge] = []
+    top = 0.0
+    for i, (_, percent) in enumerate(a.stack[:-1], start=1):
+        top += percent
+        y = height * (1 - top / 100)
+        result.append(Edge(f"y{i}", False, Rect(x1 + reach, y - reach, x2 - x1 - 2 * reach, 2 * reach)))
+    result += [Edge("x1", True, Rect(x1 - reach, 0, 2 * reach, height)),
+               Edge("x2", True, Rect(x2 - reach, 0, 2 * reach, height))]
+    return result
 
 
 def edge_at(width: float, height: float, arrangement: Arrangement, px: float, py: float) -> Edge | None:
@@ -103,87 +107,74 @@ def edge_percent(edge: Edge, width: float, height: float, px: float, py: float) 
     return px / width * 100 if edge.vertical else (height - py) / height * 100
 
 
-def cells(pane: Rect, count: int, header: float = 30, row: float = 26, min_width: float = 170) -> list[Rect]:
-    """Rects for ``count`` list items in ``pane``, top to bottom then in more columns.
+# --- the list pane
 
-    Rows shrink (down to 12 units) when there are too many items to fit.
+
+@dataclass(frozen=True)
+class ListRow:
+    """One row of the list: a section title, a switch, light or coil, or a block of text.
+
+    ``top`` is measured down from the top of the list's content, before scrolling.
     """
-    if count == 0:
-        return []
-    area = Rect(pane.x + MARGIN, pane.y + MARGIN, pane.w - 2 * MARGIN, pane.h - header - MARGIN)
-    max_columns = max(int(area.w // min_width), 1)
-    while True:
-        rows = max(int(area.h // row), 1)
-        columns = math.ceil(count / rows)
-        if columns <= max_columns or row <= 12:
-            break
-        row -= 1
-    width = area.w / max(columns, 1)
-    top = area.y + area.h
-    return [Rect(area.x + (i // rows) * width, top - (i % rows + 1) * row, width, row) for i in range(count)]
+
+    kind: str   # "title", "switch", "light", "coil", "game" or "devices"
+    name: str
+    top: float
+    height: float
 
 
-def displays(box: Rect, sizes: list[tuple[str, int, int]]) -> dict[str, Rect]:
-    """Fit the game's displays in the backbox, stacked top to bottom in config order."""
-    if not sizes:
-        return {}
-    gap = MARGIN * 2
-    area = box.inset(gap)
-    total_h = sum(h for _, _, h in sizes)
-    widest = max(w for _, w, _ in sizes)
-    scale = min(area.w / widest, (area.h - gap * (len(sizes) - 1)) / total_h)
-    used = total_h * scale + gap * (len(sizes) - 1)
-    y = area.y + (area.h + used) / 2
-    result: dict[str, Rect] = {}
-    for name, w, h in sizes:
-        y -= h * scale
-        result[name] = Rect(area.x + (area.w - w * scale) / 2, y, w * scale, h * scale)
-        y -= gap
-    return result
+def game_lines_needed(layout: dict[str, Any]) -> int:
+    """Room for the game section: whose turn, each player, a gap, a heading, the modes."""
+    return 1 + int(layout.get("max_players", 4)) + 2 + len(layout.get("modes", []))
 
 
-def _side(name: str) -> float | None:
-    match name:
-        case n if "left" in n:
-            return 0.25
-        case n if "right" in n:
-            return 0.75
-        case _:
-            return None
+def device_lines_needed(layout: dict[str, Any]) -> int:
+    return max(len(layout.get("ball_devices", [])) + len(layout.get("flippers", []))
+               + len(layout.get("autofire_coils", [])), 1)
 
 
-def playfield_spots(layout: dict[str, Any]) -> dict[str, tuple[float, float]]:
-    """Where each switch and light goes on the playfield, as fractions from its bottom left.
+def list_rows(layout: dict[str, Any], line_height: float = 20) -> tuple[list[ListRow], float]:
+    """The list's rows in order, and its total height. Every section's height is fixed."""
+    rows: list[ListRow] = []
+    top = 0.0
 
-    ``dashboard: playfield:`` positions come first. Then:
-    - ball device switches sit in a row at the bottom;
-    - autofire switches (slingshots, pops) sit by their side;
-    - cabinet switches (start, flipper buttons…) stay off the playfield;
-    - everything else goes in a grid up top, switches then lights.
-    """
-    placed: dict[str, tuple[float, float]] = {name: (float(x), float(y)) for name, (x, y) in
-                                              layout.get("playfield", {}).items()}
-    for device in layout.get("ball_devices", []):
-        todo = [s for s in device["switches"] if s not in placed]
-        for i, name in enumerate(todo):
-            placed[name] = (0.5 + (i - (len(todo) - 1) / 2) * 0.1, 0.07)
-    autofire = [a["switch"] for a in layout.get("autofire_coils", []) if a["switch"] not in placed]
-    for i, name in enumerate(autofire):
-        side = _side(name)
-        placed[name] = (side, 0.28) if side is not None else (0.5, 0.75 - i * 0.05)
-    rest = [s["name"] for s in layout.get("switches", [])
-            if s["name"] not in placed and not any(word in s["name"] or word in s["tags"] for word in CABINET_WORDS)]
-    rest += [light["name"] for light in layout.get("lights", []) if light["name"] not in placed]
-    columns = 4
-    for i, name in enumerate(rest):
-        placed[name] = (0.2 + (i % columns) * 0.2, 0.88 - (i // columns) * 0.08)
-    return placed
+    def add(kind: str, name: str, tall: float, gap: float = 0) -> None:
+        nonlocal top
+        rows.append(ListRow(kind, name, top, tall))
+        top += tall + gap
+
+    add("title", "Game", SECTION_TITLE)
+    add("game", "game", game_lines_needed(layout) * line_height, SECTION_GAP)
+    for title, kind, key in (("Switches", "switch", "switches"), ("Lights", "light", "lights"),
+                             ("Coils", "coil", "coils")):
+        add("title", title, SECTION_TITLE)
+        for item in layout.get(key, []):
+            add(kind, item["name"], ROW)
+        top += SECTION_GAP
+    add("title", "Devices", SECTION_TITLE)
+    add("devices", "devices", device_lines_needed(layout) * line_height, SECTION_GAP)
+    return rows, top
+
+
+def scroll_limit(total: float, visible: float) -> float:
+    """How far the list can scroll."""
+    return max(total - visible, 0.0)
+
+
+def thumb(track: Rect, total: float, visible: float, scroll: float) -> Rect:
+    """The scrollbar thumb: its size shows how much is visible, its place how far down."""
+    if total <= visible:
+        return track
+    h = max(track.h * visible / total, 24)
+    y = track.y + track.h - h - (track.h - h) * scroll / scroll_limit(total, visible)
+    return Rect(track.x, y, track.w, h)
 
 
 def flipper_spots(layout: dict[str, Any]) -> dict[str, tuple[float, float, float]]:
     """Each flipper's pivot (fractions of the playfield) and which way it points (+1 right, -1 left)."""
     result: dict[str, tuple[float, float, float]] = {}
     for i, flipper in enumerate(layout.get("flippers", [])):
-        side = _side(flipper["name"]) or (0.25 if i % 2 == 0 else 0.75)
-        result[flipper["name"]] = (0.3 if side < 0.5 else 0.7, 0.16, 1.0 if side < 0.5 else -1.0)
+        name = flipper["name"]
+        left = "left" in name or ("right" not in name and i % 2 == 0)
+        result[name] = (0.3 if left else 0.7, 0.16, 1.0 if left else -1.0)
     return result
