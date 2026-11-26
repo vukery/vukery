@@ -26,7 +26,7 @@ docs = [
 ]
 
 [project.scripts]
-vukery = "vukery.cli:main"
+vuk = "vukery.cli:main"
 
 [tool.uv]
 # Use uv's own Python builds, so every machine runs the same interpreter.

@@ -36,7 +36,7 @@ think one is wrong, say so instead of working around it.
   Change the copied code only in later commits. Never hand-copy MPF code,
   and never copy from a local `site-packages`.
 - **No game logic in YAML.** YAML describes the machine: hardware,
-  devices, settings, asset settings, the vukery view layout. Conditions,
+  devices, settings, asset settings, the vuk view layout. Conditions,
   shows and slides are Python.
 - **No `CustomCode`.** Anything that hooks into the machine is a `Mode`,
   named for what it does (`HoleScore`, not `Custom`). Always-on code uses
@@ -44,6 +44,8 @@ think one is wrong, say so instead of working around it.
 - **No Godot, no MPF 0.8x, no BCP.** Media controllers use vukery's own
   JSON media protocol. The default media controller uses pyglet, and the
   engine never imports any media library.
+- **The CLI is `vuk`.** The environment comes from `VUK_ENV` (default
+  `development`). There's no `--env` flag.
 - **Environments are enforced in code:**
   - `test` never opens serial ports or touches hardware;
   - `development` needs `--hardware` to touch hardware;
@@ -52,7 +54,7 @@ think one is wrong, say so instead of working around it.
     "virtual" or "smart_virtual";
   - game code never branches on the environment.
 - **Coil safety isn't optional.** Pulse and hold limits are enforced in
-  the engine, and `vukery view` can never fire a coil.
+  the engine, and `vuk view` can never fire a coil.
 
 ## Conventions
 
