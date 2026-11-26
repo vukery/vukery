@@ -32,10 +32,17 @@ def describe_base_mode():
             expect(game.player.ball).to_equal(2)
 ```
 
-Run them with `uv run vuk you` from the machine folder (or plain
-`uv run pytest`). `vuk test` does the same. `vuk you` always uses the test environment and passes
-extra arguments to pytest, e.g. `uv run vuk you -k scoring`. They print as
-a tree:
+Run them with `uv run vuk you` from the machine folder (`vuk test` is the
+same command). It:
+- always uses the test environment;
+- measures how much of the machine's code (`modes/`) the specs run, and
+  prints the coverage after the results (`--no-cov` turns that off);
+- passes any other arguments to pytest, e.g. `uv run vuk you -k scoring`.
+
+Coverage needs pytest-cov, which machines made with `vuk it` have. In an
+older machine, add it with `uv add --dev pytest-cov`.
+
+The specs print as a tree:
 
 ```text
 Base mode:
