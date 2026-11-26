@@ -61,10 +61,12 @@ class GameRig:
             self.machine.events.monitors.append(lambda event, kwargs: self.posted.append((event, kwargs)))
             # an in-process media controller on virtual time: what the screens would show, entrances included
             self.display = MediaState(now=self.clock.now)
+            if self.machine.media is not None:   # listening from power-on, so it hears the first sounds too
+                self.machine.media.attach(self.display.apply)
             self.loop.run_until_complete(self.machine.start())
             self.dashboard = DashboardState(now=self.clock.now)  # what vuk me would show
             if self.machine.media is not None:
-                self.machine.media.attach(self.display.apply)
+                self.display.apply(self.machine.media.welcome())   # the scenes the modes defined as it started
                 if dashboard:
                     self.machine.media.attach(self.dashboard.apply, dashboard=True)
             if fill_troughs:

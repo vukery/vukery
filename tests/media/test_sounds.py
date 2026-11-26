@@ -49,7 +49,8 @@ def describe_sounds():
 
     def it_tells_media_controllers_the_tracks_and_files(game):
         welcome = game.messages[0]
-        expect(welcome["tracks"]["sfx"]).to_equal({"name": "sfx", "volume": 0.6, "simultaneous_sounds": 6})
+        expect(welcome["tracks"]["sfx"]).to_equal({"name": "sfx", "volume": 0.6, "simultaneous_sounds": 6,
+                                                   "preload": False})
         expect(welcome["sounds"]["base_bgm"]["file"]).to_contain("music.ogg")
 
     def it_plays_a_sound_with_its_settings(game):

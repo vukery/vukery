@@ -61,6 +61,10 @@ def _connected(tmp_path):
     return state, clock
 
 
+def _welcome(state):
+    return {"type": "welcome", "sounds": state.sound_files}
+
+
 def _play(state, sound_id, **options):
     state.apply({"type": "sound", "action": "play", "id": sound_id, "sound": "boom", "name": "boom", "track": "sfx",
                  "volume": 0.8, **options})
@@ -87,6 +91,13 @@ def describe_audio():
         audio.frame()
         expect(player.deleted).to_be_true()
         expect(audio.players).to_equal({})
+
+    def it_loads_the_sounds_of_preload_tracks_when_it_connects(pyglet, tmp_path):
+        state, _ = _connected(tmp_path)
+        state.apply({**_welcome(state), "tracks": {"sfx": {"volume": 0.5, "simultaneous_sounds": 8, "preload": True}}})
+        audio = Audio(state)
+        audio.frame()
+        expect(list(audio._static)).to_equal(["boom"])
 
     def it_waits_for_the_engine(pyglet):
         audio = Audio(MediaState(audio=True))

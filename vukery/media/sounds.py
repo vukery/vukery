@@ -30,7 +30,7 @@ MODE_END_ACTIONS = ("stop", "stop_looping")
 POOL_TYPES = ("random", "sequence")
 SOUND_SETTINGS = {"file", "track", "volume", "priority", "loops", "max_queue_time", "mode_end_action", "ducking"}
 DUCKING_SETTINGS = {"target", "attack", "attenuation", "release_point", "release"}
-TRACK_SETTINGS = {"volume", "simultaneous_sounds"}
+TRACK_SETTINGS = {"volume", "simultaneous_sounds", "preload"}
 SYSTEM_SETTINGS = {"tracks", "buffer", "frequency", "channels"}  # the last three: pyglet picks these itself
 
 
@@ -64,6 +64,7 @@ class Track:
     name: str
     volume: float = 0.5
     simultaneous_sounds: int = 8
+    preload: bool = False   # load its sounds when the media controller connects, not when first played
 
 
 @dataclass(frozen=True)
@@ -152,7 +153,7 @@ def _track(name: str, data: dict[str, Any]) -> Track:
     limit = int(data.get("simultaneous_sounds", 8))
     if limit < 1:
         raise ConfigError(f"{where}: simultaneous_sounds must be 1 or more")
-    return Track(name, _volume(data.get("volume", 0.5), f"{where}: volume"), limit)
+    return Track(name, _volume(data.get("volume", 0.5), f"{where}: volume"), limit, bool(data.get("preload", False)))
 
 
 def _sound(name: str, data: dict[str, Any], folder: Path, files: dict[str, Path], tracks: dict[str, Track],

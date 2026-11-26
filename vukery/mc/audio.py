@@ -35,6 +35,7 @@ class Audio:
             self._stop_all()
             self._tracks = self.state.tracks
             self.mixer = Mixer(self.state.tracks, self.state.now, self._length)
+            self._preload()
         assert self.mixer is not None
         try:
             while self.state.sound_messages:
@@ -62,6 +63,17 @@ class Audio:
         player.play()
         self.players[sound.id] = player
         return player
+
+    def _preload(self) -> None:
+        """Load the sounds on tracks with ``preload`` now, so their first play isn't late."""
+        try:
+            for sound, entry in self.state.sound_files.items():
+                if self.state.tracks.get(str(entry.get("track")), {}).get("preload"):
+                    self._source(sound)
+                    self._length(sound)
+        except Exception:
+            log.exception("Couldn't preload sounds; carrying on without sound")
+            self.broken = True
 
     def _file(self, sound: str) -> str:
         return str(self.state.sound_files[sound]["file"])

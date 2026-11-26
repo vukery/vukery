@@ -93,6 +93,7 @@ sound_pools:
 |---|---|---|
 | `volume` | `0.5` | 0.0 to 1.0, or decibels: `-6db` |
 | `simultaneous_sounds` | `8` | how many sounds it plays at once |
+| `preload` | `false` | load its sounds when the media controller connects, so their first play isn't late |
 
 Without tracks, there's one: `sfx`. A sound plays on `sfx` unless it says
 otherwise (or on the first track, if there's no `sfx`). `buffer`,
