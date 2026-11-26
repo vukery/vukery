@@ -6,6 +6,16 @@ vukery is in **0.0.x** while it works toward parity with MPF. Every push to
 
 Check your version with `vuk --version`.
 
+## 0.0.6 (2026-11-25)
+
+- **The README opens with "Get VUKed!":** an AI-assisted total vukery of a
+  pinball framework with a different mission. Its status line now reflects
+  what's built.
+- **Contributing:** vukery is an AI-driven project. Pull requests are
+  welcome but will probably not be merged; issues are welcome; forking is
+  encouraged ("vuk yourself"). The policy is in `CONTRIBUTING.md` and on
+  the docs site.
+
 ## 0.0.5 (2026-11-25)
 
 The first numbered version. Everything built so far:
