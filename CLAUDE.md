@@ -94,9 +94,13 @@ think one is wrong, say so instead of working around it.
   in `notes/PLAN.md` before expanding scope.
 - **Record new decisions** in `notes/DECISIONS.md`, newest first, with what
   was decided, why, and what it costs.
-- **User-facing docs** (how to use vukery, `MIGRATING.md`,
-  `MEDIA_PROTOCOL.md`, `SEMANTICS.md`) go in `docs/` and must build with
-  `mkdocs build --strict`.
+- **Build the docs as you build the features.** Every user-visible change
+  updates its page in `docs/` and the table in `docs/status.md` in the same
+  commit. Pages say plainly what works in 0.0.x and what's planned, and never
+  describe planned features as working. User docs (how to use vukery,
+  `MIGRATING.md`, `MEDIA_PROTOCOL.md`, `SEMANTICS.md`) go in `docs/`, are
+  listed in `mkdocs.yml`'s `nav`, and must pass
+  `uv run --group docs mkdocs build --strict`.
 
 ## Reference material
 
