@@ -3,10 +3,12 @@
 from pathlib import Path
 
 import pytest
+import yaml
 
 from vukery.core.errors import ConfigError
 from vukery.dashboard import layout as lay
 from vukery.dashboard.state import DashboardState
+from vukery.media.arrangement import Arrangement, write_config
 from vukery.media.dashboard import DashboardConfig
 from vukery.testing import GameRig, expect
 
@@ -119,7 +121,7 @@ def describe_the_dashboard_config():
 
         game = tmp_path / "game"
         shutil.copytree(EXAMPLES / "basic", game)
-        config = game / "config" / "machine.yaml"
+        config = game / "config" / "dashboard.yaml"
         config.write_text(config.read_text().replace("s_target: [0.5, 0.62]", "s_targte: [0.5, 0.62]"))
         with pytest.raises(ConfigError, match="no switch or light named s_targte"):
             GameRig(game)
@@ -128,7 +130,7 @@ def describe_the_dashboard_config():
 def describe_the_layout():
     def it_has_three_columns():
         panes = lay.panes(1920, 1080)
-        expect(round(panes["backbox"].w)).to_equal(round(panes["backbox"].h))  # a square
+        expect(round(panes["backbox"].w)).to_equal(round(panes["backbox"].h))  # square by default on 16:9
         expect(round(panes["backbox"].y + panes["backbox"].h)).to_equal(1076)  # at the top
         expect(panes["game"].x).to_equal(panes["backbox"].x)                  # under it
         expect(round(panes["playfield"].h)).to_equal(1072)                     # full height
@@ -170,3 +172,92 @@ def describe_the_game_pane():
         lines = rig.dashboard.game_lines()
         expect(lines[:3]).to_equal(["Player 1 of 2   Ball 1", "> P1  1,000", "  P2  0"])
         expect("  base  100" in lines).to_equal(True)
+
+
+def describe_the_arrangement():
+    def it_defaults_to_three_columns_adding_up_to_100():
+        panes = Arrangement().to_panes()
+        widths = panes["switches"]["width"] + panes["lights"]["width"] + panes["backbox"]["width"] \
+            + panes["playfield"]["width"]
+        expect(round(widths, 1)).to_equal(100.0)
+        expect(panes["playfield"]["height"]).to_equal(100.0)
+
+    def it_reads_back_what_it_writes():
+        arrangement = Arrangement(x1=40.0, x2=70.5, s1=18.3, s2=25.0, y1=60.0, y2=45.5)
+        expect(Arrangement.from_panes(arrangement.to_panes())).to_equal(arrangement)
+
+    def it_rejects_panes_that_dont_fit_together():
+        panes = Arrangement().to_panes()
+        panes["lights"]["height"] = 70.0  # lights shares the top row with switches (50%)
+        with pytest.raises(ConfigError, match="lights"):
+            Arrangement.from_panes(panes)
+
+    def it_rejects_unknown_panes():
+        with pytest.raises(ConfigError, match="no pane named lamps"):
+            Arrangement.from_panes({"lamps": {"width": 10, "height": 10}})
+
+    def describe_dragging_an_edge():
+        def it_rounds_to_a_tenth_of_a_percent():
+            expect(Arrangement().drag("x2", 66.6666).x2).to_equal(66.7)
+
+        def it_keeps_every_pane_at_least_five_percent():
+            expect(Arrangement().drag("x2", 99.0).x2).to_equal(95.0)
+            expect(Arrangement().drag("y1", 0.0).y1).to_equal(5.0)
+
+        def it_keeps_the_first_columns_rows_in_proportion():
+            moved = Arrangement().drag("x1", 30.0)
+            expect((moved.x1, moved.s1, moved.s2)).to_equal((30.0, 15.0, 15.0))
+
+
+def describe_config_dashboard_yaml():
+    def it_saves_every_pane_keeping_the_other_settings(tmp_path):
+        path = tmp_path / "dashboard.yaml"
+        path.write_text("dashboard:\n  arrangement_lock: false\n  playfield:\n    s_target: [0.5, 0.62]\n")
+        write_config(path, Arrangement().drag("x2", 66.66))
+        config = DashboardConfig.from_yaml(yaml.safe_load(path.read_text())["dashboard"])
+        expect(config.arrangement.x2).to_equal(66.7)
+        expect(config.playfield).to_equal({"s_target": (0.5, 0.62)})
+        expect("playfield: {width: 33.3, height: 100.0}" in path.read_text()).to_equal(True)
+
+    def it_is_where_the_examples_keep_their_dashboard(rig):
+        expect(rig.dashboard.layout["config_file"].endswith("examples/basic/config/dashboard.yaml")).to_equal(True)
+        expect(rig.dashboard.layout["panes"]).to_equal(Arrangement().to_panes())
+        expect(rig.dashboard.layout["arrangement_lock"]).to_equal(False)
+
+    def it_needs_a_true_or_false_lock():
+        with pytest.raises(ConfigError, match="arrangement_lock"):
+            DashboardConfig.from_yaml({"arrangement_lock": "yes"})
+
+
+class _Window:  # what the view needs from a pyglet window, for specs
+    width, height = 1600, 900
+
+
+def describe_resizing_panes_on_the_dashboard():
+    def _view(tmp_path, lock=False):
+        from vukery.dashboard.app import DashboardView
+
+        state = DashboardState()
+        state.apply({"type": "welcome", "displays": {}, "slides": {}, "showing": {}, "players": {},
+                     "dashboard": {"panes": Arrangement().to_panes(), "arrangement_lock": lock,
+                                   "config_file": str(tmp_path / "dashboard.yaml")}, "state": {}})
+        return DashboardView(_Window(), state, lambda message: None)
+
+    def it_drags_an_edge_and_saves_on_release(tmp_path):
+        view = _view(tmp_path)
+        x2 = _Window.width * Arrangement().x2 / 100
+        view.press(x2, 450, right=False)  # grab the edge between the game column and the playfield
+        view.drag_to(1200, 450)
+        view.release()
+        expect(view.arrangement.x2).to_equal(75.0)
+        saved = yaml.safe_load((tmp_path / "dashboard.yaml").read_text())["dashboard"]["panes"]
+        expect(saved["playfield"]).to_equal({"width": 25.0, "height": 100.0})
+
+    def it_wont_resize_when_the_arrangement_is_locked(tmp_path):
+        view = _view(tmp_path, lock=True)
+        x2 = _Window.width * Arrangement().x2 / 100
+        view.press(x2, 450, right=False)
+        view.drag_to(1200, 450)
+        view.release()
+        expect(view.arrangement).to_equal(Arrangement())
+        expect((tmp_path / "dashboard.yaml").exists()).to_equal(False)

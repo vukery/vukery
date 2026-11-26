@@ -6,6 +6,18 @@ vukery is in **0.0.x** while it works toward parity with MPF. Every push to
 
 Check your version with `vuk --version`.
 
+## 0.0.11 (2026-11-25)
+
+- **Resizable `vuk me` panes:** drag the edge between two panes. Letting go
+  saves every pane's size, as a % of the window to the nearest tenth, to
+  `config/dashboard.yaml`. `arrangement_lock: true` stops resizing.
+- **`config/dashboard.yaml`** holds the dashboard's settings, including the
+  playfield positions that were in `machine.yaml`. `vuk it` creates it.
+- **Larger text on the dashboard,** growing with the window.
+- **Wood backbox and playfield backgrounds,** with the displays and
+  playfield items drawn on top.
+- Ball device switches share one label on the playfield.
+
 ## 0.0.10 (2026-11-25)
 
 - **`vuk you` runs a machine's specs** with pytest, always in the test

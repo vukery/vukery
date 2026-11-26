@@ -4,19 +4,22 @@ The dashboard is a media controller with ``"dashboard": true`` in its hello.
 Besides slides and player variables, it gets:
 
 - ``layout(machine)`` in its welcome: every switch, light, coil, ball device,
-  flipper and autofire coil, plus where to draw them on the virtual
-  playfield (the ``dashboard: playfield:`` config section);
+  flipper and autofire coil; where to draw them on the virtual playfield;
+  and the panes' sizes. All of that is the ``dashboard:`` section,
+  usually in ``config/dashboard.yaml``, which the dashboard rewrites when
+  you resize a pane;
 - ``snapshot(machine)`` in ``state`` messages whenever something changes.
 
 The only thing a dashboard can send back is a switch change, and only on the
 simulated platforms. There's no message for coils, so it can never fire one.
 """
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any
 
 from vukery.core.errors import ConfigError
 from vukery.core.yaml_values import mapping
+from vukery.media.arrangement import Arrangement
 
 if TYPE_CHECKING:
     from vukery.core.machine import Machine
@@ -24,18 +27,22 @@ if TYPE_CHECKING:
 
 @dataclass(frozen=True)
 class DashboardConfig:
-    """The ``dashboard:`` section: where things go on the virtual playfield.
+    """The ``dashboard:`` section.
 
-    ``playfield:`` maps a switch or light name to ``[x, y]``, as fractions of
-    the playfield from its bottom-left corner. Anything not listed is placed
-    automatically.
+    - ``panes:``: each pane's size (see ``vukery.media.arrangement``);
+    - ``arrangement_lock:``: true stops vuk me from resizing panes;
+    - ``playfield:``: a switch or light name to ``[x, y]``, as fractions of
+      the playfield from its bottom-left corner. Anything not listed is
+      placed automatically.
     """
 
     playfield: dict[str, tuple[float, float]]
+    arrangement: Arrangement = field(default_factory=Arrangement)
+    arrangement_lock: bool = False
 
     @classmethod
     def from_yaml(cls, data: dict[str, Any]) -> DashboardConfig:
-        unknown = sorted(set(data) - {"playfield"})
+        unknown = sorted(set(data) - {"playfield", "panes", "arrangement_lock"})
         if unknown:
             raise ConfigError(f"dashboard: not supported: {', '.join(unknown)}")
         positions: dict[str, tuple[float, float]] = {}
@@ -45,7 +52,10 @@ class DashboardConfig:
                     positions[str(name)] = (float(x), float(y))
                 case _:
                     raise ConfigError(f"dashboard: playfield: {name}: use [x, y], each from 0 to 1, got {value!r}")
-        return cls(positions)
+        lock = data.get("arrangement_lock", False)
+        if not isinstance(lock, bool):
+            raise ConfigError(f"dashboard: arrangement_lock: use true or false, got {lock!r}")
+        return cls(positions, Arrangement.from_panes(mapping(data.get("panes"), "dashboard: panes")), lock)
 
 
 def config(machine: Machine) -> DashboardConfig:
@@ -60,6 +70,7 @@ def config(machine: Machine) -> DashboardConfig:
 def layout(machine: Machine) -> dict[str, Any]:
     """Everything that doesn't change while the machine runs."""
     switch_input = machine.platform_is_simulated()
+    settings = config(machine)
     return {
         "switches": [{"name": s.name, "number": s.config.number, "tags": list(s.config.tags)}
                      for s in machine.switches.switches.values()],
@@ -71,7 +82,10 @@ def layout(machine: Machine) -> dict[str, Any]:
                      for name, f in machine.flippers.items()],
         "autofire_coils": [{"name": name, "coil": a.coil.name, "switch": a.switch.name}
                            for name, a in machine.autofire_coils.items()],
-        "playfield": {name: list(xy) for name, xy in config(machine).playfield.items()},
+        "playfield": {name: list(xy) for name, xy in settings.playfield.items()},
+        "panes": settings.arrangement.to_panes(),
+        "arrangement_lock": settings.arrangement_lock,
+        "config_file": str(machine.config.game_dir / "config" / "dashboard.yaml"),  # where vuk me saves pane sizes
         "switch_input": switch_input,
     }
 

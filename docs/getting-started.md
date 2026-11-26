@@ -38,6 +38,7 @@ uv run vuk you     # run its specs
 | Path | What's in it |
 |---|---|
 | `config/machine.yaml` | the machine: a trough, flippers, slingshots and a target, commented |
+| `config/dashboard.yaml` | `vuk me`'s pane sizes and playfield positions |
 | `config/environments/` | `development.yaml` (simulated) and `production.yaml` (where your hardware goes) |
 | `modes/base/base.py` | the base mode, with a scoring table |
 | `modes/vukery/` | reserved for overrides of vukery itself |
