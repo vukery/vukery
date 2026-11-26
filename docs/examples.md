@@ -32,7 +32,26 @@ The files:
 | `modes/base/base.py` | the scoring |
 | `tests/test_basic.py` | the specs |
 
-## `examples/display` (coming next)
+## `examples/display`
 
-The same machine with one display: the score and ball number, drawn by the
-pyglet media controller.
+`examples/basic` plus one 800×480 display, drawn by the pyglet media
+controller:
+
+- a `start_screen` mode shows "PRESS START" between games;
+- the `base` mode shows the score, player and ball during a game.
+
+Its 6 specs check what's on screen from game start to game over, including
+two players taking turns.
+
+```console
+cd examples/display
+uv run vuk run          # opens the display window; type s_start, s_target…
+uv run pytest
+```
+
+| File | What's in it |
+|---|---|
+| `config/machine.yaml` | `examples/basic`'s machine, plus `displays:` |
+| `modes/start_screen/start_screen.py` | the slide shown between games |
+| `modes/base/base.py` | scoring and the score slide |
+| `tests/test_display.py` | the specs |

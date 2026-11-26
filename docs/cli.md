@@ -36,8 +36,8 @@ VUK_LOG=debug vuk run
 | Command | Status | What it does | MPF equivalent |
 |---|---|---|---|
 | `vuk doctor` | **works** | Shows versions and checks for FFmpeg | `mpf diagnosis` |
-| `vuk run` | **works** in development | Runs the game. In development, type a switch name to tap it. Media controllers come next. | `mpf`, `mpf game`, `mpf both` |
-| `vuk mc` | planned | Runs a media controller only (`--display NAME`) | `mpf mc` |
+| `vuk run` | **works** in development | Runs the game and a media controller per display. In development, type a switch name to tap it. | `mpf`, `mpf game`, `mpf both` |
+| `vuk mc` | **works** | Runs a media controller only (`--display NAME`) | `mpf mc` |
 | `vuk view` | planned | Playfield GUI: lights, switches, coils | `mpf monitor` |
 | `vuk top` | planned | Terminal dashboard of a running game; works over SSH | `mpf -t` |
 | `vuk console` | planned | Python prompt attached to the running game | `mpf service` |
@@ -59,7 +59,7 @@ A command that isn't built yet says so and exits with code 2.
 |---|---|---|---|
 | `--log-dir DIR` | works | Where log files go (default `log/`) | `-l` |
 | `--hardware` | works | Allow real hardware in development | |
-| `--no-mc` | planned | Don't start the media controllers | (`mpf game` instead of `mpf both`) |
+| `--no-mc` | works | Don't start the media controllers | (`mpf game` instead of `mpf both`) |
 | `--no-sound` | planned | Run without audio | `--no-sound` |
 | `--preload` | planned | Load every asset at startup | `-f` |
 

@@ -4,8 +4,9 @@
     The game engine runs on the simulated `development` and `test`
     platforms: switches, coils, lights, a simple trough, single-wound
     flippers, autofire coils, the attract and game modes, and your own
-    modes. Ball saves, tilt, shows, slides and sound come later. The
-    complete example is [`examples/basic`](examples.md).
+    modes, and text slides on displays ([Displays and slides](displays.md)).
+    Ball saves, tilt, shows and sound come later. The complete examples are
+    [`examples/basic` and `examples/display`](examples.md).
 
 ## A game folder
 
@@ -72,8 +73,8 @@ modes:
 
 **Supported sections so far:** `switches`, `coils`, `lights`,
 `ball_devices` (troughs), `flippers` (single-wound, no EOS),
-`autofire_coils`, `game`, `modes`, `player_vars`, `hardware`, `fast`,
-`logging`.
+`autofire_coils`, `game`, `modes`, `player_vars`, `displays`, `media`,
+`hardware`, `fast`, `logging`.
 
 **Game logic sections aren't allowed.** vukery stops with an error that
 points you to modes if your config has `variable_player`, `event_player`,
