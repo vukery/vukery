@@ -6,6 +6,13 @@ vukery is in **0.0.x** while it works toward parity with MPF. Every push to
 
 Check your version with `vuk --version`.
 
+## 0.0.12 (2026-11-25)
+
+- **No more `vuk mc`.** `vuk us` starts each display's window itself
+  (`python -m vukery.mc`), and `vuk me` draws the displays in its backbox.
+  To restart a display or look at one in a window:
+  `uv run python -m vukery.mc . --display main --windowed`.
+
 ## 0.0.11 (2026-11-25)
 
 - **Resizable `vuk me` panes:** drag the edge between two panes. Letting go

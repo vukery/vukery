@@ -40,8 +40,12 @@ displays:
 `width` and `height` give the display's shape; full screen, the slide fills
 the monitor.
 
-`vuk mc --display main` runs a media controller on its own, for example to
-restart one. Add `--windowed` to open it at its configured size instead.
+`vuk us` runs each display as its own process. To restart one, or to look
+at one at its configured size in a window, run it by hand:
+
+```console
+uv run python -m vukery.mc . --display main --windowed
+```
 
 [`vuk me`](dashboard.md) doesn't open these windows: its dashboard draws
 every display in its virtual backbox.

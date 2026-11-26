@@ -1,6 +1,6 @@
 """The default media controller: pyglet windows, one per display, fed by the engine.
 
-Runs as its own process (``vuk mc``), started by ``vuk us``. It connects to
+Runs as its own process (``python -m vukery.mc``), started by ``vuk us``. It connects to
 the engine, retrying until the engine is up, and draws what ``MediaState``
 says. Each display is full screen on its own monitor (``screen:`` in its
 ``displays:`` entry, or the next one in order). pyglet is only imported
@@ -87,7 +87,7 @@ def run(port: int, display_configs: dict[str, dict[str, Any]], only: str | None 
         windowed: bool = False) -> int:
     """Open a full-screen window for each display (or just ``only``) and draw until the engine stops.
 
-    ``windowed`` opens them at their configured size instead (``vuk mc --windowed``).
+    ``windowed`` opens them at their configured size instead (``--windowed``).
     """
     import pyglet  # imported here so nothing else needs pyglet
 
