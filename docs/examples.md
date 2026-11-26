@@ -54,7 +54,8 @@ The files:
 
 | File | What's in it |
 |---|---|
-| [`config/machine.yaml`](https://github.com/vukery/vukery/blob/main/examples/basic/config/machine.yaml) | switches, coils, a light, the trough, flippers, slingshots, `game:`, `dashboard:` and `modes:` |
+| [`config/machine.yaml`](https://github.com/vukery/vukery/blob/main/examples/basic/config/machine.yaml) | switches, coils, a light, the trough, flippers, slingshots, `game:` and `modes:` |
+| [`config/dashboard.yaml`](https://github.com/vukery/vukery/blob/main/examples/basic/config/dashboard.yaml) | `vuk me`'s pane sizes and playfield positions |
 | [`config/environments/development.yaml`](https://github.com/vukery/vukery/blob/main/examples/basic/config/environments/development.yaml) | logging for development |
 | [`modes/base/base.py`](https://github.com/vukery/vukery/blob/main/examples/basic/modes/base/base.py) | the scoring table, and lighting Frenzy |
 | [`modes/frenzy/frenzy.py`](https://github.com/vukery/vukery/blob/main/examples/basic/modes/frenzy/frenzy.py) | priority, `Score(block=True)`, a timed mode, a light |
