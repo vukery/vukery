@@ -182,3 +182,29 @@ def describe_adjusters():
         game.player.multiplier = 2      # priority 300: then double
         game.switch("s_target")
         expect(game.player.score).to_equal(2000)
+
+
+def describe_scoring_values():
+    def it_needs_a_variable_for_an_award():
+        from vukery import Award
+
+        with pytest.raises(ValueError, match="at least one variable"):
+            Award()
+
+    def it_keeps_the_score_to_score_values():
+        from vukery import Award
+
+        with pytest.raises(ValueError, match="Use Score"):
+            Award(score=100)
+
+    def it_describes_an_award():
+        from vukery import Award
+
+        assert repr(Award(lanes=1)) == "Award(lanes=1, block=False)"
+
+    @pytest.mark.parametrize("value", [True, "1000", 2.5])
+    def it_refuses_things_that_arent_points(value):
+        from vukery.core.scoring import entries
+
+        with pytest.raises(TypeError, match="Not a scoring value"):
+            entries(value)

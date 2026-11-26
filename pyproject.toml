@@ -1,6 +1,6 @@
 [project]
 name = "vukery"
-version = "0.0.16"
+version = "0.0.17"
 description = "A very opinionated pinball framework based on the Mission Pinball Framework, built to be simple, lean and LLM-friendly."
 readme = "README.md"
 license = "MIT"
@@ -67,6 +67,9 @@ pythonVersion = "3.15"
 # uv run pytest --cov: how much of vukery the specs run (CI draws the README badge from it)
 source = ["vukery"]
 branch = true
+# FAST EXP boards: copied from MPF for later, not hooked up to anything until
+# EXP/Neuron support is built (after COMBAT), so nothing can run them yet
+omit = ["vukery/platforms/fast/fast_exp_board.py", "vukery/platforms/fast/communicators/exp.py"]
 
 [tool.coverage.report]
 show_missing = true

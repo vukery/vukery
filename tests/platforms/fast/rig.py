@@ -21,6 +21,7 @@ from vukery.platforms.fast.config import FastConfig
 from vukery.platforms.fast.fast import FastHardwarePlatform
 from vukery.platforms.interfaces import (
     DriverSettings,
+    HoldSettings,
     PulseSettings,
     SerialPortInfo,
     SwitchConfig,
@@ -244,6 +245,29 @@ class FastRig:
 
     def disable_autofire(self, name: str) -> None:
         self.platform.clear_hw_rule(*self.autofire(name))
+
+    # --- flippers (MPF: flippers:), enough to set their hardware rules
+
+    def flipper_rule(self, coil: str, switch: str, pulse_ms: int | None = None,
+                     hold: bool = True) -> tuple[SwitchSettings, DriverSettings]:
+        """The settings a flipper gives the platform for one of its coils (flippers don't recycle)."""
+        device = self.coils[coil]
+        hw_switch, invert = self.switches[switch]
+        return (SwitchSettings(hw_switch=hw_switch, invert=invert, debounce=False),
+                DriverSettings(hw_driver=device.hw_driver,
+                               pulse_settings=PulseSettings(power=device.pulse_power(),
+                                                            duration=device.pulse_ms(pulse_ms)),
+                               hold_settings=HoldSettings(power=device.hold_power()) if hold else None,
+                               recycle=False))
+
+    def expect(self, port: str, commands: dict[str, str]) -> None:
+        """The commands the next step must send (and the answers), checked by ``sent``."""
+        self.boards[port].expected_commands = dict(commands)
+
+    def sent(self, port: str) -> bool:
+        """Whether every expected command went out."""
+        self.settle()
+        return self.boards[port].expected_commands == {}
 
     def unsent(self, port: str) -> dict[str, str]:
         """Expected commands that weren't sent (should be empty)."""

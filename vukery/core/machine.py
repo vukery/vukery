@@ -68,12 +68,17 @@ class Machine(Logs):
         self.flippers: dict[str, Flipper] = {}
         self.autofire_coils: dict[str, AutofireCoil] = {}
         self._calls: dict[str, Any] = {}
-        self.platform = self._create_platform(hardware)
-        displays = {name: DisplayConfig.from_yaml(name, entry or {})
-                    for name, entry in config.section("displays").items()}
-        port = int(config.section("media").get("port", protocol.DEFAULT_PORT))
-        # A media server runs when there's something to show: displays, or the vuk me dashboard.
-        self.media: MediaServer | None = MediaServer(self, displays, port) if displays or dashboard else None
+        try:
+            self.platform = self._create_platform(hardware)
+            displays = {name: DisplayConfig.from_yaml(name, entry or {})
+                        for name, entry in config.section("displays").items()}
+            port = int(config.section("media").get("port", protocol.DEFAULT_PORT))
+            # A media server runs when there's something to show: displays, or the vuk me dashboard.
+            self.media: MediaServer | None = MediaServer(self, displays, port) if displays or dashboard else None
+        except BaseException:
+            if clock is None:  # the loop is ours: don't leave it (and its sockets) open
+                self.loop.close()
+            raise
 
     @classmethod
     def from_folder(cls, game_dir: Path, env: str | None = None, clock: Clock | None = None,
