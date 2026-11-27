@@ -1,6 +1,7 @@
-# Checks types (pyright, strict) and lint (ruff), then runs every spec with coverage. On main, it also redraws the README's
-# coverage badge and keeps it on the `badges` branch (one commit, replaced
-# each time), so no outside service is needed.
+# Runs every spec with coverage (types and lint are types.yml and lint.yml).
+# On main, it also redraws the README's coverage badge and keeps it on the
+# `badges` branch (one commit, replaced each time), so no outside service is
+# needed.
 name: Specs
 
 on:
@@ -18,10 +19,6 @@ jobs:
       - uses: astral-sh/setup-uv@v6
       - name: Install (uv installs Python 3.15 too)
         run: uv sync
-      - name: Types (pyright, strict; MPF's copied files are listed in pyproject.toml and left out)
-        run: uv run pyright
-      - name: Lint (ruff)
-        run: uv run ruff check vukery tests examples scripts
       - name: Specs, with coverage
         run: uv run vuk you --cov-report=term --cov-report=json:coverage.json
       - name: Draw the coverage badge
