@@ -367,6 +367,8 @@ class ModeController:
     def __init__(self, machine: Machine):
         self.machine = machine
         self.modes: dict[str, Mode] = {}
+        # as MPF's: a ball's modes stop inside ball_ending, before lower-priority handlers (tilt) wait on it
+        machine.events.add_handler("ball_ending", self._ball_ending, priority=0)
 
     def add(self, mode: Mode) -> None:
         self.modes[mode.name] = mode
@@ -394,6 +396,27 @@ class ModeController:
         for mode in self.modes.values():
             if mode.active and mode.stop_on_ball_end:
                 mode.stop()
+
+    def _ball_ending(self, queue: Any, **_: Any) -> None:
+        """Stop the modes that end with the ball, and hold ``ball_ending`` until they have (MPF's order)."""
+        stopping = [m for m in self.modes.values() if m.active and m.stop_on_ball_end]
+        if not stopping:
+            return
+        queue.wait()
+        waiting = {m.name for m in stopping}
+        handlers: list[Any] = []
+
+        def stopped(name: str) -> None:
+            waiting.discard(name)
+            if not waiting:
+                self.machine.events.remove_handlers(handlers)
+                queue.clear()
+
+        for mode in stopping:
+            handlers.append(self.machine.events.add_handler(
+                f"mode_{mode.name}_stopped", lambda name=mode.name, **_: stopped(name)))
+        for mode in stopping:
+            mode.stop()
 
     def stop_game_modes(self) -> None:
         for mode in self.modes.values():

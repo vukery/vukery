@@ -260,8 +260,8 @@ player_vars:
 ## Built-in modes
 
 vukery ships the modes every pinball machine needs. Today that's **attract**,
-**game** and **[high score](high-score.md)**; replay, match, tilt, ball save
-and the others are planned. Core ones always run; optional ones run when the
+**game**, **[high score](high-score.md)** and **[tilt](tilt.md)**; replay,
+match, ball save and the others are planned. Core ones always run; optional ones run when the
 game lists them in `modes:`. A game changes a built-in mode only in the ways it declares, never
 by copying its code and editing it.
 
@@ -301,6 +301,7 @@ be replaced, only customized.
 | `attract` | core | nothing yet |
 | `game` | core | nothing yet (balls and players are in `game:`) |
 | [`high_score`](high-score.md) | optional | `categories`, `defaults`, `enter_initials_seconds`, `award_seconds`, `look` |
+| [`tilt`](tilt.md) | optional | `warnings_to_tilt`, `multiple_hit_window`, `settle_time`, `reset_warnings_events`, the switch tags, `tilt_warnings_player_var`, `look` |
 
 ## Lifecycle
 
