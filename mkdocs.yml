@@ -72,6 +72,11 @@ plugins:
         dashboard.md: tools/dashboard.md
         logging.md: tools/logging.md
 
+extra:
+  analytics:                 # Material's own Google Analytics (GA4) support
+    provider: google
+    property: G-LXW1LS8B2F
+
 extra_css:
   - stylesheets/mkdocs.css
 
