@@ -31,6 +31,7 @@ POOL_TYPES = ("random", "sequence")
 SOUND_SETTINGS = {"file", "track", "volume", "priority", "loops", "max_queue_time", "mode_end_action", "ducking"}
 DUCKING_SETTINGS = {"target", "attack", "attenuation", "release_point", "release"}
 TRACK_SETTINGS = {"volume", "simultaneous_sounds", "preload"}
+POOL_SETTINGS = {"sounds", "type", "track"}
 SYSTEM_SETTINGS = {"tracks", "buffer", "frequency", "channels"}  # the last three: pyglet picks these itself
 
 
@@ -196,7 +197,7 @@ def _ducking(data: dict[str, Any], where: str, tracks: dict[str, Track]) -> Duck
 
 def _pool(name: str, data: dict[str, Any], loaded: Sounds) -> Pool:
     where = f"sound_pools: {name}"
-    _unsupported(data, {"sounds", "type", "track"}, where)
+    _unsupported(data, POOL_SETTINGS, where)
     kind = str(data.get("type", "random"))
     if kind not in POOL_TYPES:
         raise ConfigError(f"{where}: type {kind!r} isn't supported yet ({', '.join(POOL_TYPES)})")

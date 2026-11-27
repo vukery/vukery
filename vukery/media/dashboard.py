@@ -27,6 +27,9 @@ if TYPE_CHECKING:
     from vukery.core.machine import Machine
 
 
+SETTINGS = frozenset({*PLACES, "panes", "arrangement_lock"})   # dashboard:
+
+
 @dataclass(frozen=True)
 class DashboardConfig:
     """The ``dashboard:`` section (see ``vukery.media.arrangement``).
@@ -44,7 +47,7 @@ class DashboardConfig:
 
     @classmethod
     def from_yaml(cls, data: dict[str, Any], displays: Sequence[str] = ()) -> DashboardConfig:
-        unknown = sorted(set(data) - {*PLACES, "panes", "arrangement_lock"})
+        unknown = sorted(set(data) - SETTINGS)
         if unknown:
             raise ConfigError(f"dashboard: not supported: {', '.join(unknown)}")
         positions: dict[str, dict[str, tuple[float, float]]] = {}

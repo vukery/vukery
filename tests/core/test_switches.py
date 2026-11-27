@@ -43,6 +43,12 @@ def describe_switches():
             with pytest.raises(ConfigError, match="type must be NO or NC"):
                 SwitchConfig.from_yaml("s_x", {"number": "1", "type": "maybe"})
 
+        def it_reads_a_bare_no_as_normally_open():   # YAML turns an unquoted NO into false
+            expect(SwitchConfig.from_yaml("s_x", {"number": "1", "type": False}).type).to_equal("NO")
+
+        def it_takes_nc_in_any_case():
+            expect(SwitchConfig.from_yaml("s_x", {"number": "1", "type": "nc"}).type).to_equal("NC")
+
         def it_rejects_a_name_it_doesnt_know(game):
             with pytest.raises(ConfigError, match="no switch named 's_nope'"):
                 game.machine.switches["s_nope"]

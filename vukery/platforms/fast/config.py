@@ -13,6 +13,19 @@ from vukery.core.errors import ConfigError
 from vukery.core.yaml_values import mapping
 
 CONTROLLERS = ("nano", "neuron")
+UNSUPPORTED_PORTS = {"aud", "dmd", "seg", "emu", "exp_int"}
+# Every setting each part of fast: takes (MPF's names); anything else is refused.
+SETTINGS = frozenset({"net", "rgb", "debug"})
+NET_SETTINGS = frozenset({"controller", "port", "io_loop", "baud", "debug", "watchdog", "default_quick_debounce_open",
+                          "default_quick_debounce_close", "default_normal_debounce_open",
+                          "default_normal_debounce_close", "mute_unconfigured_switches"})
+IO_BOARD_SETTINGS = frozenset({"model", "order"})
+RGB_SETTINGS = frozenset({"port", "baud", "debug", "led_hz", "ignore_reboot"})
+
+
+def _known(data: dict[str, Any], settings: frozenset[str], where: str) -> None:
+    if unknown := sorted(set(data) - settings):
+        raise ConfigError(f"{where}: unknown setting(s): {', '.join(unknown)}")
 
 
 def ms(value: Any) -> int:
@@ -61,15 +74,16 @@ class NetConfig:
 
     @classmethod
     def from_yaml(cls, data: dict[str, Any]) -> NetConfig:
+        _known(data, NET_SETTINGS, "fast: net")
         controller = str(data.get("controller", ""))
         if controller not in CONTROLLERS:
             raise ConfigError(
                 f"fast: net: controller must be one of {', '.join(CONTROLLERS)}, got {controller!r}"
             )
-        io_loop = {
-            str(name): IoBoardConfig(name=str(name), model=str(board["model"]), order=int(board["order"]))
-            for name, board in mapping(data.get("io_loop"), "fast: net: io_loop").items()
-        }
+        io_loop: dict[str, IoBoardConfig] = {}
+        for name, board in mapping(data.get("io_loop"), "fast: net: io_loop").items():
+            _known(board, IO_BOARD_SETTINGS, f"fast: net: io_loop: {name}")
+            io_loop[str(name)] = IoBoardConfig(name=str(name), model=str(board["model"]), order=int(board["order"]))
         orders = sorted(board.order for board in io_loop.values())
         if orders != list(range(1, len(orders) + 1)):
             raise ConfigError("fast: net: io_loop order values must be sequential, starting at 1")
@@ -103,6 +117,7 @@ class RgbConfig:
 
     @classmethod
     def from_yaml(cls, data: dict[str, Any]) -> RgbConfig:
+        _known(data, RGB_SETTINGS, "fast: rgb")
         return cls(
             port=ports(data.get("port")),
             baud=int(data.get("baud", 921600)),
@@ -120,9 +135,10 @@ class FastConfig:
 
     @classmethod
     def from_yaml(cls, data: dict[str, Any]) -> FastConfig:
-        unsupported = sorted(set(data) & {"aud", "dmd", "seg", "emu", "exp_int"})
+        unsupported = sorted(set(data) & UNSUPPORTED_PORTS)
         if unsupported:
             raise ConfigError(f"fast: these FAST ports aren't supported by vukery yet: {', '.join(unsupported)}")
+        _known(data, SETTINGS, "fast")
         return cls(
             net=NetConfig.from_yaml(data["net"]) if data.get("net") else None,
             rgb=RgbConfig.from_yaml(data["rgb"]) if data.get("rgb") else None,

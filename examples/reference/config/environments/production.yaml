@@ -1,0 +1,32 @@
+# Merged over config/*.yaml when VUK_ENV=production: the real machine, here a
+# FAST Nano. development and test run on simulated platforms named after them.
+
+hardware:
+  platform: fast                  # fast; development and test need nothing here
+
+fast:
+  debug: false                    # log every serial message (default: false)
+  net:
+    controller: nano              # nano or neuron
+    port: auto                    # auto (the default), or the serial port(s): /dev/ttyACM0
+    baud: 921600                  # default: 921600
+    debug: false                  # default: false
+    watchdog: 1000                # ms without hearing from vukery before the boards turn off (default: 1000)
+    default_quick_debounce_open: 2      # ms (defaults: 2, 2, 4, 4)
+    default_quick_debounce_close: 2
+    default_normal_debounce_open: 4
+    default_normal_debounce_close: 4
+    mute_unconfigured_switches: false   # don't log switches the config doesn't name (default: false)
+    io_loop:                      # the I/O boards, named; switches and coils use the names (io3208-0)
+      io3208:
+        model: FP-I/O-3208
+        order: 1                  # their order on the loop, from 1
+      io0804:
+        model: FP-I/O-0804
+        order: 2
+  rgb:                            # the Nano's LED port
+    port: auto                    # default: auto
+    baud: 921600                  # default: 921600
+    debug: false                  # default: false
+    led_hz: 30                    # LED updates per second, at most 30 (default: 30)
+    ignore_reboot: true           # default: true

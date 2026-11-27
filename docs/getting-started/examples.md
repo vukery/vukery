@@ -17,6 +17,7 @@ cp -r vukery/examples/basic my_game
 | [`basic`](https://github.com/vukery/vukery/tree/main/examples/basic) | none | the game engine, modes, scoring tables, priority and blocking, tests |
 | [`display`](https://github.com/vukery/vukery/tree/main/examples/display) | one | scenes with live values, an entrance and a blink; a sound |
 | [`dual_display`](https://github.com/vukery/vukery/tree/main/examples/dual_display) | two | a media controller per display, scenes per display, a move and a fade |
+| [`reference`](https://github.com/vukery/vukery/tree/main/examples/reference) | one | every config setting vukery supports, with its default and choices: the [configuration reference](../machine/config-reference.md) |
 
 ## `examples/basic`
 
@@ -116,3 +117,14 @@ cd examples/dual_display
 uv run vuk me
 uv run vuk you
 ```
+
+## `examples/reference`
+
+[Browse it on GitHub](https://github.com/vukery/vukery/tree/main/examples/reference)
+
+A machine whose config uses every setting vukery supports, each with its
+default and choices in a comment. It's what the
+[configuration reference](../machine/config-reference.md) shows. Its specs
+check that every setting vukery lists is in it, that every fixed choice is
+named, and that the machine starts and plays a game with it. Its game side
+is a single scoring mode; learn that from the examples above.

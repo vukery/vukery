@@ -6,6 +6,17 @@ vukery is in **0.0.x** while it works toward parity with MPF. Every push to
 
 Check your version with `vuk --version`.
 
+## 0.0.31 (2026-11-27)
+
+- **Configuration reference:** `examples/reference` uses every config
+  setting vukery supports, each with its default and choices, and the
+  docs' new [Configuration reference](machine/config-reference.md) page
+  shows its files. Its specs fail when vukery gains a setting it doesn't show.
+- **Unknown settings are refused everywhere:** `hardware:`, `game:`,
+  `media:`, `player_vars:` and `fast:` (and its `net:`, `io_loop:` and
+  `rgb:`) now name a setting they don't know, as the other sections do.
+- `switches: type: NO` works unquoted (YAML reads a bare `NO` as false).
+
 ## 0.0.30 (2026-11-27)
 
 - **Docs site:** the whole menu stays open from page to page, pages show

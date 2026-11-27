@@ -22,6 +22,9 @@ if TYPE_CHECKING:
 SIMULATED_EJECT_SECONDS = 0.1
 
 
+SETTINGS = frozenset({"ball_switches", "eject_coil", "tags", "eject_targets", "mechanical_eject",
+                      "ball_search_order"})   # a ball device's settings in ball_devices:
+
 @dataclass(frozen=True)
 class BallDeviceConfig:
     """One entry of the ``ball_devices:`` section. Keys match MPF."""
@@ -36,8 +39,7 @@ class BallDeviceConfig:
 
     @classmethod
     def from_yaml(cls, name: str, data: dict[str, Any]) -> BallDeviceConfig:
-        supported = {"ball_switches", "eject_coil", "tags", "eject_targets", "mechanical_eject", "ball_search_order"}
-        unsupported = sorted(set(data) - supported)
+        unsupported = sorted(set(data) - SETTINGS)
         if unsupported:
             raise ConfigError(f"ball_devices: {name}: not supported yet: {', '.join(unsupported)}")
 

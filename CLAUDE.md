@@ -113,6 +113,11 @@ think one is wrong, say so instead of working around it.
   never plain `pytest`. It sets the test environment and measures coverage.
 - **Record new decisions** in `notes/DECISIONS.md`, newest first, with what
   was decided, why, and what it costs.
+- **Every config setting is in `examples/reference`.** A section keeps the
+  settings it takes in a named constant (`SETTINGS`…) and refuses anything
+  else. Adding a setting or a section means showing it there, with its
+  default and choices; its specs fail until you do. Nobody should learn a
+  setting exists by searching the code.
 - **Examples are the tutorial.** Code in `examples/` (config, modes, specs) has
   comments on the lines that show a concept (priority, scoring, blocks,
   scenes…), not on every line. Keep them current when an example changes.

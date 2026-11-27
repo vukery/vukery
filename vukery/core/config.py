@@ -15,7 +15,7 @@ value wins wherever both define something.
 import os
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 import yaml
 
@@ -30,6 +30,12 @@ SUPPORTED_SECTIONS = {
     "game", "modes", "player_vars", "logging", "displays", "media", "dashboard", "light_groups",
     "sound_system", "sounds", "sound_pools", "keyboard", "ball_saves", "playfields",
 }
+
+# The settings of the sections read here and there (the others check their own, by their device).
+HARDWARE_SETTINGS = frozenset({"platform"})
+GAME_SETTINGS = frozenset({"balls_per_game", "max_players"})
+MEDIA_SETTINGS = frozenset({"port"})
+PLAYER_VAR_SETTINGS = frozenset({"initial_value", "value_type"})   # value_type: MPF's; the value keeps its own type
 
 # MPF sections that hold game logic. In vukery that's Python, in a mode.
 GAME_LOGIC_SECTIONS = {
@@ -130,4 +136,17 @@ def load_game_config(game_dir: Path, env: str | None = None) -> GameConfig:
     unknown = sorted(set(data) - SUPPORTED_SECTIONS)
     if unknown:
         raise ConfigError(f"Config sections vukery doesn't support (yet): {', '.join(unknown)}")
+    _check_settings(data)
     return GameConfig(game_dir=game_dir, environment=env, data=data)
+
+
+def _check_settings(data: dict[str, Any]) -> None:
+    for section, settings in (("hardware", HARDWARE_SETTINGS), ("game", GAME_SETTINGS), ("media", MEDIA_SETTINGS)):
+        if unknown := sorted(set(mapping(data.get(section), section)) - settings):
+            raise ConfigError(f"{section}: unknown setting(s): {', '.join(unknown)}")
+    for name, spec in mapping(data.get("player_vars"), "player_vars").items():
+        match spec:
+            case dict() if unknown := sorted(set(cast(dict[str, Any], spec)) - PLAYER_VAR_SETTINGS):
+                raise ConfigError(f"player_vars: {name}: unknown setting(s): {', '.join(unknown)}")
+            case _:
+                pass
