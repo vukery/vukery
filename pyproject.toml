@@ -1,6 +1,6 @@
 [project]
 name = "vukery"
-version = "0.0.29"
+version = "0.0.30"
 description = "A very opinionated pinball framework based on the Mission Pinball Framework, built to be simple, lean and LLM-friendly."
 readme = "README.md"
 license = "MIT"
@@ -33,6 +33,7 @@ dev = [
 docs = [
     "mkdocs>=1.6.1",
     "mkdocs-material>=9.8.2",
+    "mkdocs-redirects>=1.2.3",
 ]
 
 [project.scripts]

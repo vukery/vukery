@@ -9,6 +9,12 @@ theme:
   features:
     - content.code.copy
     - navigation.indexes   # a section's first page is its overview (Modes, Built-in modes…)
+    - navigation.sections  # top-level sections are always-open groups in the menu
+    - navigation.expand    # and their subsections start open, so the menu looks the same on every page
+    - navigation.path      # breadcrumbs above each page's title
+    - navigation.instant   # pages load in place: the menu and its scroll position stay put
+    - navigation.tracking
+    - navigation.top
 
 nav:
   - Home: index.md
@@ -44,6 +50,26 @@ nav:
       - Status (0.0.x): status.md
       - Changelog: changelog.md
       - Contributing: contributing.md
+
+plugins:
+  - search
+  # The pages that moved when the docs were reorganized (0.0.29): old links still land
+  - redirects:
+      redirect_maps:
+        getting-started.md: getting-started/index.md
+        writing-a-game.md: getting-started/writing-a-game.md
+        examples.md: getting-started/examples.md
+        testing.md: getting-started/testing.md
+        modes.md: modes/index.md
+        high-score.md: modes/built-in/high-score.md
+        tilt.md: modes/built-in/tilt.md
+        shows.md: media/shows.md
+        scenes.md: media/scenes.md
+        displays.md: media/scenes.md
+        sound.md: media/sound.md
+        cli.md: tools/cli.md
+        dashboard.md: tools/dashboard.md
+        logging.md: tools/logging.md
 
 extra_css:
   - stylesheets/mkdocs.css
