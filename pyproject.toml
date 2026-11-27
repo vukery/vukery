@@ -51,8 +51,28 @@ build-backend = "hatchling.build"
 [tool.ruff]
 line-length = 100
 target-version = "py315"
-# MPF's files, kept verbatim as references (see vukery/_mpf/NOTICE)
-extend-exclude = ["tests/mpf_ported"]
+# Code copied from MPF (with scripts/import_mpf.py; vukery/_mpf/NOTICE lists it) stays close to
+# MPF's original until it's reworked, so its diffs against the import commit stay readable. It isn't
+# held to vukery's strict typing and lint rules; everything else is, and CI checks it.
+# tests/mpf_ported: MPF's own test files, kept verbatim as references.
+extend-exclude = [
+    "tests/mpf_ported",
+    "vukery/core/util.py",
+    "vukery/devices/color_names.py",
+    "vukery/platforms/fast/communicators/base.py",
+    "vukery/platforms/fast/communicators/exp.py",
+    "vukery/platforms/fast/communicators/net_nano.py",
+    "vukery/platforms/fast/communicators/net_neuron.py",
+    "vukery/platforms/fast/communicators/rgb.py",
+    "vukery/platforms/fast/fast_defines.py",
+    "vukery/platforms/fast/fast_driver.py",
+    "vukery/platforms/fast/fast_exp_board.py",
+    "vukery/platforms/fast/fast_io_board.py",
+    "vukery/platforms/fast/fast_led.py",
+    "vukery/platforms/fast/fast_port_detector.py",
+    "vukery/platforms/fast/fast_switch.py",
+    "vukery/platforms/fast/fast.py",
+]
 
 [tool.ruff.lint.per-file-ignores]
 # Game modes declare `slides = {...}` on the class; asking game authors for ClassVar is noise
@@ -62,6 +82,26 @@ extend-exclude = ["tests/mpf_ported"]
 include = ["vukery"]
 typeCheckingMode = "strict"
 pythonVersion = "3.15"
+# Code copied from MPF (with scripts/import_mpf.py; vukery/_mpf/NOTICE lists it) stays close to
+# MPF's original until it's reworked, so its diffs against the import commit stay readable. It isn't
+# held to vukery's strict typing and lint rules; everything else is, and CI checks it.
+exclude = [
+    "vukery/core/util.py",
+    "vukery/devices/color_names.py",
+    "vukery/platforms/fast/communicators/base.py",
+    "vukery/platforms/fast/communicators/exp.py",
+    "vukery/platforms/fast/communicators/net_nano.py",
+    "vukery/platforms/fast/communicators/net_neuron.py",
+    "vukery/platforms/fast/communicators/rgb.py",
+    "vukery/platforms/fast/fast_defines.py",
+    "vukery/platforms/fast/fast_driver.py",
+    "vukery/platforms/fast/fast_exp_board.py",
+    "vukery/platforms/fast/fast_io_board.py",
+    "vukery/platforms/fast/fast_led.py",
+    "vukery/platforms/fast/fast_port_detector.py",
+    "vukery/platforms/fast/fast_switch.py",
+    "vukery/platforms/fast/fast.py",
+]
 
 [tool.coverage.run]
 # uv run pytest --cov: how much of vukery the specs run (CI draws the README badge from it)
