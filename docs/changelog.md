@@ -16,6 +16,7 @@ Check your version with `vuk --version`.
   `media:`, `player_vars:` and `fast:` (and its `net:`, `io_loop:` and
   `rgb:`) now name a setting they don't know, as the other sections do.
 - `switches: type: NO` works unquoted (YAML reads a bare `NO` as false).
+- **Docs site:** Google Analytics.
 
 ## 0.0.30 (2026-11-27)
 
