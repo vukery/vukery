@@ -4,8 +4,8 @@ Both are hardware rules: the controller fires the coil when the switch
 closes, without waiting for vukery. They're switched on at ``ball_started``
 and off at ``ball_will_end`` and ``service_mode_entered``, MPF's defaults.
 
-This first version covers single-wound flippers without an EOS switch, and
-plain autofire coils (slingshots, pop bumpers).
+Flippers: single- and dual-wound, with or without an EOS switch, as MPF's.
+Autofire coils: plain ones (slingshots, pop bumpers).
 """
 
 from dataclasses import dataclass
@@ -13,14 +13,28 @@ from typing import TYPE_CHECKING, Any
 
 from vukery.core.errors import ConfigError
 from vukery.core.log import Logs
+from vukery.core.shows import seconds
 from vukery.core.yaml_values import names
-from vukery.platforms.interfaces import DriverSettings, HoldSettings, PulseSettings, SwitchSettings
+from vukery.platforms.interfaces import (
+    DriverSettings,
+    HoldSettings,
+    PulseSettings,
+    RepulseSettings,
+    SwitchSettings,
+)
 
 if TYPE_CHECKING:
     from vukery.core.machine import Machine
+    from vukery.devices.coil import Coil
 
 DEFAULT_ENABLE = ("ball_started",)
+NO_REPULSE = RepulseSettings(enable_repulse=False, debounce_ms=500)   # MPF's defaults
 DEFAULT_DISABLE = ("ball_will_end", "service_mode_entered")
+
+
+def _ms(value: Any, where: str) -> int:
+    """MPF's ms settings: a number is milliseconds; "500ms" or "0.5s" also work."""
+    return int(value) if isinstance(value, int | float) and not isinstance(value, bool) else round(seconds(value, where) * 1000)
 
 
 def _events(value: Any, default: tuple[str, ...]) -> tuple[str, ...]:
@@ -103,30 +117,115 @@ class AutofireCoil(_Rule):
 
 
 class Flipper(_Rule):
-    """A single-wound flipper: pulse when the button closes, hold, release when it opens."""
+    """A flipper, as MPF's: the button fires the coils through hardware rules.
+
+    | Flipper | Main coil | Hold coil |
+    |---|---|---|
+    | single-wound | pulse, then hold, until the button opens | |
+    | dual-wound | pulse until the button opens | pulse, then hold, until the button opens |
+    | dual-wound, ``use_eos`` | pulse until the button opens or EOS closes | pulse, then hold, until it opens |
+    | single-wound, ``use_eos`` | pulse, then hold; EOS closing cuts it to hold | |
+
+    ``repulse_on_eos_open`` (with ``eos_active_ms_before_repulse``) pulses the
+    main coil again when EOS opens while the button is held: the ball knocked
+    the flipper down.
+    """
 
     kind = "flipper"
+    SETTINGS = frozenset({"main_coil", "hold_coil", "activation_switch", "eos_switch", "use_eos", "repulse_on_eos_open",
+                          "eos_active_ms_before_repulse", "enable_events", "disable_events", "label"})
+
+    def __init__(self, config: RuleConfig, machine: Machine, hold_coil: str | None = None,
+                 eos_switch: str | None = None, use_eos: bool = False,
+                 repulse: RepulseSettings = NO_REPULSE,
+                 label: str | None = None):
+        super().__init__(config, machine)
+        self.hold_coil = machine.coils[hold_coil] if hold_coil else None
+        self.eos_switch = machine.switches[eos_switch] if eos_switch else None
+        self.use_eos = use_eos
+        self.repulse = repulse
+        self.label = label or config.name
+        holder = self.hold_coil or self.coil
+        if self.hold_coil is not None and not self.hold_coil.hold_power():
+            raise ConfigError(f"flippers: {config.name}: hold_coil {self.hold_coil.name} can't be held on: give it "
+                              "default_hold_power, max_hold_power or allow_enable: true")
+        self._holder = holder
 
     @classmethod
     def from_yaml(cls, name: str, data: dict[str, Any], machine: Machine) -> Flipper:
-        later = sorted(set(data) & {"hold_coil", "eos_switch", "use_eos"})
-        if later:
-            raise ConfigError(f"flippers: {name}: {', '.join(later)} isn't supported yet "
-                              "(only single-wound flippers without EOS)")
-        unsupported = sorted(set(data) - {"main_coil", "activation_switch", "enable_events", "disable_events"})
+        unsupported = sorted(set(data) - cls.SETTINGS)
         if unsupported:
             raise ConfigError(f"flippers: {name}: not supported yet: {', '.join(unsupported)}")
+        use_eos = bool(data.get("use_eos", False))
+        if use_eos and not data.get("eos_switch"):
+            raise ConfigError(f"flippers: {name}: use_eos needs an eos_switch")
+        repulse = RepulseSettings(enable_repulse=bool(data.get("repulse_on_eos_open", False)),
+                                  debounce_ms=_ms(data.get("eos_active_ms_before_repulse", 500),
+                                                  f"flippers: {name}: eos_active_ms_before_repulse"))
         return cls(RuleConfig(name=name, coil=data["main_coil"], switch=data["activation_switch"],
                               enable_events=_events(data.get("enable_events"), DEFAULT_ENABLE),
-                              disable_events=_events(data.get("disable_events"), DEFAULT_DISABLE)), machine)
+                              disable_events=_events(data.get("disable_events"), DEFAULT_DISABLE)), machine,
+                   hold_coil=data.get("hold_coil"), eos_switch=data.get("eos_switch"), use_eos=use_eos,
+                   repulse=repulse, label=data.get("label"))
+
+    @property
+    def dual_wound(self) -> bool:
+        return self.hold_coil is not None
+
+    def coils(self) -> list[Coil]:
+        return [self.coil, *([self.hold_coil] if self.hold_coil is not None else [])]
+
+    def _driver(self, coil: Coil, hold: bool) -> DriverSettings:
+        power = coil.hold_power() if hold else None
+        return DriverSettings(hw_driver=coil.hw_driver,
+                              pulse_settings=PulseSettings(power=coil.pulse_power(), duration=coil.pulse_ms()),
+                              hold_settings=HoldSettings(power=power) if power else None, recycle=False)
 
     def _driver_settings(self) -> DriverSettings:
-        hold = self.coil.hold_power()
-        return DriverSettings(hw_driver=self.coil.hw_driver,
-                              pulse_settings=PulseSettings(power=self.coil.pulse_power(), duration=self.coil.pulse_ms()),
-                              hold_settings=HoldSettings(power=hold) if hold else None, recycle=False)
+        return self._driver(self.coil, hold=not self.dual_wound)
+
+    def _switch(self, switch: Any) -> SwitchSettings:
+        return SwitchSettings(hw_switch=switch.hw, invert=switch.invert, debounce=False)
 
     def enable(self) -> None:
+        if self.enabled:
+            return
+        platform = self.machine.platform
+        button = self._switch(self.switch)
+        match self.dual_wound, self.use_eos:
+            case True, True:
+                platform.set_pulse_on_hit_and_release_and_disable_rule(
+                    button, self._switch(self.eos_switch), self._driver(self.coil, hold=False), self.repulse)
+            case True, False:
+                platform.set_pulse_on_hit_and_release_rule(button, self._driver(self.coil, hold=False))
+            case False, True:
+                platform.set_pulse_on_hit_and_enable_and_release_and_disable_rule(
+                    button, self._switch(self.eos_switch), self._driver(self.coil, hold=True), self.repulse)
+            case _:
+                platform.set_pulse_on_hit_and_enable_and_release_rule(button, self._driver(self.coil, hold=True))
+        if self.hold_coil is not None:
+            platform.set_pulse_on_hit_and_enable_and_release_rule(button, self._driver(self.hold_coil, hold=True))
+        self.enabled = True
+
+    def disable(self) -> None:
+        """Clear every rule it set, as MPF's does: the button's and EOS's on the main coil, the button's on the hold coil."""
         if not self.enabled:
-            self.machine.platform.set_pulse_on_hit_and_enable_and_release_rule(*self._settings())
-            self.enabled = True
+            return
+        platform = self.machine.platform
+        main = self._driver(self.coil, hold=not self.dual_wound)
+        platform.clear_hw_rule(self._switch(self.switch), main)
+        if self.use_eos and self.eos_switch is not None:
+            platform.clear_hw_rule(self._switch(self.eos_switch), main)
+        if self.hold_coil is not None:
+            platform.clear_hw_rule(self._switch(self.switch), self._driver(self.hold_coil, hold=True))
+        self.enabled = False
+
+    def driven(self) -> set[str]:
+        """The coils its rules hold on right now (for vuk me): the hold coil while the button is down,
+        and the main coil until EOS closes."""
+        if not (self.enabled and self.switch.state):
+            return set()
+        on: set[str] = {self.hold_coil.name} if self.hold_coil is not None else set()
+        if not (self.use_eos and self.eos_switch is not None and self.eos_switch.state and self.dual_wound):
+            on.add(self.coil.name)
+        return on

@@ -3,7 +3,7 @@
 Each ``it_`` names the MPF test it comes from. Differences from MPF:
 - MPF's config also has a digital output and a motor on driver 0x01. vukery has
   neither device yet, so their two driver commands are left out.
-- Flipper scenarios come later (they need the flipper device).
+- The EOS flipper scenario is MPF's Neuron one, on the Nano's numbers.
 """
 
 import pytest
@@ -224,6 +224,22 @@ def describe_fast_nano():
             rig.expect("com6", {"TN:20,02": "TN:P", "TN:21,02": "TN:P"})
             rig.platform.clear_hw_rule(*main)
             rig.platform.clear_hw_rule(*hold)
+            expect(rig.sent("com6")).to_be_true()
+
+        def it_cuts_a_dual_wound_flippers_main_coil_at_eos(rig):  # MPF: test_flipper_two_coils_with_eos (Neuron)
+            from vukery.platforms.interfaces import RepulseSettings, SwitchSettings
+
+            main = rig.flipper_rule("c_flipper_main", "s_flipper", hold=False)
+            hold = rig.flipper_rule("c_flipper_hold", "s_flipper")
+            eos_switch, invert = rig.switches["s_flipper_eos"]
+            eos = SwitchSettings(hw_switch=eos_switch, invert=invert, debounce=False)
+            # main: pulse, cut off by EOS (0x02). pwm2_power is 01 here because this config's main coil has
+            # default_hold_power 0.125, which MPF's FAST code sends too (its Neuron test's coil has none: 00)
+            rig.expect("com6", {"DN:20,01,01,75,02,0A,00,01,00": "DN:P",
+                                "DN:21,01,01,18,0A,FF,01,00,00": "DN:P"})  # hold: pulse, hold, release
+            rig.platform.set_pulse_on_hit_and_release_and_disable_rule(
+                main[0], eos, main[1], RepulseSettings(enable_repulse=False, debounce_ms=500))
+            rig.platform.set_pulse_on_hit_and_enable_and_release_rule(*hold)
             expect(rig.sent("com6")).to_be_true()
 
     def describe_numbers():  # what a typo in a machine's wiring config gets you

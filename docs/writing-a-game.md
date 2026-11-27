@@ -2,7 +2,7 @@
 
 !!! note "0.0.x"
     The game engine runs on the simulated `development` and `test`
-    platforms: switches, coils, lights, a simple trough, single-wound
+    platforms: switches, coils, lights, a simple trough, single- and dual-wound
     flippers, autofire coils, the attract and game modes, and your own
     modes, [shows](shows.md), and scenes on displays ([Displays and scenes](scenes.md)).
     [Sound](sound.md) too. Ball saves and tilt come later. The complete examples are
@@ -81,7 +81,7 @@ octal number.
 
 **Supported sections so far:** `switches`, `coils`, `lights`,
 `light_groups`, `ball_devices` (troughs and plunger lanes, see below),
-`flippers` (single-wound, no EOS),
+[`flippers`](devices/flippers.md) (single- and dual-wound, with EOS),
 `autofire_coils`, `game`, `modes`, `player_vars`, `displays`, `media`,
 `sound_system`, `sounds`, `sound_pools` ([Sound](sound.md)),
 `keyboard` ([the dashboard](dashboard.md#keys)),

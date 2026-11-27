@@ -30,6 +30,7 @@ nav:
       - FAST: hardware/fast.md
   - Devices:
       - Coils: devices/coils.md
+      - Flippers: devices/flippers.md
       - Lights: devices/lights.md
 
 extra_css:
