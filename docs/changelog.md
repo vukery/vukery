@@ -6,6 +6,13 @@ vukery is in **0.0.x** while it works toward parity with MPF. Every push to
 
 Check your version with `vuk --version`.
 
+## 0.0.26 (2026-11-26)
+
+- **Dual-wound flippers and EOS switches**, as MPF's: `hold_coil`,
+  `eos_switch`, `use_eos`, `repulse_on_eos_open`. Each kind of flipper sets
+  MPF's hardware rules (on FAST, driver modes 18, 75 and 20). `vuk me` shows
+  which coils the rules hold on. See [Flippers](devices/flippers.md).
+
 ## 0.0.25 (2026-11-26)
 
 - **Fixed:** specs wrote high score tables into the machine's `data/`

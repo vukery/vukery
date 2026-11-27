@@ -88,7 +88,7 @@ def layout(machine: Machine) -> dict[str, Any]:
         "coils": [{"name": name} for name in machine.coils],
         "ball_devices": [{"name": name, "switches": list(d.config.ball_switches)}
                          for name, d in machine.ball_devices.items()],
-        "flippers": [{"name": name, "coil": f.coil.name, "switch": f.switch.name}
+        "flippers": [{"name": name, "coil": (f.hold_coil or f.coil).name, "switch": f.switch.name}
                      for name, f in machine.flippers.items()],
         "autofire_coils": [{"name": name, "coil": a.coil.name, "switch": a.switch.name}
                            for name, a in machine.autofire_coils.items()],
@@ -114,7 +114,8 @@ def _hex(color: tuple[int, ...]) -> str:
 def snapshot(machine: Machine) -> dict[str, Any]:
     """The machine's state right now. The server sends it when it differs from the last one."""
     rules = [*machine.flippers.values(), *machine.autofire_coils.values()]
-    driven = {r.coil.name for r in rules if r.enabled and r.switch.state}  # fired by a hardware rule
+    driven = {r.coil.name for r in machine.autofire_coils.values() if r.enabled and r.switch.state}
+    driven |= {name for f in machine.flippers.values() for name in f.driven()}   # held on by a hardware rule
     return {
         "switches": {name: s.state for name, s in machine.switches.switches.items()},
         "lights": {name: _hex(light.current_color()) for name, light in machine.lights.items()},

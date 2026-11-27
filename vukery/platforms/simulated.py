@@ -155,6 +155,19 @@ class SimulatedPlatform(Logs):
                                                      coil: DriverSettings) -> None:
         self.rules[(enable_switch.hw_switch.number, coil.hw_driver.number)] = "pulse_on_hit_and_enable_and_release"
 
+    def set_pulse_on_hit_and_release_rule(self, enable_switch: SwitchSettings, coil: DriverSettings) -> None:
+        self.rules[(enable_switch.hw_switch.number, coil.hw_driver.number)] = "pulse_on_hit_and_release"
+
+    def set_pulse_on_hit_and_release_and_disable_rule(self, enable_switch: SwitchSettings, eos_switch: SwitchSettings,
+                                                      coil: DriverSettings, repulse_settings: Any = None) -> None:
+        self.rules[(enable_switch.hw_switch.number, coil.hw_driver.number)] = "pulse_on_hit_and_release_and_disable"
+
+    def set_pulse_on_hit_and_enable_and_release_and_disable_rule(self, enable_switch: SwitchSettings,
+                                                                 eos_switch: SwitchSettings, coil: DriverSettings,
+                                                                 repulse_settings: Any = None) -> None:
+        self.rules[(enable_switch.hw_switch.number, coil.hw_driver.number)] = \
+            "pulse_on_hit_and_enable_and_release_and_disable"
+
     def clear_hw_rule(self, switch: SwitchSettings, coil: DriverSettings) -> None:
         self.rules.pop((switch.hw_switch.number, coil.hw_driver.number), None)
 

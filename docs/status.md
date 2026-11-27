@@ -17,7 +17,7 @@ rest of the docs never describe something as if it already works.
 | FAST Nano: RGB port | Built and tested: LEDs, colors, fades. | [FAST hardware](hardware/fast.md) |
 | FAST port auto-detection | Built and tested (`port: auto`). | [FAST hardware](hardware/fast.md) |
 | Coils | Built: MPF's settings, with limits enforced in the engine. | [Coils](devices/coils.md) |
-| Troughs, flippers, autofire coils | First versions: a simple trough (count, eject, drain), a mechanical plunger lane (`eject_targets`, simulated as on smart_virtual), single-wound flippers, slingshots and pop bumpers. MPF's full ball device logic comes later. | [Writing a game](writing-a-game.md) |
+| Troughs, flippers, autofire coils | First versions: a simple trough (count, eject, drain), a mechanical plunger lane (`eject_targets`, simulated as on smart_virtual), [flippers](devices/flippers.md), single- and dual-wound, with or without EOS (as MPF's), slingshots and pop bumpers. MPF's full ball device logic comes later. | [Writing a game](writing-a-game.md) |
 | Lights | Built: MPF's channel numbering, colors, fades, RGBW, MPF's priority stack, light groups. | [Lights](devices/lights.md) |
 | FAST Neuron and EXP boards | Planned, after COMBAT. | |
 | Built-in modes | Built: attract and game (core), [high score](high-score.md) (optional: initials, award screens, saved tables). Sealed: a game changes only what each declares, and replaces only the optional ones. | [Modes](modes.md#built-in-modes) |
