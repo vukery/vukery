@@ -65,6 +65,10 @@ think one is wrong, say so instead of working around it.
 
 - Python 3.15. Use `uv`, `ruff`, `pyright` in strict mode, `pytest-cov`
   and `pytest`.
+- **Run `uv run pyright` and `uv run ruff check vukery tests examples scripts`
+  on the whole project before committing**, not just the files you changed;
+  CI fails on either. Files copied from MPF are listed in `pyproject.toml`
+  and left out of both; add a new copy there, and nothing else.
 - **Prefer `match` / `case` over chains of `if` / `elif` / `else`** wherever
   it fits: dispatching on values, types, config shapes or message headers.
   Plain `if` is fine for a single condition or guard. Code copied from MPF

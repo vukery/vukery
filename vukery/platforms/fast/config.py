@@ -7,9 +7,10 @@ https://github.com/missionpinball/mpf/blob/9ef886f4f263db44704f09a87bfd11229036a
 
 import re
 from dataclasses import dataclass, field
-from typing import Any
+from typing import Any, cast
 
 from vukery.core.errors import ConfigError
+from vukery.core.yaml_values import mapping
 
 CONTROLLERS = ("nano", "neuron")
 
@@ -30,7 +31,11 @@ def ms(value: Any) -> int:
 def ports(value: Any) -> list[str]:
     if value is None:
         return ["auto"]
-    return [str(p) for p in value] if isinstance(value, list) else [str(value)]
+    match value:
+        case list():
+            return [str(port) for port in cast(list[Any], value)]
+        case _:
+            return [str(value)]
 
 
 @dataclass(frozen=True)
@@ -63,7 +68,7 @@ class NetConfig:
             )
         io_loop = {
             str(name): IoBoardConfig(name=str(name), model=str(board["model"]), order=int(board["order"]))
-            for name, board in (data.get("io_loop") or {}).items()
+            for name, board in mapping(data.get("io_loop"), "fast: net: io_loop").items()
         }
         orders = sorted(board.order for board in io_loop.values())
         if orders != list(range(1, len(orders) + 1)):
