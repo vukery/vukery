@@ -1,6 +1,9 @@
 # Get VUKed!
 
+[![specs](https://github.com/vukery/vukery/actions/workflows/specs.yml/badge.svg)](https://github.com/vukery/vukery/actions/workflows/specs.yml)
 [![coverage](https://raw.githubusercontent.com/vukery/vukery/badges/coverage.svg)](https://github.com/vukery/vukery/actions/workflows/specs.yml)
+[![types](https://github.com/vukery/vukery/actions/workflows/types.yml/badge.svg)](https://github.com/vukery/vukery/actions/workflows/types.yml)
+[![lint](https://github.com/vukery/vukery/actions/workflows/lint.yml/badge.svg)](https://github.com/vukery/vukery/actions/workflows/lint.yml)
 
 An AI-assisted total vukery of a pinball framework with a different mission.
 

@@ -1,0 +1,21 @@
+# Checks types with pyright, in strict mode. MPF's copied files are listed in
+# pyproject.toml and left out; everything else must pass.
+name: Types
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  types:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - name: Install (uv installs Python 3.15 too)
+        run: uv sync
+      - name: pyright (strict)
+        run: uv run pyright

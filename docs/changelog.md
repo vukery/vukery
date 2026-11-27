@@ -15,7 +15,8 @@ Check your version with `vuk --version`.
   `playfields: playfield:`. See [Ball search](devices/ball-search.md).
 - `game.end_game()`.
 - **Strict types and lint, checked in CI:** pyright (strict) and ruff now run
-  on every push, on all of vukery except the files copied from MPF.
+  on every push, on all of vukery except the files copied from MPF. Specs,
+  types and lint are separate workflows, each with a badge in the README.
 
 ## 0.0.28 (2026-11-26)
 
