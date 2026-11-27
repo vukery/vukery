@@ -67,6 +67,30 @@ dashboard:
 A switch or light can be in the backbox or on the playfield, not both, and
 the names have to be switches or lights in the machine config.
 
+## Your own playfield and backbox
+
+`vuk me` draws a wooden playfield and backbox until the machine has its own
+pictures. Put either or both in the machine's `assets/images/` folder, named
+by what they show:
+
+```text
+assets/images/
+  playfield.jpg     a photo or scan of the playfield, straight on
+  backbox.png       the backglass
+```
+
+`.png`, `.jpg` and `.jpeg` all work. There's no setting: the file being
+there is the setting, as with any asset, and the machine's own file wins
+over vukery's.
+
+- **The playfield pane is 1:2.** A picture of another shape is stretched to
+  fit, and positions are fractions of the picture, so they stay where you
+  placed them.
+- **Flippers:** on vukery's own playfield, `vuk me` draws a flipper going
+  up while its coil is on. That's drawn to match vukery's art, so it isn't
+  drawn over yours.
+- A picture it can't read is logged, and vukery's is drawn instead.
+
 ## Resizing the panes
 
 **Drag the edge between two panes** to resize them: the list's edge (5% to
@@ -118,9 +142,9 @@ dashboard:
 
 ## Status (0.0.x)
 
-Works: everything above, on the simulated platforms. Planned:
-- your own backbox and playfield artwork;
-- trying it against real hardware (FAST Nano) with `--hardware`.
+Works: everything above, on the simulated platforms, including your own
+playfield and backbox pictures. Planned: trying it against real hardware
+(FAST Nano) with `--hardware`.
 
 ## Coming from MPF
 
@@ -129,4 +153,5 @@ Works: everything above, on the simulated platforms. Planned:
 | `mpf both` plus `mpf monitor` | `vuk me` |
 | MPF Monitor's `monitor.yaml` positions | `dashboard: playfield:` and `backbox:` in `config/dashboard.yaml` |
 | dragging a device onto the playfield image in MPF Monitor | dragging it from the list onto the playfield or backbox |
+| MPF Monitor's `playfield.jpg` | `assets/images/playfield.jpg` (positions from `monitor.yaml` line up with it) |
 | clicking a switch in MPF Monitor | clicking it on the dashboard (right-click locks it) |

@@ -18,6 +18,7 @@ from collections.abc import Sequence
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any
 
+from vukery.core.assets import ARTWORK, artwork
 from vukery.core.errors import ConfigError
 from vukery.core.yaml_values import mapping
 from vukery.media.arrangement import PLACES, Arrangement
@@ -99,6 +100,9 @@ def layout(machine: Machine) -> dict[str, Any]:
         "arrangement_lock": settings.arrangement_lock,
         "config_file": str(machine.config.game_dir / "config" / "dashboard.yaml"),  # where vuk me saves the layout
         "switch_input": machine.platform_is_simulated(),
+        # the machine's assets/images/playfield.png and backbox.png, or vukery's own
+        "artwork": {name: {"file": str(path), "own": own}
+                    for name in ARTWORK for path, own in [artwork(machine.config.game_dir, name)]},
     }
 
 

@@ -99,6 +99,7 @@ class GameConfig:
 
 def load_game_config(game_dir: Path, env: str | None = None) -> GameConfig:
     env = env or environment()
+    game_dir = game_dir.resolve()   # absolute: media controllers open its files from other folders
     config_dir = game_dir / "config"
     if not config_dir.is_dir():
         raise ConfigError(f"{game_dir} has no config/ folder. Is this a vukery game?")

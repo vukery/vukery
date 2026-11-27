@@ -79,6 +79,48 @@ def describe_the_engine_side():
         expect(rig.dashboard.coil_on("c_right_flipper")).to_equal(False)
 
 
+def describe_artwork():  # assets/images/playfield.* and backbox.* in the machine folder
+    def it_draws_vukerys_own_without_the_machines(rig):
+        artwork = rig.dashboard.layout["artwork"]
+        expect(artwork["playfield"]["own"]).to_be_false()
+        expect(artwork["playfield"]["file"]).to_contain("vukery/assets/playfield.jpg")
+        expect(artwork["backbox"]["own"]).to_be_false()
+
+    def it_draws_the_machines_own_playfield_or_backbox(tmp_path):
+        from tests.helpers import basic_machine
+
+        folder = basic_machine(tmp_path, files={"assets/images/playfield.png": "a picture",
+                                                "assets/images/backbox.JPG": "another"})
+        mine = GameRig(folder, dashboard=True)
+        try:
+            artwork = mine.dashboard.layout["artwork"]
+            expect(artwork["playfield"]).to_equal({"file": str(folder / "assets/images/playfield.png"), "own": True})
+            expect(artwork["backbox"]["file"].lower()).to_contain("backbox.jpg")   # found whatever the case
+            expect(artwork["backbox"]["own"]).to_be_true()
+        finally:
+            mine.stop()
+
+    def it_gives_the_full_path_for_a_machine_started_from_its_own_folder(tmp_path, monkeypatch):
+        from tests.helpers import basic_machine
+
+        folder = basic_machine(tmp_path, files={"assets/images/playfield.png": "a picture"})
+        monkeypatch.chdir(folder)
+        mine = GameRig(".", dashboard=True)   # vuk me in the machine folder (the dashboard may run elsewhere)
+        try:
+            expect(mine.dashboard.layout["artwork"]["playfield"]["file"]).to_equal(
+                str(folder.resolve() / "assets/images/playfield.png"))
+        finally:
+            mine.stop()
+
+    def it_finds_assets_by_name_whatever_the_extension(tmp_path):
+        from vukery.core.assets import IMAGE_FILES, find
+
+        (tmp_path / "assets" / "images").mkdir(parents=True)
+        (tmp_path / "assets" / "images" / "attract.jpeg").write_text("x")
+        expect(find(tmp_path, "images", "attract", IMAGE_FILES).name).to_equal("attract.jpeg")
+        expect(find(tmp_path, "images", "missing", IMAGE_FILES)).to_be_none()
+
+
 def describe_what_the_dashboard_can_send():
     def it_presses_switches(rig):
         _from_dashboard(rig, type="switch", name="s_start", state=1)
