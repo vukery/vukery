@@ -1,6 +1,6 @@
 [project]
 name = "vukery"
-version = "0.0.31"
+version = "0.0.32"
 description = "A very opinionated pinball framework based on the Mission Pinball Framework, built to be simple, lean and LLM-friendly."
 readme = "README.md"
 license = "MIT"

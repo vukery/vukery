@@ -6,6 +6,12 @@ vukery is in **0.0.x** while it works toward parity with MPF. Every push to
 
 Check your version with `vuk --version`.
 
+## 0.0.32 (2026-11-27)
+
+- **Docs site:** `/modes/` and `/getting-started/` no longer redirect to
+  themselves. Their redirects from 0.0.30 pointed from a page's own address;
+  a spec now refuses that.
+
 ## 0.0.31 (2026-11-27)
 
 - **Configuration reference:** `examples/reference` uses every config
