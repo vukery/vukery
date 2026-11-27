@@ -32,10 +32,11 @@ class BallDeviceConfig:
     tags: tuple[str, ...] = ()
     eject_targets: tuple[str, ...] = ("playfield",)
     mechanical_eject: bool = False   # a plunger the player pulls: the ball leaves when they shoot it
+    ball_search_order: int = 200     # MPF's default; 0 leaves it out of ball search
 
     @classmethod
     def from_yaml(cls, name: str, data: dict[str, Any]) -> BallDeviceConfig:
-        supported = {"ball_switches", "eject_coil", "tags", "eject_targets", "mechanical_eject"}
+        supported = {"ball_switches", "eject_coil", "tags", "eject_targets", "mechanical_eject", "ball_search_order"}
         unsupported = sorted(set(data) - supported)
         if unsupported:
             raise ConfigError(f"ball_devices: {name}: not supported yet: {', '.join(unsupported)}")
@@ -46,7 +47,8 @@ class BallDeviceConfig:
         targets = names(data.get("eject_targets"), f"ball_devices: {name}: eject_targets") or ("playfield",)
         return cls(name=name, ball_switches=switches, eject_coil=data.get("eject_coil"),
                    tags=names(data.get("tags"), f"ball_devices: {name}: tags"), eject_targets=targets,
-                   mechanical_eject=bool(data.get("mechanical_eject", False)))
+                   mechanical_eject=bool(data.get("mechanical_eject", False)),
+                   ball_search_order=int(data.get("ball_search_order", 200)))
 
 
 class BallDevice(Logs):
@@ -102,6 +104,17 @@ class BallDevice(Logs):
                 if target is not None:
                     self.machine.clock.call_later(2 * SIMULATED_EJECT_SECONDS, target.receive_simulated_ball)
                 return
+
+    def ball_search(self, phase: int, iteration: int) -> bool:
+        """MPF's default ball device search: phase 1, pulse if empty; then pulse anyway, except the trough."""
+        if self.coil is None or "no-eject-on-ballsearch" in self.config.tags:
+            return False
+        if phase == 1 and self.balls > 0:
+            return False
+        if phase > 1 and "trough" in self.config.tags:
+            return False
+        self.coil.pulse()
+        return True
 
     def receive_simulated_ball(self) -> None:
         """Simulated: a ball arrives, on the first empty ball switch (none if it's full)."""

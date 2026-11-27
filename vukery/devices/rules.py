@@ -97,13 +97,29 @@ class AutofireCoil(_Rule):
 
     @classmethod
     def from_yaml(cls, name: str, data: dict[str, Any], machine: Machine) -> AutofireCoil:
-        unsupported = sorted(set(data) - {"coil", "switch", "reverse_switch", "enable_events", "disable_events"})
+        unsupported = sorted(set(data) - {"coil", "switch", "reverse_switch", "enable_events", "disable_events",
+                                          "ball_search_order"})
         if unsupported:
             raise ConfigError(f"autofire_coils: {name}: not supported yet: {', '.join(unsupported)}")
-        return cls(RuleConfig(name=name, coil=data["coil"], switch=data["switch"],
-                              reverse_switch=bool(data.get("reverse_switch", False)),
-                              enable_events=_events(data.get("enable_events"), DEFAULT_ENABLE),
-                              disable_events=_events(data.get("disable_events"), DEFAULT_DISABLE)), machine)
+        autofire = cls(RuleConfig(name=name, coil=data["coil"], switch=data["switch"],
+                                  reverse_switch=bool(data.get("reverse_switch", False)),
+                                  enable_events=_events(data.get("enable_events"), DEFAULT_ENABLE),
+                                  disable_events=_events(data.get("disable_events"), DEFAULT_DISABLE)), machine)
+        autofire.ball_search_order = int(data.get("ball_search_order", 100))   # MPF's default; 0: left out
+        return autofire
+
+    ball_search_order = 100
+    _searched_until = 0.0
+
+    def ball_search(self, phase: int, iteration: int) -> bool:
+        """Pulse the coil; a hit on its switch in the next 200 ms is the pulse, not the ball (as MPF's)."""
+        self._searched_until = self.machine.clock.now() + 0.2
+        self.coil.pulse()
+        return True
+
+    def hit_by_ball(self) -> bool:
+        """Whether a hit on its switch now is the ball (not ball search's own pulse)."""
+        return self.machine.clock.now() >= self._searched_until
 
     def _driver_settings(self) -> DriverSettings:
         return DriverSettings(hw_driver=self.coil.hw_driver,

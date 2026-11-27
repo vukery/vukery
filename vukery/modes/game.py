@@ -156,6 +156,11 @@ class Game(BuiltInMode, built_in=True):
         if self.balls_in_play == 0:
             self.end_ball()
 
+    def end_game(self) -> None:
+        """End the game after this ball, ending the ball now (e.g. when ball search gives up on the last ball)."""
+        self.ending = True
+        self.end_ball()
+
     def end_ball(self) -> None:
         """End the current ball now (e.g. after a tilt)."""
         self.balls_in_play = 0
