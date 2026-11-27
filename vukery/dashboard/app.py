@@ -215,10 +215,16 @@ class DashboardView:
 
     def _image(self, name: str) -> Any:
         import pyglet
+        from pyglet.image.codecs import ImageDecodeException
 
-        if name not in self.images:
-            self.images[name] = pyglet.image.load(str(ASSETS / f"{name}.jpg"))
-        return self.images[name]
+        file = str(self.state.layout.get("artwork", {}).get(name, {}).get("file") or ASSETS / f"{name}.jpg")
+        if file not in self.images:
+            try:
+                self.images[file] = pyglet.image.load(file)
+            except (OSError, ImageDecodeException):   # a picture it can't read: draw vukery's, and say so
+                log.warning("Can't load %s; drawing vukery's %s instead", file, name)
+                self.images[file] = pyglet.image.load(str(ASSETS / f"{name}.jpg"))
+        return self.images[file]
 
     def build(self) -> None:
         import pyglet
@@ -319,7 +325,8 @@ class DashboardView:
         sprite = pyglet.sprite.Sprite(image, x=area.x, y=area.y, batch=self.batch, group=self.groups[1])
         sprite.scale_x, sprite.scale_y = area.w / image.width, area.h / image.height
         self.keep.append(sprite)
-        if place == "playfield":  # the art shows the flippers at rest; this one is drawn while its coil is on
+        own_art = self.state.layout.get("artwork", {}).get(place, {}).get("own", False)
+        if place == "playfield" and not own_art:  # vukery's art shows the flippers at rest; this is drawn while on
             length = area.w * lay.FLIPPER_LENGTH
             for name, (fx, fy, direction) in lay.flipper_spots(self.state.layout).items():
                 x, y = area.at(fx, fy)
