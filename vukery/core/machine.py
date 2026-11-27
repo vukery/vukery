@@ -32,6 +32,7 @@ from vukery.core.shows import Shows
 from vukery.core.switches import SwitchConfig, SwitchController
 from vukery.devices.ball_device import BallDevice, BallDeviceConfig
 from vukery.devices.ball_save import BallSave, BallSaveConfig
+from vukery.devices.ball_search import BallSearch, PlayfieldConfig
 from vukery.devices.coil import Coil, CoilConfig
 from vukery.devices.light import Light, LightConfig
 from vukery.devices.light_group import LightGroup
@@ -79,6 +80,7 @@ class Machine(Logs):
         self.flippers: dict[str, Flipper] = {}
         self.autofire_coils: dict[str, AutofireCoil] = {}
         self.ball_saves: dict[str, BallSave] = {}
+        self.ball_search = BallSearch(PlayfieldConfig.from_yaml(config.section("playfields")), self)
         self.keyboard: dict[str, keyboard.Key] = {}
         self.data_dir = config.game_dir / "data"   # what the machine keeps (high scores…); specs use a temp folder
         self._calls: dict[str, Any] = {}
@@ -188,6 +190,7 @@ class Machine(Logs):
         self.keyboard = keyboard.load(config.section("keyboard"), set(self.switches.switches))  # vuk me's keys
         for name, entry in config.section("ball_saves").items():
             self.ball_saves[name] = BallSave(BallSaveConfig.from_yaml(name, entry or {}), self)
+        self._set_up_ball_search()
         self.events.add_handler("request_to_start_game", self._balls_home_check, priority=100)
 
     def _fill_troughs(self) -> None:
@@ -242,9 +245,46 @@ class Machine(Logs):
                 return device
         return None
 
+    def _set_up_ball_search(self) -> None:
+        """The devices that take part, what counts as the ball moving, and how many balls are out."""
+        search = self.ball_search
+        for device in self.ball_devices.values():
+            if device.coil is not None and device.config.ball_search_order:
+                search.register(device.config.ball_search_order, device.ball_search, device.name)
+        for autofire in self.autofire_coils.values():
+            if autofire.ball_search_order:
+                search.register(autofire.ball_search_order, autofire.ball_search, autofire.name)
+                self.events.add_handler(f"{autofire.switch.name}_active", self._autofire_hit(autofire))
+        self.events.add_handler("sw_playfield_active", self._playfield_active)
+        for event in ("ball_started", "ball_ended", "game_ended"):
+            self.events.add_handler(event, self._count_playfield_balls, priority=-2000)
+        self.events.add_handler("ball_drain", self._count_playfield_balls, priority=-2000)   # after the game counts it
+        for device in self.ball_devices.values():
+            if device.config.mechanical_eject:
+                for switch in device.config.ball_switches:
+                    for state in ("active", "inactive"):
+                        self.events.add_handler(f"{switch}_{state}", self._count_playfield_balls)
+
+    def _autofire_hit(self, autofire: AutofireCoil) -> Callable[..., None]:
+        """An autofire coil's switch is playfield activity, unless ball search just pulsed the coil (MPF)."""
+        def hit(**_: Any) -> None:
+            if autofire.hit_by_ball():
+                self.ball_search.playfield_active()
+        return hit
+
+    def _playfield_active(self, **_: Any) -> None:
+        self.ball_search.playfield_active()
+
+    def _count_playfield_balls(self, **_: Any) -> None:
+        """Balls on the playfield: in play, and not waiting in a plunger lane."""
+        game = self.game
+        waiting = sum(d.balls for d in self.ball_devices.values() if d.config.mechanical_eject)
+        self.ball_search.balls_on_playfield(max(game.balls_in_play - waiting, 0) if game else 0)
+
     def _balls_home_check(self, **_: Any) -> bool:
         home = [d for d in self.ball_devices.values() if "home" in d.config.tags or "trough" in d.config.tags]
-        if all(d.is_full for d in home):
+        known = sum(d.capacity for d in home) - self.ball_search.lost_balls   # less any ball search gave up on
+        if sum(d.balls for d in home) >= known:
             return True
         self.warning_log("Not starting a game: not every ball is home (%s)",
                          ", ".join(f"{d.name} {d.balls}/{d.capacity}" for d in home))

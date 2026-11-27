@@ -5,7 +5,7 @@
     platforms: switches, coils, lights, a simple trough, single- and dual-wound
     flippers, autofire coils, the attract and game modes, and your own
     modes, [shows](shows.md), and scenes on displays ([Displays and scenes](scenes.md)).
-    [Sound](sound.md) too. Ball search and multiball come later. The complete examples are
+    [Sound](sound.md) too. Multiball comes later. The complete examples are
     [`examples/basic` and `examples/display`](examples.md).
 
 ## A game folder
@@ -81,7 +81,7 @@ octal number.
 
 **Supported sections so far:** `switches`, `coils`, `lights`,
 `light_groups`, `ball_devices` (troughs and plunger lanes, see below),
-[`ball_saves`](devices/ball-saves.md),
+[`ball_saves`](devices/ball-saves.md), `playfields` ([ball search](devices/ball-search.md)),
 [`flippers`](devices/flippers.md) (single- and dual-wound, with EOS),
 `autofire_coils`, `game`, `modes`, `player_vars`, `displays`, `media`,
 `sound_system`, `sounds`, `sound_pools` ([Sound](sound.md)),
@@ -90,7 +90,7 @@ octal number.
 
 **Ball devices:** a trough (`tags: trough`) and a mechanical plunger lane
 (`mechanical_eject: true`), with MPF's settings `ball_switches`,
-`eject_coil`, `eject_targets` and `tags`. A device tagged `drain` reports
+`eject_coil`, `eject_targets`, `tags` and `ball_search_order`. A device tagged `drain` reports
 drains. On the simulated platforms, as on MPF's smart_virtual platform, balls
 start in the trough, and an eject moves the ball into its eject target:
 

@@ -412,9 +412,13 @@ class ModeController:
                 self.machine.events.remove_handlers(handlers)
                 queue.clear()
 
+        def stopped_handler(name: str) -> Callable[..., None]:
+            def handler(**_: Any) -> None:
+                stopped(name)
+            return handler
+
         for mode in stopping:
-            handlers.append(self.machine.events.add_handler(
-                f"mode_{mode.name}_stopped", lambda name=mode.name, **_: stopped(name)))
+            handlers.append(self.machine.events.add_handler(f"mode_{mode.name}_stopped", stopped_handler(mode.name)))
         for mode in stopping:
             mode.stop()
 
