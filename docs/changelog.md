@@ -6,6 +6,13 @@ vukery is in **0.0.x** while it works toward parity with MPF. Every push to
 
 Check your version with `vuk --version`.
 
+## 0.0.28 (2026-11-26)
+
+- **Ball saves**, MPF's `ball_saves:` device: as many as a game needs, each
+  enabled by its events or from a mode, with its clock, hurry-up, grace
+  period, how many balls, only the last ball, and eject delay. See
+  [Ball saves](devices/ball-saves.md).
+
 ## 0.0.27 (2026-11-26)
 
 - **Tilt** (MPF's `tilt`), an optional built-in mode: plumb bob warnings,
