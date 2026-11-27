@@ -103,6 +103,7 @@ class HighScore(BuiltInMode, built_in=True):
     customizable = frozenset({"categories", "defaults", "enter_initials_seconds", "award_seconds", "look"})
     priority = 500                     # over everything, as in MPF
     start_on = "game_ending"
+    use_wait_queue = True              # the game ends after it, as in MPF
     game_mode = False                  # it runs as the game ends
     stop_on_ball_end = False
 
@@ -126,7 +127,6 @@ class HighScore(BuiltInMode, built_in=True):
         super().__init__(machine)
         self._check()
         self.tables = self._load()
-        self._queue: Any = None
         self._entering: list[int] = []
         self._names: dict[int, str] = {}
         self._awards: list[Award] = []
@@ -198,12 +198,6 @@ class HighScore(BuiltInMode, built_in=True):
 
     # --- running
 
-    def start(self, **kwargs: Any) -> None:
-        self._queue = kwargs.get("queue")   # hold the game's end until we're done
-        if self._queue is not None:
-            self._queue.wait()
-        super().start(**kwargs)
-
     def mode_start(self, **_: Any) -> None:
         self._awards = self.awards()
         self._entering = sorted({award.player for award in self._awards})
@@ -211,11 +205,6 @@ class HighScore(BuiltInMode, built_in=True):
         if self.look.music:
             self.play_sound(self.look.music)
         self._next_player()
-
-    def mode_stop(self, **_: Any) -> None:
-        if self._queue is not None:
-            self._queue.clear()
-            self._queue = None
 
     def _next_player(self) -> None:
         if not self._entering:

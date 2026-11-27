@@ -76,6 +76,7 @@ Settings are class attributes:
 | `stop_on` | none | Event name(s) that stop it | `stop_events` |
 | `game_mode` | `True` | Only runs during a game, and stops when it ends | `game_mode` |
 | `stop_on_ball_end` | `True` | Stops at the end of each ball | `stop_on_ball_end` |
+| `use_wait_queue` | `False` | Started by a queue event (such as `game_ending`), holds it until the mode stops: the game ends after it | `use_wait_queue` |
 | `scoring` | `{}` | What the mode scores (see [Scoring](#scoring)) | `variable_player` |
 | `scenes` | `()` | The `@scene` functions the mode can show (see [Displays and scenes](scenes.md)) | `slides` / `slide_player` |
 | `name` | from the class | `HoleScore` → `hole_score` | the mode's folder name |
