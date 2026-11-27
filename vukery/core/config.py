@@ -28,7 +28,7 @@ DEFAULT_ENVIRONMENT = "development"
 SUPPORTED_SECTIONS = {
     "hardware", "fast", "switches", "coils", "lights", "ball_devices", "flippers", "autofire_coils",
     "game", "modes", "player_vars", "logging", "displays", "media", "dashboard", "light_groups",
-    "sound_system", "sounds", "sound_pools", "keyboard",
+    "sound_system", "sounds", "sound_pools", "keyboard", "ball_saves",
 }
 
 # MPF sections that hold game logic. In vukery that's Python, in a mode.
