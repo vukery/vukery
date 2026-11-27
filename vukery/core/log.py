@@ -76,6 +76,9 @@ class _ShortNames(logging.Filter):
         return True
 
 
+SETTINGS = frozenset({"level", "console", "file", "components", "max_file_mb", "backups"})   # logging:
+
+
 @dataclass(frozen=True)
 class LoggingConfig:
     level: int = logging.INFO
@@ -88,7 +91,7 @@ class LoggingConfig:
     @classmethod
     def from_yaml(cls, data: Mapping[str, Any] | None) -> LoggingConfig:
         data = data or {}
-        unknown = sorted(set(data) - {"level", "console", "file", "components", "max_file_mb", "backups"})
+        unknown = sorted(set(data) - SETTINGS)
         if unknown:
             raise ConfigError(f"logging: unknown setting(s): {', '.join(unknown)}")
         return cls(

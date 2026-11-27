@@ -25,6 +25,9 @@ from vukery.platforms.interfaces import SwitchConfig as PlatformSwitchConfig
 log = get_logger("switches")
 
 
+SETTINGS = frozenset({"number", "type", "debounce", "tags", "events_when_activated", "events_when_deactivated",
+                      "platform_settings", "label"})   # a switch's settings in switches:
+
 @dataclass(frozen=True)
 class SwitchConfig:
     """One entry of the ``switches:`` section. Keys match MPF."""
@@ -40,17 +43,16 @@ class SwitchConfig:
 
     @classmethod
     def from_yaml(cls, name: str, data: dict[str, Any]) -> SwitchConfig:
-        known = {"number", "type", "debounce", "tags", "events_when_activated", "events_when_deactivated",
-                 "platform_settings", "label"}
-        unknown = sorted(set(data) - known)
+        unknown = sorted(set(data) - SETTINGS)
         if unknown:
             raise ConfigError(f"switches: {name}: unknown setting(s): {', '.join(unknown)}")
-        switch_type = str(data.get("type", "NO")).upper()
-        match switch_type:
-            case "NO" | "NC":
-                pass
-            case _:
-                raise ConfigError(f"switches: {name}: type must be NO or NC, got {switch_type!r}")
+        match data.get("type", "NO"):
+            case False:   # YAML reads a bare NO as false
+                switch_type = "NO"
+            case str() as text if text.upper() in ("NO", "NC"):
+                switch_type = text.upper()
+            case other:
+                raise ConfigError(f"switches: {name}: type must be NO or NC, got {other!r}")
         return cls(
             name=name,
             number=str(data.get("number", "")),

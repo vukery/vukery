@@ -94,11 +94,11 @@ class AutofireCoil(_Rule):
     """Fires its coil whenever its switch closes (slingshots, pop bumpers)."""
 
     kind = "autofire"
+    SETTINGS = frozenset({"coil", "switch", "reverse_switch", "enable_events", "disable_events", "ball_search_order"})
 
     @classmethod
     def from_yaml(cls, name: str, data: dict[str, Any], machine: Machine) -> AutofireCoil:
-        unsupported = sorted(set(data) - {"coil", "switch", "reverse_switch", "enable_events", "disable_events",
-                                          "ball_search_order"})
+        unsupported = sorted(set(data) - cls.SETTINGS)
         if unsupported:
             raise ConfigError(f"autofire_coils: {name}: not supported yet: {', '.join(unsupported)}")
         autofire = cls(RuleConfig(name=name, coil=data["coil"], switch=data["switch"],

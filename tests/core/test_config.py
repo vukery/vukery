@@ -51,6 +51,18 @@ def describe_config():
             with pytest.raises(ConfigError, match="doesn't support \\(yet\\): shots"):
                 load_game_config(folder, "test")
 
+        @pytest.mark.parametrize("section", ["hardware", "game", "media"])
+        def it_names_settings_a_section_doesnt_know(tmp_path, section):
+            folder = basic_machine(tmp_path, files={"config/extra.yaml": f"{section}:\n  colour: red\n"})
+            with pytest.raises(ConfigError, match=f"{section}: unknown setting\\(s\\): colour"):
+                load_game_config(folder, "test")
+
+        def it_names_settings_a_player_variable_doesnt_know(tmp_path):
+            folder = basic_machine(tmp_path, files={"config/extra.yaml":
+                                                    "player_vars:\n  lanes:\n    initial_value: 0\n    colour: red\n"})
+            with pytest.raises(ConfigError, match="player_vars: lanes: unknown setting\\(s\\): colour"):
+                load_game_config(folder, "test")
+
         def it_needs_a_platform_name(tmp_path):
             folder = basic_machine(tmp_path, files={"config/hardware.yaml": "hardware: {platform: [fast]}\n"})
             with pytest.raises(ConfigError, match="expected a name"):

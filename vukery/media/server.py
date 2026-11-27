@@ -12,7 +12,7 @@ import random
 from collections.abc import Callable
 from dataclasses import asdict, dataclass
 from itertools import count
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, ClassVar
 
 from vukery.core.errors import ConfigError
 from vukery.core.log import Logs
@@ -35,9 +35,11 @@ class DisplayConfig:
     height: int = 480
     screen: int | None = None  # which monitor vuk us puts it on, full screen (default: the next one)
 
+    SETTINGS: ClassVar[frozenset[str]] = frozenset({"width", "height", "screen"})
+
     @classmethod
     def from_yaml(cls, name: str, data: dict[str, Any]) -> DisplayConfig:
-        unknown = sorted(set(data) - {"width", "height", "screen"})
+        unknown = sorted(set(data) - cls.SETTINGS)
         if unknown:
             raise ConfigError(f"displays: {name}: not supported yet: {', '.join(unknown)}")
         screen = data.get("screen")
