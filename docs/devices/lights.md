@@ -2,8 +2,8 @@
 
 !!! note "0.0.x"
     Lights are built and tested on the FAST Nano's RGB port: channel
-    numbering, colors, fades and RGBW. The priority stack (shows and modes
-    restoring the color underneath) comes with shows.
+    numbering, colors (hex, or MPF's color names), fades, RGBW, and MPF's
+    priority stack (shows and modes restoring the color underneath).
 
 Lights use the `lights:` section. Numbering matches MPF, so a migrated
 config lights up the same LEDs.
@@ -48,8 +48,9 @@ Use one of `number`, `previous`, `start_channel` or `channels`.
 
 ## Colors and fades
 
-Colors are 6-digit hex strings (`"ff8800"`) or `(red, green, blue)` with
-each value from 0 to 255.
+Colors are 6-digit hex strings (`"ff8800"`), `(red, green, blue)` with
+each from 0 to 255, or one of MPF's color names, the web's: `orange`,
+`red`, `aqua`, `off`…
 
 ```python
 light.on()

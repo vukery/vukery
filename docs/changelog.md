@@ -12,6 +12,8 @@ Check your version with `vuk --version`.
   enabled by its events or from a mode, with its clock, hurry-up, grace
   period, how many balls, only the last ball, and eject delay. See
   [Ball saves](devices/ball-saves.md).
+- **MPF's color names** (the web's: `orange`, `red`, `off`…) work wherever a
+  color does, so MPF shows that use them carry over.
 
 ## 0.0.27 (2026-11-26)
 

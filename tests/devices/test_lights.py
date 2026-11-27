@@ -33,8 +33,13 @@ def describe_lights():
         def it_takes_hex_or_three_numbers(value):
             expect(parse_color(value)).to_equal((255, 136, 0))
 
+        def it_knows_mpfs_color_names():   # the web's names, as in MPF shows: orange, red, off…
+            expect(parse_color("orange")).to_equal((255, 165, 0))
+            expect(parse_color("Red")).to_equal((255, 0, 0))
+            expect(parse_color("off")).to_equal((0, 0, 0))
+
         @pytest.mark.parametrize(("value", "message"), [("ff88zz", "Not a color"), ((300, 0, 0), "0-255"),
-                                                        ("orange", "Not a color")])
+                                                        ("orangeish", "Not a color")])
         def it_explains_a_bad_color(value, message):
             with pytest.raises(ConfigError, match=message):
                 parse_color(value)
