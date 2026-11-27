@@ -77,6 +77,7 @@ class Machine(Logs):
         self.flippers: dict[str, Flipper] = {}
         self.autofire_coils: dict[str, AutofireCoil] = {}
         self.keyboard: dict[str, keyboard.Key] = {}
+        self.data_dir = config.game_dir / "data"   # what the machine keeps (high scores…); specs use a temp folder
         self._calls: dict[str, Any] = {}
         try:
             self.platform = self._create_platform(hardware)

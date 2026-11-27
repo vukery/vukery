@@ -85,9 +85,10 @@ def describe_high_score():
         _play(game, [45])                                   # between ERY (40,000) and VUK (50,000)
         _enter(game, "ZOE")
         game.advance(4)
-        saved = yaml.safe_load((tmp_path / "machine" / "data" / "high_scores.yaml").read_text())
+        saved = yaml.safe_load((game.machine.data_dir / "high_scores.yaml").read_text())
         expect([name for name, _ in saved["score"]]).to_equal(["VUK", "ZOE", "ERY", "PIN", "BAL"])
-        again = GameRig(tmp_path / "machine")
+        expect((tmp_path / "machine" / "data").exists()).to_be_false()   # specs never write into the machine
+        again = GameRig(tmp_path / "machine", data_dir=game.machine.data_dir)
         try:
             expect(again.display.values["high_score"]["score2_name"]).to_equal("ZOE")
         finally:
