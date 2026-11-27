@@ -8,6 +8,11 @@ Check your version with `vuk --version`.
 
 ## 0.0.23 (2026-11-26)
 
+- **Keys in `vuk me`:** MPF's `keyboard:` section, so an MPF machine's
+  carries over. A key holds a switch (`toggle`, `invert`) or posts an event
+  with `params`, with `ctrl+`, `shift+` and `alt+` combinations. Simulated
+  platforms only, as clicks. `examples/basic` and new machines from `vuk it`
+  have start, flipper and trough keys. See [the dashboard](dashboard.md#keys).
 - **Your own playfield and backbox in `vuk me`:** put `playfield.jpg` or
   `backbox.png` (or both) in the machine's `assets/images/`, and `vuk me`
   draws them instead of the wooden ones. An MPF machine's Monitor playfield

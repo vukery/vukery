@@ -72,3 +72,16 @@ game:
 
 modes:                          # the game's own modes, from modes/<name>/mode.py
   - base                        # (attract and game are built in and always loaded)
+
+keyboard:                       # keys for vuk me (MPF's keyboard:): hold a key to hold its switch
+  s:
+    switch: s_start
+  z:
+    switch: s_left_flipper
+  "/":
+    switch: s_right_flipper
+  t:
+    switch: s_target
+  "1":
+    switch: s_trough1
+    toggle: true                # each press flips it: take a ball out of the trough, or put it back

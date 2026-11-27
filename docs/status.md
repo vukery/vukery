@@ -23,7 +23,7 @@ rest of the docs never describe something as if it already works.
 | Ball save, tilt, high score, match, other built-in modes | Planned. | |
 | Sound | Built: sounds from `assets/sounds/`, MPF's `sounds:`, `sound_pools:` and tracks; `play_sound` with MPF's `sound_player` options; mixed with priorities, queueing, loops and ducking; played by `vuk me` and by `vuk us`. Fades, markers and sounds in shows come later. | [Sound](sound.md) |
 | Images, video | Planned. | |
-| `vuk me` dashboard | Built: a scrolling list of the game, switches, lights, coils and devices; the backbox, a pane per display, and the playfield; clicking switches; dragging switches and lights into the backbox or onto the playfield; resizable panes; all saved to `config/dashboard.yaml` (`arrangement_lock`). Your own playfield and backbox pictures from `assets/images/`. Never fires coils. | [The dashboard](dashboard.md) |
+| `vuk me` dashboard | Built: a scrolling list of the game, switches, lights, coils and devices; the backbox, a pane per display, and the playfield; clicking switches; MPF's `keyboard:` keys for switches and events; dragging switches and lights into the backbox or onto the playfield; resizable panes; all saved to `config/dashboard.yaml` (`arrangement_lock`). Your own playfield and backbox pictures from `assets/images/`. Never fires coils. | [The dashboard](dashboard.md) |
 
 ## What vukery is tested against
 

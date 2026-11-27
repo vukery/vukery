@@ -100,6 +100,7 @@ def layout(machine: Machine) -> dict[str, Any]:
         "arrangement_lock": settings.arrangement_lock,
         "config_file": str(machine.config.game_dir / "config" / "dashboard.yaml"),  # where vuk me saves the layout
         "switch_input": machine.platform_is_simulated(),
+        "keyboard": {name: key.to_data() for name, key in machine.keyboard.items()},   # keys that press switches
         # the machine's assets/images/playfield.png and backbox.png, or vukery's own
         "artwork": {name: {"file": str(path), "own": own}
                     for name in ARTWORK for path, own in [artwork(machine.config.game_dir, name)]},

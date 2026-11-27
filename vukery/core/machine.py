@@ -35,7 +35,7 @@ from vukery.devices.coil import Coil, CoilConfig
 from vukery.devices.light import Light, LightConfig
 from vukery.devices.light_group import LightGroup
 from vukery.devices.rules import AutofireCoil, Flipper
-from vukery.media import dashboard, protocol
+from vukery.media import dashboard, keyboard, protocol
 from vukery.media.scenes import build, scene_name
 from vukery.media.server import DisplayConfig, MediaServer
 from vukery.media.sounds import Sounds
@@ -73,6 +73,7 @@ class Machine(Logs):
         self.ball_devices: dict[str, BallDevice] = {}
         self.flippers: dict[str, Flipper] = {}
         self.autofire_coils: dict[str, AutofireCoil] = {}
+        self.keyboard: dict[str, keyboard.Key] = {}
         self._calls: dict[str, Any] = {}
         try:
             self.platform = self._create_platform(hardware)
@@ -177,6 +178,7 @@ class Machine(Logs):
             self.flippers[name] = Flipper.from_yaml(name, entry or {}, self)
         for name, entry in config.section("autofire_coils").items():
             self.autofire_coils[name] = AutofireCoil.from_yaml(name, entry or {}, self)
+        self.keyboard = keyboard.load(config.section("keyboard"), set(self.switches.switches))  # vuk me's keys
         self.events.add_handler("request_to_start_game", self._balls_home_check, priority=100)
 
     def _fill_troughs(self) -> None:
