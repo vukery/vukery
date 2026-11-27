@@ -54,14 +54,14 @@ nav:
 
 plugins:
   - search
-  # The pages that moved when the docs were reorganized (0.0.29): old links still land
+  # The pages that moved when the docs were reorganized (0.0.29): old links still land.
+  # Only pages whose address changed: modes.md and modes/index.md are both /modes/, and a
+  # redirect there would replace the page with one pointing at itself (tests/test_docs.py)
   - redirects:
       redirect_maps:
-        getting-started.md: getting-started/index.md
         writing-a-game.md: getting-started/writing-a-game.md
         examples.md: getting-started/examples.md
         testing.md: getting-started/testing.md
-        modes.md: modes/index.md
         high-score.md: modes/built-in/high-score.md
         tilt.md: modes/built-in/tilt.md
         shows.md: media/shows.md
