@@ -40,11 +40,12 @@ from vukery.media.scenes import build, scene_name
 from vukery.media.server import DisplayConfig, MediaServer
 from vukery.media.sounds import Sounds
 from vukery.modes.attract import Attract
+from vukery.modes.built_in import BuiltInMode, resolve
 from vukery.modes.game import Game
 from vukery.platforms.interfaces import SerialPortInfo
 from vukery.platforms.simulated import SimulatedPlatform
 
-BUILT_IN_MODES: tuple[type[Mode], ...] = (Attract, Game)
+BUILT_IN_MODES: tuple[type[BuiltInMode], ...] = (Attract, Game)
 
 
 class Machine(Logs):
@@ -191,12 +192,16 @@ class Machine(Logs):
                     self.set_switch(name, 1)
 
     def _load_modes(self) -> None:
-        for mode_class in BUILT_IN_MODES:
-            self.modes.add(mode_class(self))
+        """vukery's built-in modes, each customized or (if optional) replaced by the game's mode of the
+        same name, then the game's own."""
         check_mode_folders(self.config.game_dir)
         package = modes_package(self.config.game_dir)
-        for name in self.config.modes:
-            self.modes.add(load_mode(self.config.game_dir, name, package)(self))
+        mine = {name: load_mode(self.config.game_dir, name, package) for name in self.config.modes}
+        for built_in in BUILT_IN_MODES:
+            mode_class = resolve(built_in, mine.pop(built_in.name)) if built_in.name in mine else built_in
+            self.modes.add(mode_class(self))
+        for mode_class in mine.values():
+            self.modes.add(mode_class(self))
 
     def stop(self, reason: str = "") -> None:
         if self.is_shutting_down:

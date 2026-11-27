@@ -7,10 +7,13 @@ when not every ball is home), then ``game_start`` starts the game.
 
 from typing import Any
 
-from vukery.core.modes import Mode, on
+from vukery.core.modes import on
+from vukery.modes.built_in import BuiltInMode
 
 
-class Attract(Mode):
+class Attract(BuiltInMode, built_in=True):
+    """Core: a game can't replace it, and there's nothing to customize yet."""
+
     priority = 10
     start_on = ("reset_complete", "game_ended")
     stop_on = "game_start"
