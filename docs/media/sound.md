@@ -11,7 +11,7 @@
 **Every file in `assets/sounds/` is a sound,** named by its file name without
 the extension: `assets/sounds/explosion.ogg` is the sound `explosion`. Use
 `.ogg`, `.wav`, `.mp3` or `.flac`. vukery decodes everything but `.wav` with
-the `ffmpeg` command (see [Getting started](getting-started.md)): short
+the `ffmpeg` command (see [Getting started](../getting-started/index.md)): short
 sounds once, into memory, and music as it plays. `vuk health` says whether
 `ffmpeg` is there; without it, only `.wav` sounds play.
 

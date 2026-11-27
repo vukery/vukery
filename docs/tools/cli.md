@@ -16,7 +16,7 @@ vuk --help
 - **`vuk it NAME`** creates a new machine folder, much like `rails new`: a
   commented machine config, a base mode, specs, asset folders, and a
   `pyproject.toml` that pins vukery. Leave out the name and it asks. See
-  [Getting started](getting-started.md#make-a-machine-vuk-it).
+  [Getting started](../getting-started/index.md#make-a-machine-vuk-it).
 
 `vuk me` and `vuk us` run the game whose `config/` folder is in the current
 folder (or in the folder given with `-C DIR`):

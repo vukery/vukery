@@ -17,6 +17,8 @@ Check your version with `vuk --version`.
 - **Strict types and lint, checked in CI:** pyright (strict) and ruff now run
   on every push, on all of vukery except the files copied from MPF. Specs,
   types and lint are separate workflows, each with a badge in the README.
+- **The docs are reorganized:** seven sections instead of seventeen pages,
+  with built-in modes under Modes and devices and hardware under Machine.
 
 ## 0.0.28 (2026-11-26)
 
@@ -32,7 +34,7 @@ Check your version with `vuk --version`.
 - **Tilt** (MPF's `tilt`), an optional built-in mode: plumb bob warnings,
   tilt, slam tilt, waiting for the balls and the bob to settle. Its look is
   a scene, how long it stays and a sound for each warning and for the tilt.
-  See [Tilt](tilt.md).
+  See [Tilt](modes/built-in/tilt.md).
 - **A ball's modes stop inside `ball_ending`**, as in MPF: earlier than
   before, so handlers that wait on `ball_ending` (tilt) run with them
   stopped.
@@ -58,10 +60,10 @@ Check your version with `vuk --version`.
   changes only what the mode declares (settings, look, hooks); anything else
   is refused with a list of what can change. Optional built-ins can be
   replaced by a game's own mode of the same name; core ones (attract, game)
-  can't. See [Modes](modes.md#built-in-modes).
+  can't. See [Modes](modes/index.md#built-in-modes).
 - **High score** (MPF's `high_score`), the first optional built-in: list it
   in `modes:`. Initials with the flippers and start, the award screens, and
-  tables saved in `data/high_scores.yaml`. See [High score](high-score.md).
+  tables saved in `data/high_scores.yaml`. See [High score](modes/built-in/high-score.md).
 - **`use_wait_queue`** (MPF's): a mode started by a queue event such as
   `game_ending` holds it until the mode stops.
 - **Values from modes:** `self.publish(countdown=10)` is `{frenzy.countdown}`
@@ -76,12 +78,12 @@ Check your version with `vuk --version`.
   carries over. A key holds a switch (`toggle`, `invert`) or posts an event
   with `params`, with `ctrl+`, `shift+` and `alt+` combinations. Simulated
   platforms only, as clicks. `examples/basic` and new machines from `vuk it`
-  have start, flipper and trough keys. See [the dashboard](dashboard.md#keys).
+  have start, flipper and trough keys. See [the dashboard](tools/dashboard.md#keys).
 - **Your own playfield and backbox in `vuk me`:** put `playfield.jpg` or
   `backbox.png` (or both) in the machine's `assets/images/`, and `vuk me`
   draws them instead of the wooden ones. An MPF machine's Monitor playfield
   lines up with its migrated positions. See
-  [the dashboard](dashboard.md#your-own-playfield-and-backbox).
+  [the dashboard](tools/dashboard.md#your-own-playfield-and-backbox).
 - **Fixed:** files a machine started from its own folder (`.`) passed to
   media controllers were relative paths; the machine folder is now made
   absolute when the config loads.
@@ -107,7 +109,7 @@ Check your version with `vuk --version`.
   `max_queue_time`) and `stop_sound(...)`. The media controller mixes as MPF
   does: track limits, priorities, queueing, loops and ducking. `vuk me` plays
   sound, and so does the first display's media controller in `vuk us`. See
-  [Sound](sound.md).
+  [Sound](media/sound.md).
 - **Specs:** `expect(game).to_have_played("name")`, `game.sounds()`. The
   rig now listens from power-on.
 - `examples/display` beeps when its target is hit.
@@ -133,7 +135,7 @@ Check your version with `vuk --version`.
   any actor from where it's placed to another point: once, there and back,
   or over and over (a scroll). `.blinks(every=, times=, fade=)` turns it off
   and on, or fades it out and in (MPF's pulsate). See
-  [Displays and scenes](scenes.md#animations-moves-and-blinks).
+  [Displays and scenes](media/scenes.md#animations-moves-and-blinks).
 - `game.screen()` lists only what's visible at that moment.
 - The display examples blink, fade and move.
 
@@ -143,7 +145,7 @@ Check your version with `vuk --version`.
   `self.play_show(...)` and MPF's `show_player` options. Write one as a
   frames grid over a light group, or as MPF's list of steps (lights, coils,
   events, fades). Tokens, loops, speed, keys, pause and resume, and MPF's
-  built-in shows. See [Shows](shows.md).
+  built-in shows. See [Shows](media/shows.md).
 - **The light stack:** each light shows its highest-priority color, as in
   MPF. Shows borrow lights and give them back when they stop; a mode's shows
   stop with the mode.
@@ -153,7 +155,7 @@ Check your version with `vuk --version`.
   scene placed inside it). Actors can `.enters(side)` and `.exits(side)`.
   Scenes are `@scene` functions in a mode's `scenes.py`, shown with
   `self.show_scene(...)`. The media protocol is now version 2. See
-  [Displays and scenes](scenes.md).
+  [Displays and scenes](media/scenes.md).
 - **Coil starting points:** the [Coils](devices/coils.md) page has typical
   settings for each kind of coil, from 46 public MPF machines.
 - **Indented YAML:** examples, the machine template and the docs write one

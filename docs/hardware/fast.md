@@ -39,7 +39,7 @@ fast:
 | `default_quick_debounce_open` / `_close` | `2` (ms) | For switches with `debounce: quick` |
 | `default_normal_debounce_open` / `_close` | `4` (ms) | For switches with `debounce: normal` or `auto` |
 | `mute_unconfigured_switches` | `false` | Ignore switches that aren't in your config |
-| `debug` | `false` | Same as setting `fast.net: debug` in [logging](../logging.md) |
+| `debug` | `false` | Same as setting `fast.net: debug` in [logging](../tools/logging.md) |
 
 ### `rgb:`
 

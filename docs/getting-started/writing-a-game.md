@@ -4,8 +4,8 @@
     The game engine runs on the simulated `development` and `test`
     platforms: switches, coils, lights, a simple trough, single- and dual-wound
     flippers, autofire coils, the attract and game modes, and your own
-    modes, [shows](shows.md), and scenes on displays ([Displays and scenes](scenes.md)).
-    [Sound](sound.md) too. Multiball comes later. The complete examples are
+    modes, [shows](../media/shows.md), and scenes on displays ([Displays and scenes](../media/scenes.md)).
+    [Sound](../media/sound.md) too. Multiball comes later. The complete examples are
     [`examples/basic` and `examples/display`](examples.md).
 
 ## A game folder
@@ -81,11 +81,11 @@ octal number.
 
 **Supported sections so far:** `switches`, `coils`, `lights`,
 `light_groups`, `ball_devices` (troughs and plunger lanes, see below),
-[`ball_saves`](devices/ball-saves.md), `playfields` ([ball search](devices/ball-search.md)),
-[`flippers`](devices/flippers.md) (single- and dual-wound, with EOS),
+[`ball_saves`](../devices/ball-saves.md), `playfields` ([ball search](../devices/ball-search.md)),
+[`flippers`](../devices/flippers.md) (single- and dual-wound, with EOS),
 `autofire_coils`, `game`, `modes`, `player_vars`, `displays`, `media`,
-`sound_system`, `sounds`, `sound_pools` ([Sound](sound.md)),
-`keyboard` ([the dashboard](dashboard.md#keys)),
+`sound_system`, `sounds`, `sound_pools` ([Sound](../media/sound.md)),
+`keyboard` ([the dashboard](../tools/dashboard.md#keys)),
 `hardware`, `fast`, `logging`.
 
 **Ball devices:** a trough (`tags: trough`) and a mechanical plunger lane
@@ -114,7 +114,7 @@ points you to modes if your config has `variable_player`, `event_player`,
 
 Game logic lives in modes: Python classes in `modes/<name>/mode.py`, with
 their bigger parts (scenes, shows, helper code) in files next to it. See
-[Modes: A mode's files](modes.md#a-modes-files).
+[Modes: A mode's files](../modes/index.md#a-modes-files).
 
 ```python
 from vukery import Mode
@@ -130,7 +130,7 @@ class Base(Mode):
     }
 ```
 
-The [Modes](modes.md) page covers everything about them:
+The [Modes](../modes/index.md) page covers everything about them:
 - settings and priority;
 - scoring tables;
 - blocking;
@@ -174,14 +174,14 @@ cd my_game
 uv run vuk me
 ```
 
-In development the machine is simulated. The [dashboard](dashboard.md)
+In development the machine is simulated. The [dashboard](../tools/dashboard.md)
 shows the whole machine: click `s_start` to start a game, then click
 switches on the playfield. Esc stops it. Logs go to `log/development.log`.
 
 On the machine itself, `vuk us` runs the game with its displays full screen
-(see [The vuk command](cli.md)).
+(see [The vuk command](../tools/cli.md)).
 
 ## Coming from MPF
 
 The section names in config are MPF's. Game logic moves from YAML to modes:
-see [Modes: Coming from MPF](modes.md#coming-from-mpf).
+see [Modes: Coming from MPF](../modes/index.md#coming-from-mpf).

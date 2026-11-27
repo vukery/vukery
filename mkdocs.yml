@@ -8,33 +8,42 @@ theme:
   name: material
   features:
     - content.code.copy
+    - navigation.indexes   # a section's first page is its overview (Modes, Built-in modes…)
 
 nav:
   - Home: index.md
-  - Status (0.0.x): status.md
-  - Changelog: changelog.md
-  - Contributing: contributing.md
-  - Getting started: getting-started.md
-  - Writing a game: writing-a-game.md
-  - Modes: modes.md
-  - Shows: shows.md
-  - Displays and scenes: scenes.md
-  - Sound: sound.md
-  - High score: high-score.md
-  - Tilt: tilt.md
-  - Testing a game: testing.md
-  - Examples: examples.md
-  - The dashboard (vuk me): dashboard.md
-  - The vuk command: cli.md
-  - Logging: logging.md
-  - Hardware:
-      - FAST: hardware/fast.md
-  - Devices:
-      - Coils: devices/coils.md
-      - Flippers: devices/flippers.md
-      - Ball saves: devices/ball-saves.md
-      - Ball search: devices/ball-search.md
-      - Lights: devices/lights.md
+  - Getting started:
+      - getting-started/index.md
+      - Writing a game: getting-started/writing-a-game.md
+      - Examples: getting-started/examples.md
+      - Testing a game: getting-started/testing.md
+  - Modes:
+      - modes/index.md
+      - Built-in modes:
+          - modes/built-in/index.md
+          - High score: modes/built-in/high-score.md
+          - Tilt: modes/built-in/tilt.md
+  - Shows, displays and sound:
+      - Shows: media/shows.md
+      - Displays and scenes: media/scenes.md
+      - Sound: media/sound.md
+  - Machine:
+      - Devices:
+          - Coils: devices/coils.md
+          - Lights: devices/lights.md
+          - Flippers: devices/flippers.md
+          - Ball saves: devices/ball-saves.md
+          - Ball search: devices/ball-search.md
+      - Hardware:
+          - FAST: hardware/fast.md
+  - Tools:
+      - The vuk command: tools/cli.md
+      - The dashboard (vuk me): tools/dashboard.md
+      - Logging: tools/logging.md
+  - Project:
+      - Status (0.0.x): status.md
+      - Changelog: changelog.md
+      - Contributing: contributing.md
 
 extra_css:
   - stylesheets/mkdocs.css
