@@ -35,6 +35,7 @@ from typing import Any, Literal
 
 from vukery.core.log import get_logger
 from vukery.dashboard import layout as lay
+from vukery.dashboard.keys import KeyboardInput, key_name
 from vukery.dashboard.state import DashboardState
 from vukery.mc.app import FRAME_SECONDS, connect, draw_scene, pixel_ratio
 from vukery.media import protocol
@@ -564,6 +565,15 @@ def run(port: int, size: tuple[int, int] = WINDOW) -> int:
     def on_mouse_scroll(x: int, y: int, scroll_x: float, scroll_y: float) -> None:
         view.scroll_by(x, y, scroll_y)
 
+    keys = KeyboardInput(state, send)   # the machine's keyboard: section
+
+    def on_key_press(symbol: int, modifiers: int) -> None:
+        keys.press(symbol, key_name(symbol, modifiers))
+
+    def on_key_release(symbol: int, modifiers: int) -> None:
+        keys.release(symbol)
+
+    window.push_handlers(on_key_press=on_key_press, on_key_release=on_key_release)
     window.push_handlers(on_mouse_press=on_mouse_press, on_mouse_release=on_mouse_release,
                          on_mouse_drag=on_mouse_drag, on_mouse_motion=on_mouse_motion,
                          on_mouse_scroll=on_mouse_scroll)
@@ -572,6 +582,7 @@ def run(port: int, size: tuple[int, int] = WINDOW) -> int:
         while not state.engine_stopped and not window.has_exit:
             pyglet.clock.tick()
             sound.frame()
+            keys.sync()
             window.dispatch_events()
             view.draw()
             window.flip()

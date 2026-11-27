@@ -16,6 +16,7 @@ from typing import TYPE_CHECKING, Any
 
 from vukery.core.errors import ConfigError
 from vukery.core.log import Logs
+from vukery.core.yaml_values import mapping
 from vukery.media import dashboard, protocol
 from vukery.media.scenes import Scene
 from vukery.media.sounds import Sound
@@ -255,10 +256,17 @@ class MediaServer(Logs):
     def handle(self, message: dict[str, Any], from_dashboard: bool) -> None:
         """A message from a media controller or dashboard.
 
-        The only one acted on is a dashboard's switch change, on the simulated
-        platforms. Nothing a client sends can fire a coil.
+        Only a dashboard's are acted on, and only on the simulated platforms: a
+        switch change (a click, or a key), or an event (a key from ``keyboard:``).
+        Nothing a client sends can fire a coil on real hardware.
         """
         match message:
+            case {"type": "event", "name": str() as name} if from_dashboard:
+                if not self.machine.platform_is_simulated():
+                    self.warning_log("Ignoring event %s from the dashboard on real hardware", name)
+                else:
+                    self.info_log("Posting %s from the dashboard's keyboard", name)
+                    self.machine.events.post(name, **mapping(message.get("params")))
             case {"type": "switch", "name": str() as name, "state": 0 | 1 as state} if from_dashboard:
                 if not self.machine.platform_is_simulated():
                     self.warning_log("Ignoring switch %s from the dashboard: switches come from the hardware", name)

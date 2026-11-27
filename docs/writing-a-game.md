@@ -84,6 +84,7 @@ octal number.
 `flippers` (single-wound, no EOS),
 `autofire_coils`, `game`, `modes`, `player_vars`, `displays`, `media`,
 `sound_system`, `sounds`, `sound_pools` ([Sound](sound.md)),
+`keyboard` ([the dashboard](dashboard.md#keys)),
 `hardware`, `fast`, `logging`.
 
 **Ball devices:** a trough (`tags: trough`) and a mechanical plunger lane

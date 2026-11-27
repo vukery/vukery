@@ -43,6 +43,43 @@ do.
 **The dashboard can never fire a coil.** Coils fire only from the game
 running in the engine; the dashboard has no way to ask for one.
 
+## Keys
+
+The `keyboard:` section (MPF's, so an MPF machine's carries over) gives
+keys to switches and events. They work while the `vuk me` window has focus,
+on the simulated platforms only, as clicks do.
+
+```yaml
+keyboard:
+  z:
+    switch: s_left_flipper     # active while the key is held
+  "/":
+    switch: s_right_flipper
+  "1":
+    switch: s_trough1
+    toggle: true               # each press flips it
+  t:
+    switch: s_tilt
+    invert: true               # active until the key is pressed
+  ctrl+l:
+    event: light_all           # posted as the key goes down
+    params:
+      color: ffffff
+```
+
+| Setting | |
+|---|---|
+| `switch` | the switch the key presses |
+| `toggle` | each press flips the switch, instead of holding it |
+| `invert` | the switch is active until the key is pressed |
+| `event` | an event to post instead |
+| `params` | the event's arguments |
+
+**Keys** are a character (`z`, `/`, `1`) or a name (`space`, `enter`,
+`left`, `escape`, `num_1`…), with `ctrl+`, `shift+` or `alt+` in front as
+needed. MPF's names (`slash`, `spacebar`) work too. A section-wide
+`debug: true` is accepted. Escape closes the window.
+
 ## Placing switches and lights
 
 **Drag a switch or light from the list** into the backbox or onto the
@@ -155,3 +192,4 @@ playfield and backbox pictures. Planned: trying it against real hardware
 | dragging a device onto the playfield image in MPF Monitor | dragging it from the list onto the playfield or backbox |
 | MPF Monitor's `playfield.jpg` | `assets/images/playfield.jpg` (positions from `monitor.yaml` line up with it) |
 | clicking a switch in MPF Monitor | clicking it on the dashboard (right-click locks it) |
+| `keyboard:` in MPF's window | the same `keyboard:` section, in the `vuk me` window |
