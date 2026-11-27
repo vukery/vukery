@@ -179,6 +179,16 @@ class Mode(Logs):
         if self.machine.media is not None:
             self.machine.media.show(self, scene_name(scene), display, priority)
 
+    def scene_functions(self) -> tuple[SceneFunction, ...]:
+        """The scenes this mode can show (its ``scenes``; a built-in mode may take them from its look)."""
+        return type(self).scenes
+
+    def publish(self, **values: Any) -> None:
+        """Make values available to scenes as ``{<mode name>.<key>}``: ``self.publish(initials="AB")``
+        in the high_score mode is ``{high_score.initials}``. They stay until published again."""
+        if self.machine.media is not None:
+            self.machine.media.publish(self, values)
+
     def play_sound(self, sound: str, *, volume: float | None = None, loops: int | None = None, priority: int = 0,
                    start_at: float = 0.0, delay: float = 0.0, max_queue_time: float | None = None) -> None:
         """Play a sound, or one of a sound pool's (MPF: ``sound_player``).

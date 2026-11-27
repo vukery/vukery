@@ -17,8 +17,10 @@ switches:
     number: 3
   s_left_flipper:
     number: 4
+    tags: left_flipper           # MPF's tag: menus (high score initials) use the flipper buttons
   s_right_flipper:
     number: 5
+    tags: right_flipper
   s_left_sling:
     number: 6
   s_right_sling:

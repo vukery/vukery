@@ -131,6 +131,7 @@ class MediaState:
         self.settled: set[str] = set()   # displays whose scene was already up when we connected: no entrances
         self.leaving: dict[str, tuple[str, float, float, bool]] = {}   # display -> (scene, left, shown, settled)
         self.players: dict[int, dict[str, Any]] = {}
+        self.values: dict[str, dict[str, Any]] = {}   # what modes published: {high_score.initials}
         self.current: int | None = None
         self.connected = False
         self.engine_stopped = False
@@ -145,6 +146,7 @@ class MediaState:
                 self.settled = set(self.showing)  # already in place: no entrances
                 self.players = {int(k): mapping(v) for k, v in mapping(message.get("players")).items()}
                 self.current = message.get("player")
+                self.values = {str(k): dict(mapping(v)) for k, v in mapping(message.get("values")).items()}
                 self.tracks = mapping(message.get("tracks"))
                 self.sound_files = mapping(message.get("sounds"))
                 if self.audio:   # start over with what's playing now (connected late, or the engine restarted)
@@ -170,6 +172,8 @@ class MediaState:
                     self.played.append(message)
                 if self.audio:
                     self.sound_messages.append(message)
+            case {"type": "values", "mode": str() as mode, "values": dict()}:
+                self.values.setdefault(mode, {}).update(mapping(message["values"]))
             case {"type": "bye"}:
                 self.engine_stopped = True
             case _:
@@ -202,6 +206,10 @@ class MediaState:
     def texts(self, display: str) -> list[DrawText]:
         """The texts you could see on ``display`` now (what ``GameRig.screen()`` reads)."""
         return [item for item in self.draws(display) if isinstance(item, DrawText) and item.opacity > 0]
+
+    def _modes(self) -> dict[str, SimpleNamespace]:
+        """What each mode published, by mode name: ``{high_score.initials}``."""
+        return {mode: SimpleNamespace(**values) for mode, values in self.values.items()}
 
     def _players(self) -> dict[int, SimpleNamespace]:
         """Every player's variables, by number: ``{players[2].score}``."""
@@ -246,7 +254,8 @@ class MediaState:
             y = cy + (ay - 0.5) * height + dy
             match actor.get("type"):
                 case "text":
-                    text = _FORMATTER.format(str(actor["text"]), player=self._player(), players=self._players())
+                    text = _FORMATTER.format(str(actor["text"]), **self._modes(), player=self._player(),
+                                             players=self._players())
                     out.append(DrawText(text, x, y, float(actor.get("size", 0.1)) * height,
                                         str(actor.get("color", "ffffff")), str(actor.get("anchor", "center")), seen))
                 case "scene":

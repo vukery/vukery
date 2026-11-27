@@ -239,6 +239,7 @@ scoring entry in the same mode.
 | `self.delay("name", seconds, callback)` | call later; cancelled if the mode stops first |
 | `self.cancel_delay("name")` | |
 | `self.show_scene(scene, display=None, priority=0)` / `self.remove_scene(scene)` | see [Displays and scenes](scenes.md) |
+| `self.publish(**values)` | values for scenes, as `{<mode name>.<key>}`: see [values from modes](scenes.md#values-from-modes) |
 | `self.play_show(name, ...)` / `self.stop_show(key=None)` | see [Shows](shows.md) |
 | `self.stop()` | stop the mode |
 | `self.machine` | everything else: `switches`, `coils`, `lights`, `events`, `game`, `modes` |
@@ -257,9 +258,10 @@ player_vars:
 
 ## Built-in modes
 
-vukery ships the modes every pinball machine needs. Today that's **attract**
-and **game**; high score, replay, match, tilt, ball save and the others are
-planned. A game changes a built-in mode only in the ways it declares, never
+vukery ships the modes every pinball machine needs. Today that's **attract**,
+**game** and **[high score](high-score.md)**; replay, match, tilt, ball save
+and the others are planned. Core ones always run; optional ones run when the
+game lists them in `modes:`. A game changes a built-in mode only in the ways it declares, never
 by copying its code and editing it.
 
 **Customizing:** a built-in mode lists what can change (its
@@ -275,7 +277,7 @@ Change them in a subclass, in the mode's folder, and list the mode in
 `modes:` as usual:
 
 ```python
-# modes/high_score/mode.py (high score is planned)
+# modes/high_score/mode.py
 from vukery.modes import HighScore
 
 
@@ -297,6 +299,7 @@ be replaced, only customized.
 |---|---|---|
 | `attract` | core | nothing yet |
 | `game` | core | nothing yet (balls and players are in `game:`) |
+| [`high_score`](high-score.md) | optional | `categories`, `defaults`, `enter_initials_seconds`, `award_seconds`, `look` |
 
 ## Lifecycle
 
