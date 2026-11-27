@@ -159,3 +159,7 @@ vukery/core/util.py
 vukery/core/util.py
     from: lines 789-799 of mpf/core/utility_functions.py @ 9ef886f4f263db44704f09a87bfd11229036ab5c (MPF 0.57.6)
     permalink: https://github.com/missionpinball/mpf/blob/9ef886f4f263db44704f09a87bfd11229036ab5c/mpf/core/utility_functions.py#L789-L799
+
+vukery/devices/color_names.py
+    from: lines 19-163 of mpf/core/rgb_color.py @ 9ef886f4f263db44704f09a87bfd11229036ab5c (MPF 0.57.6)
+    permalink: https://github.com/missionpinball/mpf/blob/9ef886f4f263db44704f09a87bfd11229036ab5c/mpf/core/rgb_color.py#L19-L163
