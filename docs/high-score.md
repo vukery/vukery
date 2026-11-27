@@ -23,7 +23,8 @@ player who beat an entry, in turn:
 2. **sees each award** for a few seconds.
 
 Then the tables are saved in `data/high_scores.yaml` in the machine folder
-(new machines keep `data/` out of git) and the game ends. A score that ties
+(new machines keep `data/` out of git) and the game ends. In specs, the rig
+keeps them in a temporary folder instead, so a spec run never changes them. A score that ties
 an entry doesn't beat it.
 
 ## Customizing it

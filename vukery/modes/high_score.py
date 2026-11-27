@@ -152,7 +152,7 @@ class HighScore(BuiltInMode, built_in=True):
 
     @property
     def file(self) -> Path:
-        return self.machine.config.game_dir / "data" / "high_scores.yaml"
+        return self.machine.data_dir / "high_scores.yaml"
 
     def _load(self) -> dict[str, list[tuple[str, int]]]:
         saved: dict[str, Any] = {}

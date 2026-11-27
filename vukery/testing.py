@@ -29,6 +29,8 @@ One verb per concept (no combined helpers): ``switch()`` changes switches,
 """
 
 import asyncio
+import shutil
+import tempfile
 from pathlib import Path
 from typing import Any
 
@@ -48,14 +50,19 @@ class GameRig:
     """Runs a game folder in the test environment, for specs."""
 
     def __init__(self, game_dir: Path | str, simulate_balls: bool = True, fill_troughs: bool = True,
-                 dashboard: bool = False):
+                 dashboard: bool = False, data_dir: Path | str | None = None):
         """``simulate_balls``: ejected balls leave the trough by themselves (as in development).
         ``fill_troughs``: every trough switch starts active (all balls home).
-        ``dashboard``: attach an in-process vuk me dashboard, as ``rig.dashboard``."""
+        ``dashboard``: attach an in-process vuk me dashboard, as ``rig.dashboard``.
+        ``data_dir``: where the machine keeps its data (high scores…). A temporary folder by default,
+        removed when the rig stops, so specs never write into the machine folder; pass another
+        rig's ``machine.data_dir`` to read what it saved."""
         self.loop = asyncio.new_event_loop()
         self.clock = VirtualClock(self.loop)
         try:
             self.machine = Machine.from_folder(Path(game_dir), env="test", clock=self.clock, dashboard=dashboard)
+            self._own_data = data_dir is None
+            self.machine.data_dir = Path(data_dir) if data_dir is not None else Path(tempfile.mkdtemp(prefix="vukery-"))
             self.machine.platform.simulate_balls = simulate_balls
             self.posted: list[tuple[str, dict[str, Any]]] = []
             self.machine.events.monitors.append(lambda event, kwargs: self.posted.append((event, kwargs)))
@@ -157,6 +164,8 @@ class GameRig:
             self.loop.run_until_complete(asyncio.gather(*pending, return_exceptions=True))
         settle(self.loop)
         self.loop.close()
+        if self._own_data:
+            shutil.rmtree(self.machine.data_dir, ignore_errors=True)
 
     # --- what to look at
 

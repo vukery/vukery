@@ -61,6 +61,7 @@ happens until the test does something.
 |---|---|---|
 | `fill_troughs` | `True` | Every trough switch starts active (all balls home); other ball devices start empty |
 | `simulate_balls` | `True` | An ejected ball leaves the trough by itself, and lands in its eject target (a plunger lane, say) |
+| `data_dir` | a temporary folder | Where the machine keeps its data (high scores…). Specs never write into the machine folder; pass another rig's `machine.data_dir` to read what it saved |
 
 ### Actions
 
