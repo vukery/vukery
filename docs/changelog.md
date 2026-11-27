@@ -6,6 +6,12 @@ vukery is in **0.0.x** while it works toward parity with MPF. Every push to
 
 Check your version with `vuk --version`.
 
+## 0.0.30 (2026-11-27)
+
+- **Docs site:** the whole menu stays open from page to page, pages show
+  breadcrumbs and load in place, and the pages that moved in 0.0.29 redirect
+  to their new places.
+
 ## 0.0.29 (2026-11-27)
 
 - **Ball search**, MPF's: when the playfield goes quiet with a ball on it,
