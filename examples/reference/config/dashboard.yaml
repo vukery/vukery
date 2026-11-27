@@ -1,0 +1,18 @@
+# vuk me's dashboard. vuk me rewrites this file when you resize a pane or drag
+# a switch or light into place, unless arrangement_lock is true.
+
+dashboard:
+  arrangement_lock: false         # true: vuk me can't change the layout (default: false)
+  panes:                          # each pane's size, as a % of the window (default: an even split)
+    list:
+      width: 40.0                 # the list of everything, on the left
+    backbox:
+      height: 55.0                # the middle column, top to bottom: the backbox, then one pane per display;
+    main:                         # their heights add up to 100
+      height: 45.0
+  backbox:                        # switches and lights placed on the backbox artwork: [x, y], each 0 to 1
+    s_start: [0.9, 0.1]
+  playfield:                      # and on the playfield (artwork: assets/images/playfield.png)
+    s_target: [0.5, 0.62]
+    s_left_sling: [0.22, 0.3]
+    l_shoot_again: [0.5, 0.12]

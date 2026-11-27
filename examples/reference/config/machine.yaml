@@ -1,0 +1,303 @@
+# examples/reference: every config setting vukery supports, in one machine.
+#
+# This machine exists to be read. Each section shows every setting it takes,
+# with its default and its choices in a comment; a spec fails if vukery gains
+# a setting that isn't shown here, and another spec starts this machine, so
+# everything here really loads. To learn the game side (modes, scenes,
+# specs), start with examples/basic instead.
+#
+# Names are MPF's, so an MPF machine config mostly carries over. Times take a
+# unit: "500ms" or "2s". Where MPF reads a bare number as milliseconds (ball
+# search, ball saves), so does vukery; elsewhere a bare number is seconds.
+#
+# The config is split over files: every config/*.yaml is merged (this file,
+# dashboard.yaml), then config/environments/<VUK_ENV>.yaml on top. The FAST
+# hardware is in environments/production.yaml.
+
+# --- switches -------------------------------------------------------------
+
+switches:
+  s_start:
+    number: 0                     # required: the board and input (FAST: "io3208-0"); simulated: any unique one
+    tags: start                   # start: the start button (attract and game listen for it)
+    label: Start button           # what vuk me shows (default: the name)
+  s_trough1:
+    number: 1
+    type: NO                      # NO (normally open, the default) or NC (normally closed: an opto)
+    debounce: auto                # auto (the default), quick or normal: FAST's debounce times
+  s_trough2:
+    number: 2
+  s_trough3:
+    number: 3
+  s_plunger:
+    number: 4
+  s_left_flipper:
+    number: 5
+    tags: left_flipper            # left_flipper / right_flipper: menus (high score initials) use them
+  s_right_flipper:
+    number: 6
+    tags: right_flipper
+  s_left_flipper_eos:
+    number: 7                     # end of stroke: the flipper is all the way up
+  s_left_sling:
+    number: 8
+  s_target:
+    number: 9
+    tags: playfield_active        # playfield_active: a ball hit it (ball search starts its timer over)
+    events_when_activated: target_down        # posted when it closes (default: none)
+    events_when_deactivated: target_up        # posted when it opens (default: none)
+    platform_settings:            # FAST only: per-switch debounce, in ms (default: from debounce:)
+      debounce_open: 3
+      debounce_close: 3
+  s_plumb_bob:
+    number: 10
+    tags: tilt_warning            # tilt_warning: the tilt mode's plumb bob
+  s_slam:
+    number: 11
+    tags: slam_tilt               # slam_tilt: the tilt mode's slam switch; tilt: tilts at once
+
+# --- coils ----------------------------------------------------------------
+
+coils:
+  c_trough_eject:
+    number: 0                     # required: the board and driver (FAST: "io3208-0")
+    default_pulse_ms: 20          # a pulse's length (default: 10)
+    default_pulse_power: 1.0      # 0.0 to 1.0 (default: 1.0)
+    max_pulse_ms: 40              # vukery refuses longer pulses (default: the platform's maximum)
+    max_pulse_power: 1.0          # 0.0 to 1.0 (default: 1.0)
+    default_recycle: true         # wait after a pulse before it can fire again (default: the platform's)
+    platform_settings:            # FAST only
+      recycle_ms: 100             # the wait, in ms
+  c_left_flipper_main:
+    number: 1
+    default_pulse_ms: 30
+  c_left_flipper_hold:
+    number: 2
+    allow_enable: true            # may be held on (default: false). Needs default_hold_power
+    default_hold_power: 1.0       # 0.0 to 1.0: the power while held
+    max_hold_power: 1.0           # vukery refuses more (default: default_hold_power)
+  c_right_flipper:
+    number: 3                     # a single-wound flipper: one coil, pulsed then held at low power
+    default_pulse_ms: 30
+    allow_enable: true
+    default_hold_power: 0.125
+  c_left_sling:
+    number: 4
+    default_pulse_ms: 15
+  c_diverter:
+    number: 5
+    default_timed_enable_ms: 2000      # how long timed_enable() holds it (default: none)
+    pulse_with_timed_enable: true      # pulse() holds it for default_timed_enable_ms (default: false)
+    allow_enable: true
+    default_hold_power: 0.25
+    platform_settings:
+      pwm2_ms: 2000                    # FAST only: hold up to 25.5 s (over 255 ms, in steps of 100)
+
+# --- lights ---------------------------------------------------------------
+# Give each light one of: number, previous, start_channel or channels.
+
+lights:
+  l_shoot_again:
+    number: 3-24                  # FAST Nano: LED port 3, LED 24 (both from 1); or a plain index: 151
+    subtype: led                  # led (the default; the only one vukery supports)
+    default_on_color: ff8800      # the color for on() (default: ffffff); hex or MPF's names (orange…)
+    fade_ms: 100                  # the default fade (default: none)
+    platform_settings: {}         # MPF's; accepted, FAST has none for lights
+  l_lane_a:
+    previous: l_shoot_again       # the channels right after another light's
+    type: grb                     # channel order: rgb (default for 3 channels), grb, rgbw, w (1 channel)…
+  l_lane_b:
+    previous: l_lane_a
+    type: rgb
+  l_lane_c:
+    start_channel: 33-0           # starting at a channel (LED-channel), in sequence
+    type: rgbw
+  l_custom:
+    channels:                     # each color on any channel
+      red:
+        number: 40-0
+      green:
+        number: 40-2
+      blue:
+        number: 40-1
+      white:
+        number: 41-2
+
+light_groups:                     # lights in order, for chases and fills: a list of lights
+  l_lanes:
+    - l_lane_a
+    - l_lane_b
+    - l_lane_c
+
+# --- ball devices -----------------------------------------------------------
+
+ball_devices:
+  bd_trough:
+    ball_switches: s_trough1, s_trough2, s_trough3   # one per ball
+    eject_coil: c_trough_eject    # fired to eject a ball
+    tags: trough, home, drain     # trough: balls drain here; home: a game starts when it's full; drain
+    eject_targets: bd_plunger     # where its balls go: playfield (the default) or a ball device
+    ball_search_order: 3          # its turn in ball search (default: 200); 0: left out
+  bd_plunger:
+    ball_switches: s_plunger
+    mechanical_eject: true        # a plunger the player pulls: the ball leaves when it's shot (default: false)
+    eject_targets: playfield
+
+# --- flippers and autofire coils (hardware rules) ----------------------------
+
+flippers:
+  left_flipper:                   # dual-wound, with an end-of-stroke switch
+    main_coil: c_left_flipper_main
+    hold_coil: c_left_flipper_hold          # dual-wound: the hold winding (default: none: single-wound)
+    activation_switch: s_left_flipper
+    eos_switch: s_left_flipper_eos
+    use_eos: true                 # the EOS switch ends the power stroke (default: false: timed)
+    repulse_on_eos_open: true     # re-pulse if the ball knocks the flipper down (default: false)
+    eos_active_ms_before_repulse: 20        # how long the EOS must be closed first (default: 500)
+    enable_events: ball_started             # default: ball_started
+    disable_events: ball_will_end, service_mode_entered   # default: these two
+    label: Left flipper           # what vuk me shows
+  right_flipper:                  # single-wound, timed
+    main_coil: c_right_flipper
+    activation_switch: s_right_flipper
+
+autofire_coils:                   # slingshots and pop bumpers: the switch fires the coil
+  left_sling:
+    coil: c_left_sling
+    switch: s_left_sling
+    reverse_switch: false         # fire when the switch opens instead (default: false)
+    enable_events: ball_started   # default: ball_started
+    disable_events: ball_will_end, service_mode_entered   # default: these two
+    ball_search_order: 100        # its turn in ball search (default: 100); 0: left out
+
+# --- the playfield and ball search ----------------------------------------
+
+playfields:
+  playfield:                      # the only playfield
+    enable_ball_search: true      # default: false
+    ball_search_timeout: 15s      # quiet this long with a ball out: search (default: 15s)
+    ball_search_interval: 250ms   # between coils (default: 150ms)
+    ball_search_wait_after_iteration: 10s   # between rounds (default: 5s)
+    ball_search_phase_1_searches: 3         # rounds in each phase (defaults: 3, 3, 4)
+    ball_search_phase_2_searches: 3
+    ball_search_phase_3_searches: 4
+    ball_search_failed_action: new_ball     # new_ball (the default), end_ball or end_game
+    ball_search_block_events: flipper_cradle            # default: flipper_cradle
+    ball_search_unblock_events: flipper_cradle_release  # default: flipper_cradle_release
+    ball_search_enable_events: mode_base_started        # default: none (it arms itself)
+    ball_search_disable_events: mode_base_stopped       # default: none
+    tags: default                 # MPF's; accepted so MPF configs load, not used
+    default_source_device: bd_plunger       # MPF's; accepted so MPF configs load, not used
+
+ball_saves:
+  default:
+    active_time: 10s              # how long it saves, once its timer starts (default: 0: until disabled)
+    hurry_up_time: 2s             # ball_save_<name>_hurry_up this long before the end (default: 0)
+    grace_period: 500ms           # still saving this long after the end (default: 0)
+    timer_start_events: balldevice_bd_plunger_ball_eject_success   # start the timer then (default: on enable)
+    balls_to_save: 1              # -1: any number (default: 1)
+    only_last_ball: false         # only the last ball in play (multiball) (default: false)
+    eject_delay: 0ms              # wait before serving the new ball (default: 0)
+    auto_launch: true             # the new ball goes to the trough's eject target (default: true)
+    enable_events: ball_started   # default: none
+    disable_events: ball_will_end, service_mode_entered   # default: these two
+    debug: false                  # MPF's; vukery logs it under devices.ball_save.<name>
+
+# --- the game ---------------------------------------------------------------
+
+game:
+  balls_per_game: 3               # default: 3
+  max_players: 4                  # default: 4
+
+player_vars:                      # each player's variables and their starting values (default: 0)
+  bonus_multiplier:
+    initial_value: 1
+    value_type: int               # MPF's; accepted, the value keeps its own type
+  lanes_lit: 0                    # a bare value works too
+
+modes:                            # the modes that run: the game's own, from modes/<name>/
+  - base
+  - high_score                    # optional built-in modes: listed to run
+  - tilt
+
+# --- displays and sound -----------------------------------------------------
+
+displays:                         # one media controller per display
+  main:
+    width: 800                    # default: 800
+    height: 480                   # default: 480
+    screen: 1                     # the monitor vuk us puts it on, full screen (default: the next one)
+
+media:
+  port: 5051                      # where media controllers connect (default: 5051)
+
+sound_system:
+  buffer: 2048                    # MPF's; pyglet picks these itself
+  frequency: 44100
+  channels: 2
+  tracks:                         # default: one track, sfx
+    music:
+      volume: 0.4                 # 0.0 to 1.0, or decibels: -8db (default: 0.5)
+      simultaneous_sounds: 1      # default: 8
+    sfx:
+      volume: 0.8
+      simultaneous_sounds: 8
+      preload: true               # decode its sounds at start, not on first play (default: false)
+    voice:
+      volume: 1.0
+      simultaneous_sounds: 1
+
+sounds:                           # every file in assets/sounds/ is already a sound, named by its file name;
+  music:                          # list one here to change its settings
+    track: music                  # default: sfx, or the first track
+    loops: -1                     # -1: forever (default: 0: play once)
+    mode_end_action: stop         # when its mode stops: stop, or stop_looping (the default)
+  jackpot_voice:
+    file: jackpot_voice.wav       # a file in assets/sounds/ (default: the file named like the sound)
+    track: voice
+    volume: -3db                  # default: 0.5
+    priority: 10                  # a full track stops a lower one for it (default: 0)
+    max_queue_time: 2s            # a busy track may queue it this long (default: never queue)
+    ducking:                      # turn another track down while it plays
+      target: music
+      attack: 100ms               # how fast it goes down (default: 0.01s)
+      attenuation: 0.3            # to this share of its volume (default: 1.0: not at all)
+      release_point: 200ms        # how long before this sound ends it comes back up (default: 0)
+      release: 300ms              # how fast it comes back up (default: 0.01s)
+
+sound_pools:                      # one name for several sounds
+  voices:
+    sounds: voice_1|2, voice_2    # sound|weight (default weight: 1)
+    type: random                  # random (the default) or sequence
+    track: voice                  # MPF's; each sound plays on its own track
+
+# --- vuk me (simulated platforms only) --------------------------------------
+
+keyboard:                         # keys in vuk me's window (dashboard.yaml places switches and lights)
+  debug: false                    # MPF's; vuk me logs keys at debug level
+  z:
+    switch: s_left_flipper        # active while the key is held
+  slash:
+    switch: s_right_flipper
+  "1":
+    switch: s_trough1
+    toggle: true                  # each press flips it (default: false)
+  s:
+    switch: s_slam
+    invert: true                  # active until the key is pressed: an NC switch (default: false)
+  ctrl+j:
+    event: award_jackpot          # posted when the key goes down
+    params:                       # the event's arguments (default: none)
+      points: 5000
+
+# --- logging (VUK_LOG=debug overrides every level for one run) ----------------
+
+logging:
+  level: info                     # debug, info (the default), warning, error or off
+  console: info                   # what the terminal shows (default: info)
+  file: debug                     # what log/<env>.log keeps (default: debug)
+  max_file_mb: 10                 # the log file's size before it rotates (default: 10)
+  backups: 5                      # rotated files kept (default: 5)
+  components:                     # levels for single parts, by their dotted names
+    ball_search: debug
+    fast.net: warning
