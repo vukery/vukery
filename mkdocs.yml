@@ -32,6 +32,7 @@ nav:
   - Devices:
       - Coils: devices/coils.md
       - Flippers: devices/flippers.md
+      - Ball saves: devices/ball-saves.md
       - Lights: devices/lights.md
 
 extra_css:

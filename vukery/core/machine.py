@@ -31,6 +31,7 @@ from vukery.core.modes import Mode, ModeController
 from vukery.core.shows import Shows
 from vukery.core.switches import SwitchConfig, SwitchController
 from vukery.devices.ball_device import BallDevice, BallDeviceConfig
+from vukery.devices.ball_save import BallSave, BallSaveConfig
 from vukery.devices.coil import Coil, CoilConfig
 from vukery.devices.light import Light, LightConfig
 from vukery.devices.light_group import LightGroup
@@ -77,6 +78,7 @@ class Machine(Logs):
         self.ball_devices: dict[str, BallDevice] = {}
         self.flippers: dict[str, Flipper] = {}
         self.autofire_coils: dict[str, AutofireCoil] = {}
+        self.ball_saves: dict[str, BallSave] = {}
         self.keyboard: dict[str, keyboard.Key] = {}
         self.data_dir = config.game_dir / "data"   # what the machine keeps (high scores…); specs use a temp folder
         self._calls: dict[str, Any] = {}
@@ -184,6 +186,8 @@ class Machine(Logs):
         for name, entry in config.section("autofire_coils").items():
             self.autofire_coils[name] = AutofireCoil.from_yaml(name, entry or {}, self)
         self.keyboard = keyboard.load(config.section("keyboard"), set(self.switches.switches))  # vuk me's keys
+        for name, entry in config.section("ball_saves").items():
+            self.ball_saves[name] = BallSave(BallSaveConfig.from_yaml(name, entry or {}), self)
         self.events.add_handler("request_to_start_game", self._balls_home_check, priority=100)
 
     def _fill_troughs(self) -> None:

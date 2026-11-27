@@ -21,7 +21,8 @@ rest of the docs never describe something as if it already works.
 | Lights | Built: MPF's channel numbering, colors, fades, RGBW, MPF's priority stack, light groups. | [Lights](devices/lights.md) |
 | FAST Neuron and EXP boards | Planned, after COMBAT. | |
 | Built-in modes | Built: attract and game (core), [high score](high-score.md) and [tilt](tilt.md) (optional). Sealed: a game changes only what each declares, and replaces only the optional ones. | [Modes](modes.md#built-in-modes) |
-| Ball save, match, replay, ball search, other built-in modes | Planned. | |
+| Ball saves | Built: MPF's `ball_saves:` device (timer, hurry-up, grace period, balls to save, only the last ball, eject delay). | [Ball saves](devices/ball-saves.md) |
+| Match, replay, ball search, other built-in modes | Planned. | |
 | Sound | Built: sounds from `assets/sounds/`, MPF's `sounds:`, `sound_pools:` and tracks; `play_sound` with MPF's `sound_player` options; mixed with priorities, queueing, loops and ducking; played by `vuk me` and by `vuk us`. Fades, markers and sounds in shows come later. | [Sound](sound.md) |
 | Images, video | Planned. | |
 | `vuk me` dashboard | Built: a scrolling list of the game, switches, lights, coils and devices; the backbox, a pane per display, and the playfield; clicking switches; MPF's `keyboard:` keys for switches and events; dragging switches and lights into the backbox or onto the playfield; resizable panes; all saved to `config/dashboard.yaml` (`arrangement_lock`). Your own playfield and backbox pictures from `assets/images/`. Never fires coils. | [The dashboard](dashboard.md) |
