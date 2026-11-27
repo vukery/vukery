@@ -6,6 +6,12 @@ vukery is in **0.0.x** while it works toward parity with MPF. Every push to
 
 Check your version with `vuk --version`.
 
+## 0.0.25 (2026-11-26)
+
+- **Fixed:** specs wrote high score tables into the machine's `data/`
+  folder, so one run changed the next. The spec rig now keeps a machine's
+  data in a temporary folder (`GameRig(data_dir=...)` to choose).
+
 ## 0.0.24 (2026-11-26)
 
 - **Built-in modes are sealed.** A game customizes one with a subclass that
