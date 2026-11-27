@@ -6,6 +6,15 @@ vukery is in **0.0.x** while it works toward parity with MPF. Every push to
 
 Check your version with `vuk --version`.
 
+## 0.0.29 (2026-11-27)
+
+- **Ball search**, MPF's: when the playfield goes quiet with a ball on it,
+  ball devices, slingshots and bumpers, and a game's own devices fire in
+  order, in three phases; then it gives up with a new ball (or ends the ball
+  or game). Lost balls that turn up later are found, not drained. Set up in
+  `playfields: playfield:`. See [Ball search](devices/ball-search.md).
+- `game.end_game()`.
+
 ## 0.0.28 (2026-11-26)
 
 - **Ball saves**, MPF's `ball_saves:` device: as many as a game needs, each
