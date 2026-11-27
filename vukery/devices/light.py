@@ -19,6 +19,7 @@ from itertools import count
 from typing import Any, cast
 
 from vukery.core.errors import ConfigError
+from vukery.devices.color_names import NAMED_RGB_COLORS
 
 COLOR_NAMES = {"r": "red", "g": "green", "b": "blue", "w": "white"}
 
@@ -26,8 +27,12 @@ Color = tuple[int, int, int]
 
 
 def parse_color(value: Any) -> Color:
-    """A color from config or code: ``"ff8800"``, ``(255, 136, 0)`` or ``[255, 136, 0]``."""
+    """A color from config or code: ``"ff8800"``, ``(255, 136, 0)``, ``[255, 136, 0]``, or one of MPF's
+    color names (the web's: ``orange``, ``red``, ``off``…)."""
     match value:
+        case str() as text if text.lower() in NAMED_RGB_COLORS:
+            red, green, blue = NAMED_RGB_COLORS[text.lower()]
+            return red, green, blue
         case str() as text if len(text) == 6:
             try:
                 return int(text[0:2], 16), int(text[2:4], 16), int(text[4:6], 16)
