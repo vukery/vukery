@@ -4,7 +4,7 @@
     Built: warnings, tilt, slam tilt, settling, the look. As MPF's `tilt`
     mode, and specced with MPF's tilt scenarios.
 
-An optional [built-in mode](modes.md#built-in-modes). List it in `modes:`;
+An optional [built-in mode](../index.md#built-in-modes). List it in `modes:`;
 it runs all the time, even between games, so a slam tilt is always caught.
 
 ```yaml

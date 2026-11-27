@@ -33,7 +33,7 @@ A mode is a folder, and its main file is always `mode.py`.
   its settings (priority, `start_on`…) and its scoring table.
 - **Bigger parts go in files next to it,** imported with a relative import:
   - its scenes in `scenes.py`;
-  - its shows, as YAML files (see [Shows](shows.md));
+  - its shows, as YAML files (see [Shows](../media/shows.md));
   - helper code in a module of its own.
 
 ```text
@@ -78,7 +78,7 @@ Settings are class attributes:
 | `stop_on_ball_end` | `True` | Stops at the end of each ball | `stop_on_ball_end` |
 | `use_wait_queue` | `False` | Started by a queue event (such as `game_ending`), holds it until the mode stops: the game ends after it | `use_wait_queue` |
 | `scoring` | `{}` | What the mode scores (see [Scoring](#scoring)) | `variable_player` |
-| `scenes` | `()` | The `@scene` functions the mode can show (see [Displays and scenes](scenes.md)) | `slides` / `slide_player` |
+| `scenes` | `()` | The `@scene` functions the mode can show (see [Displays and scenes](../media/scenes.md)) | `slides` / `slide_player` |
 | `name` | from the class | `HoleScore` → `hole_score` | the mode's folder name |
 
 For code that runs the whole time the machine is on, set `game_mode = False`
@@ -239,9 +239,9 @@ scoring entry in the same mode.
 | `self.post("event_name", **args)` | post an event |
 | `self.delay("name", seconds, callback)` | call later; cancelled if the mode stops first |
 | `self.cancel_delay("name")` | |
-| `self.show_scene(scene, display=None, priority=0)` / `self.remove_scene(scene)` | see [Displays and scenes](scenes.md) |
-| `self.publish(**values)` | values for scenes, as `{<mode name>.<key>}`: see [values from modes](scenes.md#values-from-modes) |
-| `self.play_show(name, ...)` / `self.stop_show(key=None)` | see [Shows](shows.md) |
+| `self.show_scene(scene, display=None, priority=0)` / `self.remove_scene(scene)` | see [Displays and scenes](../media/scenes.md) |
+| `self.publish(**values)` | values for scenes, as `{<mode name>.<key>}`: see [values from modes](../media/scenes.md#values-from-modes) |
+| `self.play_show(name, ...)` / `self.stop_show(key=None)` | see [Shows](../media/shows.md) |
 | `self.stop()` | stop the mode |
 | `self.machine` | everything else: `switches`, `coils`, `lights`, `events`, `game`, `modes` |
 | `mode_start()` / `mode_stop()` | override to run code as the mode starts or stops |
@@ -259,49 +259,9 @@ player_vars:
 
 ## Built-in modes
 
-vukery ships the modes every pinball machine needs. Today that's **attract**,
-**game**, **[high score](high-score.md)** and **[tilt](tilt.md)**; replay,
-match, ball save and the others are planned. Core ones always run; optional ones run when the
-game lists them in `modes:`. A game changes a built-in mode only in the ways it declares, never
-by copying its code and editing it.
-
-**Customizing:** a built-in mode lists what can change (its
-`customizable`), in three kinds:
-
-- **settings:** class attributes, such as high score's categories;
-- **look:** the scene, sound or show for each moment, such as the
-  initials screen;
-- **hooks:** a few methods with a fixed signature that return a
-  decision, such as what a replay pays.
-
-Change them in a subclass, in the mode's folder, and list the mode in
-`modes:` as usual:
-
-```python
-# modes/high_score/mode.py
-from vukery.modes import HighScore
-
-
-class CombatHighScore(HighScore):   # still the high_score mode
-    enter_initials_seconds = 45
-```
-
-**Anything else is refused** when the class is defined: overriding another
-method (`mode_start`, say) or setting, or adding an `@on` handler. The error
-says what the mode can change. For more behavior, react to the built-in
-mode's events in a mode of your own.
-
-**Replacing:** the *optional* built-in modes (high score, replay, match and
-the like) can be replaced outright. A mode of the game's own with the same
-name, not a subclass, runs instead. The *core* ones, attract and game, can't
-be replaced, only customized.
-
-| Built-in mode | Kind | Can change |
-|---|---|---|
-| `attract` | core | nothing yet |
-| `game` | core | nothing yet (balls and players are in `game:`) |
-| [`high_score`](high-score.md) | optional | `categories`, `defaults`, `enter_initials_seconds`, `award_seconds`, `look` |
-| [`tilt`](tilt.md) | optional | `warnings_to_tilt`, `multiple_hit_window`, `settle_time`, `reset_warnings_events`, the switch tags, `tilt_warnings_player_var`, `look` |
+vukery ships the modes every pinball machine needs: attract and game, and
+optional ones a game lists in `modes:`, such as high score and tilt. A game
+changes one only in the ways it declares. See [Built-in modes](built-in/index.md).
 
 ## Lifecycle
 

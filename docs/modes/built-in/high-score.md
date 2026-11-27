@@ -5,7 +5,7 @@
     screens, saved tables. Replay, match and the other optional built-in
     modes come later.
 
-An optional [built-in mode](modes.md#built-in-modes), as MPF's
+An optional [built-in mode](../index.md#built-in-modes), as MPF's
 `high_score`. List it in `modes:` to use it:
 
 ```yaml
@@ -67,7 +67,7 @@ replace it with a `high_score` mode of your own that isn't a subclass.
 
 ## Its scenes and events
 
-Scenes read what it publishes (see [publishing values](scenes.md#values-from-modes)):
+Scenes read what it publishes (see [publishing values](../../media/scenes.md#values-from-modes)):
 
 | Value | |
 |---|---|

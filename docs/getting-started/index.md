@@ -3,7 +3,7 @@
 !!! note "0.0.x"
     vukery runs games on its simulated platforms today. Real hardware (the
     FAST Nano) is built but not yet tried on a machine. See
-    [Status](status.md).
+    [Status](../status.md).
 
 ## What you need
 

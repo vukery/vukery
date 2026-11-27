@@ -4,7 +4,7 @@
     Scenes with text and nested scenes, entrances and exits, moves and
     blinks, on one or more displays, drawn by the pyglet media controller. Images, sprite sheets,
     video and sound come later. The complete examples are
-    [`examples/display` and `examples/dual_display`](examples.md).
+    [`examples/display` and `examples/dual_display`](../getting-started/examples.md).
 
 vukery's game engine decides what each display shows. A **media
 controller**, a separate process, only draws it. The default media
@@ -47,7 +47,7 @@ at one at its configured size in a window, run it by hand:
 uv run python -m vukery.mc . --display main --windowed
 ```
 
-[`vuk me`](dashboard.md) doesn't open these windows: its dashboard shows each
+[`vuk me`](../tools/dashboard.md) doesn't open these windows: its dashboard shows each
 display in a pane of its own.
 
 ## Scenes and actors (Python)
@@ -212,7 +212,7 @@ self.publish(countdown=10)        # in the frenzy mode: {frenzy.countdown}
 ```
 
 They stay until published again, and a media controller that connects
-later gets them. [High score](high-score.md) publishes the initials being
+later gets them. [High score](../modes/built-in/high-score.md) publishes the initials being
 entered and its tables this way.
 
 ### Clipped to the display
@@ -245,7 +245,7 @@ controller in any language: it says hello with its displays, gets a welcome
 with every scene (as data) and the current state, then follows `show`,
 `player` and `turn` messages. Messages it doesn't recognize must be ignored.
 The protocol is version 2 (version 1 had slides).
-The [`vuk me` dashboard](dashboard.md) is a media controller too: it says
+The [`vuk me` dashboard](../tools/dashboard.md) is a media controller too: it says
 `"dashboard": true` in its hello and also gets the machine's layout and
 `state` messages, and it may send `switch` messages back.
 The message formats are in `vukery/media/protocol.py`.
