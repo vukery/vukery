@@ -6,6 +6,22 @@ vukery is in **0.0.x** while it works toward parity with MPF. Every push to
 
 Check your version with `vuk --version`.
 
+## 0.0.24 (2026-11-26)
+
+- **Built-in modes are sealed.** A game customizes one with a subclass that
+  changes only what the mode declares (settings, look, hooks); anything else
+  is refused with a list of what can change. Optional built-ins can be
+  replaced by a game's own mode of the same name; core ones (attract, game)
+  can't. See [Modes](modes.md#built-in-modes).
+- **High score** (MPF's `high_score`), the first optional built-in: list it
+  in `modes:`. Initials with the flippers and start, the award screens, and
+  tables saved in `data/high_scores.yaml`. See [High score](high-score.md).
+- **Values from modes:** `self.publish(countdown=10)` is `{frenzy.countdown}`
+  in a scene.
+- New matcher: `expect(x).to_be(y)`, the same object.
+- The examples and new machines tag their flipper buttons (`left_flipper`,
+  `right_flipper`), and new machines keep `data/` out of git.
+
 ## 0.0.23 (2026-11-26)
 
 - **Keys in `vuk me`:** MPF's `keyboard:` section, so an MPF machine's

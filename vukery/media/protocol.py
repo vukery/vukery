@@ -19,6 +19,7 @@ The engine decides what's shown; media controllers only render.
        {"type": "show", "display": "main", "scene": "score"}      # the scene now on a display
        {"type": "player", "number": 1, "vars": {"score": 1000}}   # player variables
        {"type": "turn", "number": 2}                               # whose turn it is (null: no game)
+       {"type": "values", "mode": "high_score", "values": {"initials": "AB"}}  # for scenes: {high_score.initials}
        {"type": "bye"}                                             # the engine is stopping
 
 Messages a media controller doesn't recognize must be ignored, so the

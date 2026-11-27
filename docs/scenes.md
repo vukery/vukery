@@ -203,6 +203,18 @@ Text can include the current player's variables, with Python formatting:
 Anything that doesn't exist yet shows as empty: `{players[3].score}` before
 there's a third player, say.
 
+### Values from modes
+
+A mode can publish values for scenes, read as `{<mode name>.<key>}`:
+
+```python
+self.publish(countdown=10)        # in the frenzy mode: {frenzy.countdown}
+```
+
+They stay until published again, and a media controller that connects
+later gets them. [High score](high-score.md) publishes the initials being
+entered and its tables this way.
+
 ### Clipped to the display
 
 Nothing is drawn outside a display, as on real glass: an actor moving past

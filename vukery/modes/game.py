@@ -19,11 +19,15 @@ Adding a player: ``player_add_request`` (boolean, can be refused) →
 import asyncio
 from typing import Any
 
-from vukery.core.modes import Mode, on
+from vukery.core.modes import on
 from vukery.core.player import Player
+from vukery.modes.built_in import BuiltInMode
 
 
-class Game(Mode):
+class Game(BuiltInMode, built_in=True):
+    """Core: a game can't replace it, and there's nothing to customize yet (balls and players are
+    in the game: section)."""
+
     priority = 20
     start_on = "game_start"
     stop_on = "game_ended"

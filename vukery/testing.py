@@ -212,6 +212,10 @@ class Expectation:
     def to_equal(self, expected: Any) -> None:
         assert self.value == expected, f"expected {expected!r}, got {self.value!r}"
 
+    def to_be(self, expected: Any) -> None:
+        """The very same object (``is``), not just an equal one."""
+        assert self.value is expected, f"expected {expected!r} itself, got {self.value!r}"
+
     def not_to_equal(self, unexpected: Any) -> None:
         assert self.value != unexpected, f"expected anything but {unexpected!r}"
 

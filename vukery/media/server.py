@@ -64,6 +64,7 @@ def _jsonable(value: Any) -> bool:
 
 STATE_SECONDS = 1 / 20  # how often dashboards are told what changed
 MAX_REMEMBERED = 200    # sounds remembered per mode, for media controllers that connect late
+_UNSET = object()
 
 
 @dataclass(frozen=True)
@@ -94,6 +95,7 @@ class MediaServer(Logs):
         self._last_state: dict[str, Any] | None = None
         self._poller: Any = None
         self._server: asyncio.Server | None = None
+        self.values: dict[str, dict[str, Any]] = {}   # mode -> what it published for scenes: {mode.key}
         self.random = random.Random()   # picks from sound pools
         self._pool_turns: dict[str, int] = {}
         self._sound_ids = count(1)
@@ -140,6 +142,16 @@ class MediaServer(Logs):
         if self.showing.get(display) != top:
             self.showing[display] = top
             self._send({"type": "show", "display": display, "scene": top})
+
+    # --- values for scenes
+
+    def publish(self, mode: Mode, values: dict[str, Any]) -> None:
+        """Values a mode publishes for scenes, as ``{<mode name>.<key>}``. They stay until changed."""
+        mine = self.values.setdefault(mode.name, {})
+        changed = {k: v for k, v in values.items() if _jsonable(v) and mine.get(k, _UNSET) != v}
+        if changed:
+            mine.update(changed)
+            self._send({"type": "values", "mode": mode.name, "values": changed})
 
     # --- sounds
 
@@ -218,6 +230,7 @@ class MediaServer(Logs):
             "players": players,
             **self.machine.sounds.to_data(),
             "playing": self.playing(),
+            "values": {name: dict(values) for name, values in self.values.items()},
         }
 
     # --- clients
