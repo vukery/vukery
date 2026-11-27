@@ -16,6 +16,8 @@ Check your version with `vuk --version`.
 - **High score** (MPF's `high_score`), the first optional built-in: list it
   in `modes:`. Initials with the flippers and start, the award screens, and
   tables saved in `data/high_scores.yaml`. See [High score](high-score.md).
+- **`use_wait_queue`** (MPF's): a mode started by a queue event such as
+  `game_ending` holds it until the mode stops.
 - **Values from modes:** `self.publish(countdown=10)` is `{frenzy.countdown}`
   in a scene.
 - New matcher: `expect(x).to_be(y)`, the same object.

@@ -101,6 +101,7 @@ class Mode(Logs):
     stop_on: ClassVar[str | tuple[str, ...]] = ()
     game_mode: ClassVar[bool] = True  # stops when the game ends; can only run during a game
     stop_on_ball_end: ClassVar[bool] = True
+    use_wait_queue: ClassVar[bool] = False  # started by a queue event (game_ending…): hold it until the mode stops
     scenes: ClassVar[tuple[SceneFunction, ...]] = ()  # the @scene functions this mode can show
     scoring: ClassVar[dict[str, Entry]] = {}  # what this mode scores (see vukery.core.scoring)
 
@@ -111,6 +112,7 @@ class Mode(Logs):
 
     def __init__(self, machine: Machine):
         self.machine = machine
+        self._wait_queue: Any = None
         self.active = False
         self.starting = False
         self.stopping = False
@@ -253,6 +255,9 @@ class Mode(Logs):
             self.warning_log("Not starting: it's a game mode and no game is running")
             return
         self.starting = True
+        if self.use_wait_queue and (queue := kwargs.get("queue")) is not None:
+            queue.wait()   # MPF's use_wait_queue: what posted it waits for this mode to finish
+            self._wait_queue = queue
         self.events.post(f"mode_{self.name}_will_start")
         self.events.post_queue(f"mode_{self.name}_starting", callback=lambda: self._started(kwargs))
 
@@ -284,6 +289,9 @@ class Mode(Logs):
     def _stopped(self, kwargs: dict[str, Any]) -> None:
         def finish() -> None:
             self.mode_stop(**kwargs)
+            if self._wait_queue is not None:
+                self._wait_queue.clear()
+                self._wait_queue = None
             if self.machine.media is not None:
                 self.machine.media.remove(self)
                 self.machine.media.stop_sounds(self)
