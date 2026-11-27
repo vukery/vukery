@@ -6,6 +6,17 @@ vukery is in **0.0.x** while it works toward parity with MPF. Every push to
 
 Check your version with `vuk --version`.
 
+## 0.0.23 (2026-11-26)
+
+- **Your own playfield and backbox in `vuk me`:** put `playfield.jpg` or
+  `backbox.png` (or both) in the machine's `assets/images/`, and `vuk me`
+  draws them instead of the wooden ones. An MPF machine's Monitor playfield
+  lines up with its migrated positions. See
+  [the dashboard](dashboard.md#your-own-playfield-and-backbox).
+- **Fixed:** files a machine started from its own folder (`.`) passed to
+  media controllers were relative paths; the machine folder is now made
+  absolute when the config loads.
+
 ## 0.0.22 (2026-11-26)
 
 - **Fixed:** sounds that started before a media controller connected were
