@@ -40,6 +40,8 @@ class Game(BuiltInMode, built_in=True):
         self._player: Player | None = None
         self.balls_in_play = 0
         self.ending = False
+        self.tilted = False        # this ball is tilted (the tilt mode sets and clears it), as MPF's
+        self.slam_tilted = False   # slam tilted: no extra balls, and the game ends after this ball
         self._ball_over: asyncio.Event | None = None
         self._task: asyncio.Task[None] | None = None
 
@@ -62,6 +64,7 @@ class Game(BuiltInMode, built_in=True):
 
     def mode_start(self, **_: Any) -> None:
         self.players, self.player, self.balls_in_play, self.ending = [], None, 0, False
+        self.tilted = self.slam_tilted = False
         self.machine.game = self
         self._ball_over = asyncio.Event()
         self._task = self.machine.create_task(self._run())
@@ -92,12 +95,12 @@ class Game(BuiltInMode, built_in=True):
         while not self.ending:
             await self._start_turn()
             await self._run_ball()
-            while self._current().extra_balls and not self.ending:
+            while self._current().extra_balls and not self.ending and not self.slam_tilted:
                 self._current().extra_balls -= 1
                 await self._run_ball(extra_ball=True)
             await self._end_turn()
             player = self._current()
-            if player.ball >= self.balls_per_game and player.number == len(self.players):
+            if self.slam_tilted or player.ball >= self.balls_per_game and player.number == len(self.players):
                 self.ending = True
             else:
                 self._player = self.players[player.number % len(self.players)]
@@ -140,8 +143,7 @@ class Game(BuiltInMode, built_in=True):
         await ball_over.wait()
 
         await events.post_async("ball_will_end")
-        await events.post_queue_async("ball_ending")
-        self.machine.modes.stop_for_ball_end()
+        await events.post_queue_async("ball_ending")   # the ball's modes stop in here (ModeController)
         await events.post_async("ball_ended")
 
     # --- reacting to the playfield

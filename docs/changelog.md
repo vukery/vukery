@@ -6,6 +6,18 @@ vukery is in **0.0.x** while it works toward parity with MPF. Every push to
 
 Check your version with `vuk --version`.
 
+## 0.0.27 (2026-11-26)
+
+- **Tilt** (MPF's `tilt`), an optional built-in mode: plumb bob warnings,
+  tilt, slam tilt, waiting for the balls and the bob to settle. Its look is
+  a scene, how long it stays and a sound for each warning and for the tilt.
+  See [Tilt](tilt.md).
+- **A ball's modes stop inside `ball_ending`**, as in MPF: earlier than
+  before, so handlers that wait on `ball_ending` (tilt) run with them
+  stopped.
+- `game.tilted` and `game.slam_tilted`, and ball devices post MPF's
+  `balldevice_<name>_ball_enter`.
+
 ## 0.0.26 (2026-11-26)
 
 - **Dual-wound flippers and EOS switches**, as MPF's: `hold_coil`,

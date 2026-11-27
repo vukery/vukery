@@ -86,6 +86,9 @@ class BallDevice(Logs):
 
     def _ball_entered(self, **_: Any) -> None:
         game = self.machine.game
+        # MPF's event; nothing claims balls yet (ball save will), so every new ball is unclaimed
+        self.machine.events.post(f"balldevice_{self.name}_ball_enter", new_balls=1, unclaimed_balls=1,
+                                 device=self.name)
         if "drain" in self.config.tags and game and game.balls_in_play > 0:
             self.machine.events.post_relay("ball_drain", balls=1, device=self.name)
 

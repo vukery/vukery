@@ -43,11 +43,12 @@ from vukery.modes.attract import Attract
 from vukery.modes.built_in import BuiltInMode, resolve
 from vukery.modes.game import Game
 from vukery.modes.high_score import HighScore
+from vukery.modes.tilt import Tilt
 from vukery.platforms.interfaces import SerialPortInfo
 from vukery.platforms.simulated import SimulatedPlatform
 
 BUILT_IN_MODES: tuple[type[BuiltInMode], ...] = (Attract, Game)   # always loaded
-OPTIONAL_MODES: dict[str, type[BuiltInMode]] = {mode.name: mode for mode in (HighScore,)}   # when listed in modes:
+OPTIONAL_MODES: dict[str, type[BuiltInMode]] = {mode.name: mode for mode in (HighScore, Tilt)}   # when listed in modes:
 
 
 class Machine(Logs):

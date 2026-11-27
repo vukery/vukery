@@ -21,6 +21,7 @@ nav:
   - Displays and scenes: scenes.md
   - Sound: sound.md
   - High score: high-score.md
+  - Tilt: tilt.md
   - Testing a game: testing.md
   - Examples: examples.md
   - The dashboard (vuk me): dashboard.md
